@@ -1,0 +1,249 @@
+at Burn and Glute Blast absolutely belong in the first screen. I looked at what treadmill brands are pushing now, and I think we can make the Echelon program lineup much more consumer-friendly than the first version.
+
+What is happening in treadmills right now
+The market is moving away from old labels like “Program 1,” “Hill,” and “Interval.” Four things stand out:
+
+Incline walking is huge. NordicTrack is actively positioning incline walking around calorie demand and glute/hamstring engagement, with its incline products going as high as 40%. (NordicTrack)
+
+Personalized intensity is becoming table stakes. iFIT's current SmartAdjust changes treadmill speed and incline automatically and learns from workout history. ActivePulse can further modify intensity based on heart rate. (NordicTrack)
+
+Peloton is personalizing pace. Its newer Pace Targets translate instructor cues into personalized speed ranges for running, walking, Walk+Run, hiking and bootcamp. Peloton also continues to emphasize Scenic and game-style Lanebreak experiences. (Peloton)
+
+Hybrid/functional training is hot. HYROX-style training continues to grow, combining repeated running with strength movements. (Verywell Health)
+
+So I would not launch Echelon with 10 generic treadmill programs. I'd make the program names immediately communicate what the customer wants from the workout.
+
+I would change our launch lineup to this:
+Program	Promise	Style	Speed	Incline
+🔥 FAT BURN	Maximize sustained calorie output	Incline walk + jog	2.8–5.5	1–12%
+🍑 GLUTE BLAST	Hills focused on posterior-chain work	Power walk	2.5–4.0	4–15%+
+🏔️ SUMMIT	Conquer one massive climb	Progressive climb	2.5–4.5	1–15%+
+⚡ HIIT 20	Maximum effort in 20 minutes	Sprint/recover	3–9+	1–5%
+💦 SWEAT 30	Get sweaty. Get it done.	Mixed	3–7	1–10%
+🚀 SPEED LAB	Improve speed	Progressive intervals	4–10+	0–4%
+🍑🔥 BOOTY BURN	Short, aggressive incline workout	Steep walk	2.5–3.8	6–15%+
+🏃 5K READY	Train toward running a 5K	Progressive run	Personalized	0–6%
+🧗 VERTICAL	How high can you climb?	Elevation challenge	2.5–4.0	8–Max
+🏆 ECHELON CHALLENGE	Beat your previous performance	Adaptive	Personalized	Personalized
+And then I would add a second row of experiences such as 12-3-30, Power Walk, Rolling Hills, Zone 2, Walk + Run, Endurance, Pyramid, Recovery Walk, Quick 10, and Surprise Me.
+
+That gives us recognizable fitness goals and interesting Echelon-specific experiences.
+
+FAT BURN should be smarter than a generic “fat-burning zone”
+I would be careful about promising that a particular workout uniquely “burns fat.” Instead, the consumer-facing promise can be sustained calorie-burning work without requiring hard running.
+
+FAT BURN — 30 MIN
+
+The treadmill alternates between moderate incline walking and light running:
+
+WARM UP → CLIMB → PUSH → RECOVER → CLIMB → PUSH → BIG CLIMB → FINISH
+
+For example:
+
+0–5: 3.0 mph / 1%
+5–8: 3.3 / 5%
+8–11: 3.5 / 8%
+11–14: 4.5 / 3%
+14–17: 3.2 / 10%
+17–20: 5.0 / 2%
+20–23: 3.3 / 12%
+23–26: 5.2 / 2%
+26–30: cooldown
+
+The important thing is that Echelon Adapt scales those numbers to the individual.
+
+🍑 GLUTE BLAST
+This one could become a signature Echelon treadmill program.
+
+NordicTrack itself now highlights that higher-incline walking increases involvement of the glutes, hamstrings and calves. (NordicTrack)
+
+Don't make it simply 15% for 20 minutes.
+
+Make the hill pattern the workout:
+
+30 MIN • WALK • GLUTES + LEGS
+
+▁ ▃ ▅ ▇ ▅ █ ▆ █ ▃ ▁
+
+ROUND 1 — ACTIVATE
+3.0 mph / 4–6%
+
+ROUND 2 — BUILD
+3.1 mph / 7–9%
+
+ROUND 3 — BURN
+3.0 mph / 10–12%
+
+ROUND 4 — POWER
+2.8 mph / 13–15%
+
+FINAL CLIMB
+Maximum programmed incline appropriate to the machine/user.
+
+On-screen messaging:
+
+GLUTE BLAST
+
+12%
+3.1 MPH
+
+🔥 BURN BLOCK 2 OF 4
+
+NEXT: 14% POWER CLIMB
+0:42
+
+That feels like a workout product, not treadmill firmware.
+
+🍑 BOOTY BURN 15
+I would actually have Glute Blast and Booty Burn.
+
+They address the same broad consumer goal but different use cases.
+
+GLUTE BLAST
+30-minute structured training workout.
+
+BOOTY BURN 15
+The quick workout someone selects because they only have 15 minutes.
+
+Marketing line:
+
+15 MINUTES. ALL HILLS.
+And make it brutal without requiring running.
+
+🧗 VERTICAL
+This could be really cool.
+
+Don't make time the primary objective.
+
+HOW HIGH CAN YOU GO?
+Choose:
+
+500 FT
+
+1,000 FT
+
+2,000 FT
+
+VERTICAL MILE — 5,280 FT
+
+The treadmill manages incline while the user works toward the elevation target.
+
+Live screen:
+
+742 FT
+/ 1,000 FT
+████████░░
+
+258 FT TO GO
+
+Now incline becomes a game.
+
+🔥 CALORIE TARGET
+Another one competitors don't present as cleanly as I think we can.
+
+Instead of choosing time:
+
+WHAT'S YOUR TARGET?
+100 CAL
+
+200 CAL
+
+300 CAL
+
+500 CAL
+
+Then Echelon creates an appropriate treadmill session.
+
+Screen:
+
+183
+/ 300 CAL
+117 TO GO
+
+The estimated calorie number needs the normal accuracy caveat, but psychologically the experience is very easy to understand.
+
+🫀 ZONE 2
+This needs to be prominent because heart-rate-based training has become a major part of connected treadmill experiences. iFIT already uses real-time heart rate to modify workout intensity through ActivePulse. (iFit)
+
+Connect Apple Watch / compatible HR monitor.
+
+Then:
+
+STAY IN ZONE 2
+Echelon automatically nudges incline/speed to maintain the target.
+
+TOO LOW → + incline
+
+IN ZONE → hold
+
+TOO HIGH → reduce
+
+The customer doesn't manage the treadmill.
+
+⚔️ HYBRID
+I'd also build a treadmill-only program influenced by the popularity of HYROX without using their trademark as our product name.
+
+ECHELON HYBRID RUN
+RUN → CLIMB → RUN → POWER WALK → RUN → SPRINT
+
+We can't do sled pushes on a normal motorized treadmill unless the hardware is designed and validated for that mode, so don't fake that.
+
+Instead, reproduce the change in demands using speed and incline.
+
+That captures the functional-racing trend without needing another piece of equipment.
+
+🎲 SURPRISE ME
+This should literally be one giant button.
+
+I HAVE:
+
+10 MIN 20 MIN 30 MIN 45 MIN
+
+TODAY I WANT:
+
+EASY SWEAT BURN HARD
+
+SURPRISE ME
+Echelon builds the session.
+
+That's much more approachable than asking a consumer to understand interval programming.
+
+And here's the bigger UI change I'd make
+Instead of opening Programs and showing:
+
+Just Walk
+Rolling Hills
+Pyramid
+Endurance
+HIIT
+
+Start with:
+
+WHAT DO YOU WANT TODAY?
+🔥 BURN CALORIES
+
+🍑 GLUTES + LEGS
+
+💦 SWEAT
+
+🏔️ CLIMB
+
+⚡ GET FASTER
+
+🏃 RUN
+
+❤️ HEART RATE
+
+🏆 CHALLENGE ME
+
+🧘 RECOVERY
+
+🎲 SURPRISE ME
+
+Then show the relevant programs.
+
+That's the part I think makes Echelon better. We're starting with the customer's reason for getting on the treadmill, rather than making them decipher exercise terminology.
+
+And underneath all of it I'd use the same Echelon intelligence layer: automatic speed + incline, personalized level, EFFORT +/- during the workout, learning from manual overrides, HR integration, progress/PRs, and a clear preview of what's coming next. That's where the market is headed, and iFIT's 2026 SmartAdjust positioning confirms that automatic personalized adjustment is increasingly central to the experience. (NordicTrack)
+
+I'd make Fat Burn, Glute Blast, Vertical and Surprise Me the four hero tiles in the designer brief. Those immediately look different from another treadmill's boring preset menu.

@@ -38,11 +38,9 @@ claimed as runtime verification.
 ## Architecture
 
 ```text
-domain → application/usecase ← data
-                    ↓
-             presentation (Compose)
-                    ↑
-          MainActivity (composition root)
+presentation (Compose) ───────→ application/usecase ─────→ domain
+data (adapters) ──────────────→ application/usecase ─────→ domain
+MainActivity (composition root): wires presentation + data
 ```
 
 Domain code is Android-free. Use cases depend on contracts, `data` provides the

@@ -31,6 +31,21 @@ implementation of those screens.
 - No backend, database, authentication, charting library, device SDK, or heart
   rate integration in this increment.
 
+## Official sources
+
+Framework and tooling decisions are grounded in these official Android
+Developers references:
+
+- Architecture recommendations: <https://developer.android.com/topic/architecture/recommendations>
+- Compose Bill of Materials and compiler relationship: <https://developer.android.com/develop/ui/compose/bom>
+- Android Gradle Plugin 9.1.1 compatibility: <https://developer.android.com/build/releases/agp-9-1-0-release-notes>
+- Android testing overview: <https://developer.android.com/training/testing>
+- Compose UI testing and semantics: <https://developer.android.com/develop/ui/compose/testing>
+- Robolectric local-test strategies: <https://developer.android.com/training/testing/local-tests/robolectric>
+
+The local toolchain below intentionally uses older cached versions; these
+references are the upgrade authority before moving to the official baseline.
+
 ### Local toolchain audit (2026-08-26)
 
 The requested official baseline is compile/target SDK 37, AGP 9.1.1, Gradle
@@ -134,8 +149,8 @@ repository or calls an Android API.
 The test pyramid starts with deterministic pure Kotlin tests and adds Android
 tests only when behavior crosses a UI/device boundary:
 
-1. Domain tests verify program identifiers, required hero ordering, and product
-   invariants without an Android runtime.
+1. Pure JVM use-case tests verify program identifiers, required hero ordering,
+   and product invariants without an Android runtime.
 2. Use-case tests use the real static catalog or a tiny in-memory fake to verify
    application behavior; interaction mocks are avoided.
 3. Compose UI tests verify accessible text, focus, touch targets, and state
@@ -145,10 +160,15 @@ tests only when behavior crosses a UI/device boundary:
 5. Every behavior change records RED, GREEN, and REFACTOR evidence. Tests do
    not skip or disable pending behavior.
 
+The foundation intentionally has no Compose UI behavior test, emulator run, or
+manual rendering claim. The static shell is compile/package-verified; accessible
+interaction tests and real-device verification begin with Gate 1.
+
 Foundation acceptance tests:
 
 - the use case returns the four goal-first hero programs in the required order;
-- the Compose shell exposes those labels and the app name;
+- the Compose shell source exposes those labels and the app name, with runtime
+  UI verification deferred to Gate 1;
 - the shell does not instantiate data infrastructure inside a composable;
 - Android lint, unit tests, and debug assemble pass when the local SDK supports
   them.

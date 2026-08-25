@@ -1,11 +1,10 @@
-package com.echelon.console.domain
+package com.echelon.console.application.usecase
 
-import com.echelon.console.application.usecase.ListHeroPrograms
 import com.echelon.console.data.StaticProgramCatalog
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class HeroProgramTest {
+class ListHeroProgramsTest {
     @Test
     fun `lists the four goal-first hero programs in customer priority order`() {
         val programs = ListHeroPrograms(StaticProgramCatalog())()

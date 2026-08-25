@@ -1,7 +1,8 @@
 node_modules/
-\.gradle/
+.gradle/
+.kotlin/
 local.properties
-\.idea/
+.idea/
 *.iml
 build/
 app/build/

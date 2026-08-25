@@ -110,9 +110,9 @@ Luna reports:
 2. architecture boundary decisions;
 3. RED command and failure, then GREEN and REFACTOR evidence;
 4. `./gradlew test`, `./gradlew :app:testDebugUnitTest`, `./gradlew lint`,
-   `./gradlew :app:assembleDebug`, and `./gradlew check` results;
+   `./gradlew architectureCheck`, `./gradlew :app:assembleDebug`, and
+   `./gradlew check` results;
 5. commit hash and open risks, including toolchain blockers.
 
 Sol reports findings by severity, confirms design/spec alignment, and chooses
 `proceed`, `fix`, or `clarify` as the next action.
-

@@ -7,20 +7,24 @@ visual references.
 
 ## Shared screen contract
 
-All twelve screens belong to one Echelon dark treadmill console. Keep the same
-64px desktop rail, carbon surfaces, 1px structural lines, Geist/Geist Mono
-typography, single Echelon Cyan accent (`#28A8FF`), 4px corner radius, and
-explicit telemetry units. The console must feel like hardware software: dense,
-precise, calm, and immediately scannable while the user is moving.
+All twelve screens belong to one Echelon dark landscape Android treadmill
+console. Keep the same 64dp rail, carbon surfaces, 1dp structural lines,
+Geist/Geist Mono typography targets (with Android sans-serif/monospace fallback
+until font licensing is approved), single Echelon Cyan accent (`#28A8FF`), 4dp
+corner radius, and explicit telemetry units. The console must feel like
+hardware software: dense, precise, calm, and immediately scannable while the
+user is moving.
 
 Use line icons with text labels. Do not use emojis as icons even where the
 source idea uses emoji shorthand. Do not invent extra accent colors; use cyan
 opacity, line weight, dash style, and labels to differentiate data. Never use
 pure black, purple/neon gradients, generic dashboard cards, centered marketing
-heroes, or overlapping layers. The UI is responsive: below 768px collapse to a
-single column, keep the stop/end action visible, and preserve 44px touch
-targets. All screens need loading, empty, error, selected, disabled, and reduced-
-motion considerations where applicable.
+heroes, or overlapping layers. The visual reference is a 16:9 Android
+landscape touchscreen; use `WindowWidthSizeClass.Expanded` for the primary
+layout and collapse to a single column for compact/medium fallback windows.
+Keep the stop/end action visible and preserve 44dp touch targets. All screens
+need loading, empty, error, selected, disabled, and reduced-motion
+considerations where applicable.
 
 ## Screen breakdown
 
@@ -145,8 +149,8 @@ motion considerations where applicable.
   and preview.
 - **States:** empty editor, editing, invalid block, device limit warning, unsaved
   changes, and save success/error.
-- **Layout note:** two-column editor/preview on desktop, single-column ordered
-  workflow on mobile; never hide units.
+- **Layout note:** two-column editor/preview in the expanded landscape window,
+  single-column ordered workflow in compact/medium fallback; never hide units.
 
 ### 11. Surprise Me
 
@@ -192,23 +196,25 @@ navigation must not discard unsaved settings without a clear confirmation.
 ## Master prompt for Google Stitch
 
 ```text
-Design a responsive 12-screen Echelon treadmill console from the attached
-concept reference. Treat it as hardware software for a moving user: dark,
-precise, cockpit-dense, calm, and scannable in under one second. Start with the
-customer goal, not treadmill jargon. The four hero programs on Screen 1 must be
-FAT BURN, GLUTE BLAST, VERTICAL, and SURPRISE ME, in that order. FAT BURN means
-sustained calorie-burning work and must not make a medical claim. Use line icons
-with text labels; never use emojis as UI icons.
+Design a responsive 12-screen Echelon treadmill console for a 16:9 landscape
+Android tablet/treadmill touchscreen from the attached concept reference.
+Treat it as hardware software for a moving user: dark, precise, cockpit-dense,
+calm, and scannable in under one second. Start with the customer goal, not
+treadmill jargon. The four hero programs on Screen 1 must be FAT BURN, GLUTE
+BLAST, VERTICAL, and SURPRISE ME, in that order. FAT BURN means sustained
+calorie-burning work and must not make a medical claim. Use line icons with text
+labels; never use emojis as UI icons.
 
 Use the Echelon Console / Runline design system: canvas #071016, carbon surfaces
 #0C171E and #12232C, primary text #E5EDF2, secondary #A4B3BD, muted #6D7D88,
 structural line #253842, and exactly one interactive accent #28A8FF with opacity
-variants only. Use Geist for UI text and Geist Mono for telemetry. Use 4px
-corners, 4px spacing multiples, 1px rules, explicit units, 44dp minimum touch
-targets, and a 64dp desktop navigation rail. The hero layout is asymmetric;
+variants only. Use Geist for UI text and Geist Mono for telemetry when approved;
+otherwise use a neutral sans-serif/monospace fallback. Use 4dp corners, 4dp
+spacing multiples, 1dp rules, explicit units, 44dp minimum touch targets, and a
+64dp landscape navigation rail. The hero layout is asymmetric;
 the live screen is a dominant chart/current-value panel with a narrow telemetry
-rail. Compose implementation should use grid/lazy layout primitives and honor
-landscape system insets; the visual reference is 16:9 and touchscreen-first.
+rail. Keep visual output coherent as one 16:9 Android console; do not generate a
+web browser page, phone-only layout, or unrelated dashboard templates.
 
 Generate these screens and preserve the shared shell: (1) goal-first program
 library, (2) program detail/overview, (3) make it yours, (4) live workout, (5)
@@ -218,13 +224,25 @@ and (12) heart-rate mode. For every screen define loading, empty, error,
 selected, disabled, and reduced-motion behavior where relevant. Show current
 speed/incline, units, next segment, safe stop/end action, and accessible labels.
 
-Animate only transform and opacity with restrained spring-like feedback; do not
-animate layout properties. On narrow/portrait fallback widths, collapse to one
-column, move the telemetry below the current value, keep the stop/end action
-above the fold, and retain 44dp controls. Do not use centered marketing heroes,
+Animate only purposeful layer movement and opacity with restrained spring-like
+feedback; do not animate layout properties. On narrow/portrait fallback widths,
+collapse to one column, move the telemetry below the current value, keep the
+stop/end action above the fold, and retain 44dp controls. Do not use centered marketing heroes,
 three equal cards,
 overlapping layers, pure black, gradients, purple/neon glows, Inter, generic
 serifs, fake metrics, filler scroll prompts, confetti, custom cursors, or AI
 copywriting clichés. Produce a coherent instrument panel, not twelve unrelated
 dashboard templates.
 ```
+
+## Jetpack Compose implementation handoff (not part of the Stitch visual prompt)
+
+When translating the generated visual direction into this repository, use a
+single-activity Android app with Jetpack Compose. Use
+`WindowWidthSizeClass.Expanded` for the primary landscape console and
+`BoxWithConstraints` for compact/medium fallback. Express the visual tokens in
+`dp`/`sp`, use `WindowInsets`, and keep touch targets at least 44dp. Render
+purposeful motion through `Modifier.graphicsLayer` translation/alpha and honor
+the Android animator duration scale plus an explicit reduced-motion flag. Keep
+Compose UI in `presentation`; screens receive state/events from ViewModels and
+use cases, while `data` remains outside the UI boundary.

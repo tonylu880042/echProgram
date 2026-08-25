@@ -22,7 +22,7 @@ Compose, Android framework APIs, device SDKs, storage, HTTP, or a concrete
 vendor integration.
 
 ```text
-app/src/main/kotlin/com/echelon/console/
+app/src/main/java/com/echelon/console/
 ├── domain/                 entities, value objects, business rules
 ├── application/usecase/    application orchestration and ports
 ├── data/                   concrete repositories and external mappers
@@ -91,6 +91,11 @@ Required local checks for an implementation increment:
 versions differ from the official baseline, record the actual versions and the
 upgrade path in `docs/SPEC.md`; never claim an unrun task passed.
 
+On this macOS workspace, select the installed JDK 17 before invoking Gradle:
+`export JAVA_HOME="$(/usr/libexec/java_home -v 17)"`. The default JDK 24 causes
+the locally cached AGP/Gradle combination to fail during task-report creation;
+this is a toolchain constraint, not an application test result.
+
 ## Naming and code style
 
 - Kotlin uses explicit nullability and compiler warnings treated as errors where
@@ -134,4 +139,3 @@ VERIFICATION: unit tests, Android tests, lint, type/build checks
 COMMIT: hash and message
 RISKS: unresolved questions or explicit none
 ```
-

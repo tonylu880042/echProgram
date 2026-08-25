@@ -25,6 +25,9 @@ implementation of those screens.
   added only when a screen behavior needs them.
 - Android lifecycle-aware state (`ViewModel` + `StateFlow`) for future screens;
   no state-management framework in the foundation increment.
+- The design target is Geist/Geist Mono, but no font asset or font dependency is
+  bundled in this increment. Use Android `sans-serif`/`monospace` fallbacks until
+  brand licensing and `res/font` packaging are approved.
 - No backend, database, authentication, charting library, device SDK, or heart
   rate integration in this increment.
 
@@ -46,8 +49,12 @@ authoritative fallback and the exact Gradle blocker must be reported.
 ## Commands
 
 ```bash
+# This workspace has JDK 17 installed alongside a newer default JDK.
+export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+
 ./gradlew test                       # all JVM unit tests
 ./gradlew :app:testDebugUnitTest    # app module JVM tests
+./gradlew architectureCheck         # Clean Architecture import direction
 ./gradlew lint                      # Android lint
 ./gradlew :app:assembleDebug        # compile/package the walking skeleton
 ./gradlew check                     # complete local quality gate
@@ -213,4 +220,3 @@ The foundation increment succeeds when:
    (touch, physical keys, voice, contrast mode, reduced motion)?
 7. Which metrics are estimates versus machine-measured values, and what legal
    copy is required beside calories, elevation, and Echelon Score?
-

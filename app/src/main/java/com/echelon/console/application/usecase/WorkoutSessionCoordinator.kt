@@ -62,7 +62,7 @@ sealed interface WorkoutSessionCommandFailure {
 
 class InMemoryWorkoutSessionCoordinator(
     private val catalog: ProgramDetailCatalog,
-) : WorkoutSessionStarter {
+) : WorkoutSessionStarter, WorkoutSessionController {
     private var sessionState: WorkoutSessionState? = null
 
     override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
@@ -122,23 +122,23 @@ class InMemoryWorkoutSessionCoordinator(
         return WorkoutSessionStarterResult.Started(running)
     }
 
-    fun advance(elapsedSeconds: Int): WorkoutSessionCommandResult = updateSession { state ->
+    override fun advance(elapsedSeconds: Int): WorkoutSessionCommandResult = updateSession { state ->
         WorkoutSessionStateMachine.advance(state, elapsedSeconds)
     }
 
-    fun pause(): WorkoutSessionCommandResult = updateSession { state ->
+    override fun pause(): WorkoutSessionCommandResult = updateSession { state ->
         WorkoutSessionStateMachine.pause(state)
     }
 
-    fun resume(): WorkoutSessionCommandResult = updateSession { state ->
+    override fun resume(): WorkoutSessionCommandResult = updateSession { state ->
         WorkoutSessionStateMachine.resume(state)
     }
 
-    fun stop(): WorkoutSessionCommandResult = updateSession { state ->
+    override fun stop(): WorkoutSessionCommandResult = updateSession { state ->
         WorkoutSessionStateMachine.stop(state)
     }
 
-    fun currentState(): WorkoutSessionState? = sessionState
+    override fun currentState(): WorkoutSessionState? = sessionState
 
     private fun failedTransition(error: WorkoutSessionError): WorkoutSessionStarterResult =
         WorkoutSessionStarterResult.Failed(

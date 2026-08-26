@@ -24,13 +24,27 @@ class StaticProgramDetailCatalogTest {
         assertEquals(DurationMinutes(45), detail.defaultSettings.duration)
         assertEquals(PlanIntensity.MEDIUM, detail.defaultSettings.intensity)
         assertEquals(PlanFocus.BALANCED, detail.defaultSettings.focus)
-        assertEquals(SpeedTenths(85), detail.defaultSettings.maxSpeed)
-        assertEquals(InclineTenths(80), detail.defaultSettings.maxIncline)
-        assertEquals(SpeedRange(SpeedTenths(20), SpeedTenths(120)), detail.speedRange)
-        assertEquals(InclineRange(InclineTenths(0), InclineTenths(80)), detail.inclineRange)
+        assertEquals(SpeedTenths(55), detail.defaultSettings.maxSpeed)
+        assertEquals(InclineTenths(120), detail.defaultSettings.maxIncline)
+        assertEquals(SpeedRange(SpeedTenths(28), SpeedTenths(55)), detail.speedRange)
+        assertEquals(InclineRange(InclineTenths(10), InclineTenths(120)), detail.inclineRange)
         assertEquals(
             listOf("Warm Up", "Steady Burn", "Climb", "Push", "Recovery", "Cool Down"),
             detail.profile.map { it.name },
+        )
+        assertEquals(
+            detail.defaultDuration,
+            DurationMinutes(detail.profile.sumOf { it.duration.value }),
+        )
+        assertTrue(
+            detail.profile.all {
+                it.speed.value in detail.speedRange.min.value..detail.speedRange.max.value
+            },
+        )
+        assertTrue(
+            detail.profile.all {
+                it.incline.value in detail.inclineRange.min.value..detail.inclineRange.max.value
+            },
         )
     }
 }

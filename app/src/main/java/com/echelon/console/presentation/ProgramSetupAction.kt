@@ -1,5 +1,6 @@
 package com.echelon.console.presentation
 
+import com.echelon.console.domain.CalorieTargetOption
 import com.echelon.console.domain.DurationMinutes
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.PlanFocus
@@ -63,4 +64,8 @@ sealed interface ProgramSetupAction {
     data class SetZone2UpperBpm(val text: String) : ProgramSetupAction
 
     data object StartZone2Preview : ProgramSetupAction
+
+    data class SelectCalorieTarget(val target: CalorieTargetOption) : ProgramSetupAction
+
+    data object StartCalorieTargetPreview : ProgramSetupAction
 }

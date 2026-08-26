@@ -1,16 +1,18 @@
 package com.echelon.console.presentation
 
+import com.echelon.console.domain.CalorieTargetOption
+import com.echelon.console.domain.CalorieTargetSelection
 import com.echelon.console.domain.DurationMinutes
+import com.echelon.console.domain.FiveKReadySessionDraft
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.PlanSettings
 import com.echelon.console.domain.PlanValidationError
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
-import com.echelon.console.domain.FiveKReadySessionDraft
+import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.SurpriseWorkoutEffort
-import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.VerticalTarget
 import com.echelon.console.domain.VerticalWorkoutDraft
@@ -34,6 +36,13 @@ internal val Zone2DurationOptions = listOf(
     DurationMinutes(30),
     DurationMinutes(45),
     DurationMinutes(60),
+)
+
+internal val CalorieTargetOptions = listOf(
+    CalorieTargetOption.ONE_HUNDRED_KCAL,
+    CalorieTargetOption.TWO_HUNDRED_KCAL,
+    CalorieTargetOption.THREE_HUNDRED_KCAL,
+    CalorieTargetOption.FIVE_HUNDRED_KCAL,
 )
 
 internal val VerticalTargetOptions = VerticalTarget.values().toList()
@@ -124,6 +133,17 @@ sealed interface ProgramSetupUiState {
         val duration: DurationMinutes,
         val lowerBpmText: String,
         val upperBpmText: String,
+        val userMaxSpeed: SpeedTenths,
+        val machineMaxSpeed: SpeedTenths,
+        val userMaxIncline: InclineTenths,
+        val machineMaxIncline: InclineTenths,
+        val errorMessage: String? = null,
+    ) : ProgramSetupUiState
+
+    data class CalorieTargetConfiguring(
+        val detail: ProgramDetail,
+        val representativeProfileDuration: DurationMinutes,
+        val selectedTarget: CalorieTargetSelection?,
         val userMaxSpeed: SpeedTenths,
         val machineMaxSpeed: SpeedTenths,
         val userMaxIncline: InclineTenths,

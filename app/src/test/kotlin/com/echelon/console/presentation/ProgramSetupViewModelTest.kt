@@ -1,20 +1,21 @@
 package com.echelon.console.presentation
 
-import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
+import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
 import com.echelon.console.application.usecase.GetProgramDetail
-import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
-import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
+import com.echelon.console.application.usecase.ProgramDetailCatalog
+import com.echelon.console.application.usecase.StartCalorieTargetPreview
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
+import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
-import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.StartWorkout
-import com.echelon.console.application.usecase.testStartedWorkoutResult
+import com.echelon.console.application.usecase.StartZone2WorkoutPreview
+import com.echelon.console.application.usecase.WorkoutSessionStartFailure
 import com.echelon.console.application.usecase.WorkoutSessionStarter
 import com.echelon.console.application.usecase.WorkoutSessionStarterResult
-import com.echelon.console.application.usecase.WorkoutSessionStartFailure
+import com.echelon.console.application.usecase.testStartedWorkoutResult
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
@@ -38,10 +39,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -244,6 +245,7 @@ class ProgramSetupViewModelTest {
                 startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
                 generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                 startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
+                startCalorieTargetPreview = StartCalorieTargetPreview(catalog, coordinator),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -289,6 +291,7 @@ class ProgramSetupViewModelTest {
                 startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
                 generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                 startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
+                startCalorieTargetPreview = StartCalorieTargetPreview(catalog, coordinator),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -339,6 +342,7 @@ class ProgramSetupViewModelTest {
                 startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
                 generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                 startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
+                startCalorieTargetPreview = StartCalorieTargetPreview(catalog, coordinator),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -461,6 +465,10 @@ class ProgramSetupViewModelTest {
                     missingCapabilitiesCatalog,
                     missingCapabilitiesCoordinator,
                 ),
+                startCalorieTargetPreview = StartCalorieTargetPreview(
+                    missingCapabilitiesCatalog,
+                    missingCapabilitiesCoordinator,
+                ),
                 capabilities = null,
                 dispatcher = dispatcher,
             )
@@ -485,6 +493,7 @@ class ProgramSetupViewModelTest {
                 startVerticalWorkoutDraft = StartVerticalWorkoutDraft(unsafeCoordinator),
                 generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                 startZone2WorkoutPreview = StartZone2WorkoutPreview(unsafeCatalog, unsafeCoordinator),
+                startCalorieTargetPreview = StartCalorieTargetPreview(unsafeCatalog, unsafeCoordinator),
                 capabilities = unsafeCapabilities,
                 dispatcher = dispatcher,
             )
@@ -763,6 +772,7 @@ class ProgramSetupViewModelTest {
         startVerticalWorkoutDraft = StartVerticalWorkoutDraft(InMemoryWorkoutSessionCoordinator(catalog)),
         generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
         startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, InMemoryWorkoutSessionCoordinator(catalog)),
+        startCalorieTargetPreview = StartCalorieTargetPreview(catalog, InMemoryWorkoutSessionCoordinator(catalog)),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )
@@ -781,6 +791,7 @@ class ProgramSetupViewModelTest {
         startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
         generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
         startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
+        startCalorieTargetPreview = StartCalorieTargetPreview(catalog, coordinator),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )

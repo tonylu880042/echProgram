@@ -4,9 +4,10 @@ import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.ProgramDetailCatalog
+import com.echelon.console.application.usecase.StartCalorieTargetPreview
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
-import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.StartWorkout
+import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
@@ -19,8 +20,8 @@ import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.VerticalTarget
 import com.echelon.console.domain.WorkoutSessionState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -218,6 +219,7 @@ class VerticalWorkoutSetupViewModelTest {
         startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
         generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
         startZone2WorkoutPreview = StartZone2WorkoutPreview(StaticProgramCatalog(), coordinator),
+        startCalorieTargetPreview = StartCalorieTargetPreview(StaticProgramCatalog(), coordinator),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )

@@ -6,19 +6,20 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.echelon.console.application.usecase.EvaluateZone2EquipmentHeartRate
 import com.echelon.console.application.usecase.EquipmentTelemetrySource
-import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
+import com.echelon.console.application.usecase.EvaluateZone2EquipmentHeartRate
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
+import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
-import com.echelon.console.application.usecase.ListProgramLibrary
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
-import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
+import com.echelon.console.application.usecase.ListProgramLibrary
+import com.echelon.console.application.usecase.StartCalorieTargetPreview
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
+import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
-import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.StartWorkout
+import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.data.fitos.AndroidFitOsClientFactory
 import com.echelon.console.data.fitos.FitOsEquipmentAdapter
@@ -29,6 +30,11 @@ import com.echelon.console.domain.InclineRange
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
+import com.echelon.console.presentation.EquipmentTelemetryViewModel
+import com.echelon.console.presentation.EquipmentTelemetryViewModelFactory
+import com.echelon.console.presentation.LiveWorkoutRoute
+import com.echelon.console.presentation.LiveWorkoutViewModel
+import com.echelon.console.presentation.LiveWorkoutViewModelFactory
 import com.echelon.console.presentation.ProgramLibraryDestination
 import com.echelon.console.presentation.ProgramLibraryRoute
 import com.echelon.console.presentation.ProgramLibraryViewModel
@@ -38,11 +44,6 @@ import com.echelon.console.presentation.ProgramSetupRoute
 import com.echelon.console.presentation.ProgramSetupUiState
 import com.echelon.console.presentation.ProgramSetupViewModel
 import com.echelon.console.presentation.ProgramSetupViewModelFactory
-import com.echelon.console.presentation.EquipmentTelemetryViewModel
-import com.echelon.console.presentation.EquipmentTelemetryViewModelFactory
-import com.echelon.console.presentation.LiveWorkoutRoute
-import com.echelon.console.presentation.LiveWorkoutViewModel
-import com.echelon.console.presentation.LiveWorkoutViewModelFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -83,6 +84,10 @@ class MainActivity : ComponentActivity() {
             startVerticalWorkoutDraft = StartVerticalWorkoutDraft(workoutSessionCoordinator),
             generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
             startZone2WorkoutPreview = StartZone2WorkoutPreview(
+                programCatalog,
+                workoutSessionCoordinator,
+            ),
+            startCalorieTargetPreview = StartCalorieTargetPreview(
                 programCatalog,
                 workoutSessionCoordinator,
             ),

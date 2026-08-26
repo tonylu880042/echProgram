@@ -27,7 +27,10 @@ import com.echelon.console.domain.FiveKReadyBaselinePace
 import com.echelon.console.domain.FiveKReadyBaselineSource
 import com.echelon.console.domain.FiveKReadySessionGenerationFailure
 import com.echelon.console.domain.FiveKReadySessionGenerationResult
+import com.echelon.console.domain.HeartRateTargetBound
+import com.echelon.console.domain.HeartRateTargetRange
 import com.echelon.console.domain.HeartRateTargetRangeFailure
+import com.echelon.console.domain.HeartRateTargetRangeResult
 import com.echelon.console.domain.PlanSettings
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
@@ -260,13 +263,13 @@ class ProgramSetupViewModel(
             return
         }
 
-        val targetResult = com.echelon.console.domain.HeartRateTargetRange.createUserConfirmed(
+        val targetResult = HeartRateTargetRange.createUserConfirmed(
             lowerBpm = current.lowerBpmText.trim().toIntOrNull(),
             upperBpm = current.upperBpmText.trim().toIntOrNull(),
         )
         val target = when (targetResult) {
-            is com.echelon.console.domain.HeartRateTargetRangeResult.Accepted -> targetResult.target
-            is com.echelon.console.domain.HeartRateTargetRangeResult.Rejected -> {
+            is HeartRateTargetRangeResult.Accepted -> targetResult.target
+            is HeartRateTargetRangeResult.Rejected -> {
                 _state.value = current.copy(
                     errorMessage = zone2TargetError(
                         targetResult.failure,
@@ -328,8 +331,8 @@ class ProgramSetupViewModel(
             if (upperBpmText.isBlank()) "UPPER BPM IS REQUIRED" else "UPPER BPM MUST BE A WHOLE NUMBER"
 
         is HeartRateTargetRangeFailure.NonPositiveBound -> when (failure.bound) {
-            com.echelon.console.domain.HeartRateTargetBound.LOWER -> "LOWER BPM MUST BE GREATER THAN 0"
-            com.echelon.console.domain.HeartRateTargetBound.UPPER -> "UPPER BPM MUST BE GREATER THAN 0"
+            HeartRateTargetBound.LOWER -> "LOWER BPM MUST BE GREATER THAN 0"
+            HeartRateTargetBound.UPPER -> "UPPER BPM MUST BE GREATER THAN 0"
         }
 
         is HeartRateTargetRangeFailure.LowerAboveUpper ->

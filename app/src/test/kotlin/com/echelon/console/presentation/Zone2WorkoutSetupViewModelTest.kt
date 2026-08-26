@@ -37,7 +37,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -63,7 +62,7 @@ class Zone2WorkoutSetupViewModelTest {
             val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
             val viewModel = viewModel(dispatcher, catalog, coordinator)
 
-            openZone2(viewModel)
+            openZone2Ready(viewModel)
             viewModel.onAction(ProgramSetupAction.StartDefault)
 
             val configuring = viewModel.state.value as ProgramSetupUiState.Zone2Configuring
@@ -89,10 +88,13 @@ class Zone2WorkoutSetupViewModelTest {
             val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
             val viewModel = viewModel(dispatcher, catalog, coordinator)
 
-            openZone2(viewModel)
+            openZone2Ready(viewModel)
             viewModel.onAction(ProgramSetupAction.MakeItYours)
 
-            assertTrue(viewModel.state.value is ProgramSetupUiState.Zone2Configuring)
+            val configuring = viewModel.state.value as ProgramSetupUiState.Zone2Configuring
+            assertEquals(DurationMinutes(30), configuring.duration)
+            assertEquals("", configuring.lowerBpmText)
+            assertEquals("", configuring.upperBpmText)
             assertNull(coordinator.currentState())
         } finally {
             Dispatchers.resetMain()
@@ -106,7 +108,8 @@ class Zone2WorkoutSetupViewModelTest {
         try {
             val catalog = StaticProgramCatalog()
             val viewModel = viewModel(dispatcher, catalog, InMemoryWorkoutSessionCoordinator(catalog))
-            openZone2(viewModel)
+            openZone2Ready(viewModel)
+            viewModel.onAction(ProgramSetupAction.StartDefault)
 
             viewModel.onAction(ProgramSetupAction.SetZone2LowerBpm("141"))
             viewModel.onAction(ProgramSetupAction.SetZone2UpperBpm("120"))
@@ -133,30 +136,42 @@ class Zone2WorkoutSetupViewModelTest {
     }
 
     @Test
-    fun `zone 2 target validation maps missing nonpositive ordered and overflow input`() = runTest {
+    fun `zone 2 target validation maps every input failure to exact copy`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         Dispatchers.setMain(dispatcher)
         try {
             val catalog = StaticProgramCatalog()
             val viewModel = viewModel(dispatcher, catalog, InMemoryWorkoutSessionCoordinator(catalog))
-            openZone2(viewModel)
+            openZone2Ready(viewModel)
+            viewModel.onAction(ProgramSetupAction.StartDefault)
 
             val cases = listOf(
-                Triple("", "140", "LOWER BPM"),
-                Triple("120", "", "UPPER BPM"),
-                Triple("0", "140", "LOWER BPM"),
-                Triple("120", "0", "UPPER BPM"),
-                Triple("141", "140", "LOWER BPM"),
-                Triple("999999999999999999999999999999", "140", "LOWER BPM"),
+                Zone2TargetCase("", "140", "LOWER BPM IS REQUIRED"),
+                Zone2TargetCase("120", "", "UPPER BPM IS REQUIRED"),
+                Zone2TargetCase("-1", "140", "LOWER BPM MUST BE GREATER THAN 0"),
+                Zone2TargetCase("120", "0", "UPPER BPM MUST BE GREATER THAN 0"),
+                Zone2TargetCase("141", "140", "LOWER BPM MUST NOT EXCEED UPPER BPM"),
+                Zone2TargetCase("malformed", "140", "LOWER BPM MUST BE A WHOLE NUMBER"),
+                Zone2TargetCase(
+                    "999999999999999999999999999999",
+                    "140",
+                    "LOWER BPM MUST BE A WHOLE NUMBER",
+                ),
+                Zone2TargetCase("120", "malformed", "UPPER BPM MUST BE A WHOLE NUMBER"),
+                Zone2TargetCase(
+                    "120",
+                    "999999999999999999999999999999",
+                    "UPPER BPM MUST BE A WHOLE NUMBER",
+                ),
             )
-            cases.forEach { (lower, upper, expectedText) ->
-                viewModel.onAction(ProgramSetupAction.SetZone2LowerBpm(lower))
-                viewModel.onAction(ProgramSetupAction.SetZone2UpperBpm(upper))
+            cases.forEach { case ->
+                viewModel.onAction(ProgramSetupAction.SetZone2LowerBpm(case.lower))
+                viewModel.onAction(ProgramSetupAction.SetZone2UpperBpm(case.upper))
                 viewModel.onAction(ProgramSetupAction.StartZone2Preview)
 
                 val state = viewModel.state.value as ProgramSetupUiState.Zone2Configuring
-                assertTrue("Expected $expectedText in ${state.errorMessage}", state.errorMessage?.contains(expectedText) == true)
-                assertNull((viewModel.state.value as? ProgramSetupUiState.Started)?.plan)
+                assertEquals(case.expectedMessage, state.errorMessage)
+                assertTrue(viewModel.state.value !is ProgramSetupUiState.Started)
             }
         } finally {
             Dispatchers.resetMain()
@@ -170,8 +185,21 @@ class Zone2WorkoutSetupViewModelTest {
         try {
             val catalog = StaticProgramCatalog()
             val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
-            val viewModel = viewModel(dispatcher, catalog, coordinator)
-            openZone2(viewModel)
+            val machineLimitedCapabilities = capabilities.copy(
+                speed = SpeedRange(SpeedTenths(20), SpeedTenths(40)),
+                incline = InclineRange(InclineTenths(0), InclineTenths(60)),
+            )
+            val viewModel = viewModel(
+                dispatcher = dispatcher,
+                detailCatalog = catalog,
+                coordinator = coordinator,
+                capabilitiesOverride = machineLimitedCapabilities,
+            )
+            openZone2Ready(viewModel)
+            viewModel.onAction(ProgramSetupAction.StartDefault)
+            val configuring = viewModel.state.value as ProgramSetupUiState.Zone2Configuring
+            assertEquals(SpeedTenths(40), configuring.machineMaxSpeed)
+            assertEquals(InclineTenths(60), configuring.machineMaxIncline)
             viewModel.onAction(ProgramSetupAction.SetZone2Duration(DurationMinutes(45)))
             viewModel.onAction(ProgramSetupAction.SetZone2LowerBpm("123"))
             viewModel.onAction(ProgramSetupAction.SetZone2UpperBpm("145"))
@@ -180,15 +208,15 @@ class Zone2WorkoutSetupViewModelTest {
             val started = viewModel.state.value as ProgramSetupUiState.Started
             assertEquals(ProgramPreviewMode.HEART_RATE_PREVIEW, started.previewMode)
             assertEquals(DurationMinutes(45), started.plan.plan.settings.duration)
-            assertEquals(SpeedTenths(50), started.plan.plan.settings.maxSpeed)
-            assertEquals(InclineTenths(80), started.plan.plan.settings.maxIncline)
+            assertEquals(SpeedTenths(40), started.plan.plan.settings.maxSpeed)
+            assertEquals(InclineTenths(60), started.plan.plan.settings.maxIncline)
             val context = (coordinator.currentState() as WorkoutSessionState.Running).timeline.context
                 as com.echelon.console.domain.WorkoutTimelineContext.Zone2Preview
             assertEquals(ProgramId("ZONE_2"), context.programId)
             assertEquals(acceptedTarget(123, 145), context.target)
             assertEquals(DurationMinutes(45), context.duration)
-            assertEquals(SpeedTenths(50), context.effectiveMaxSpeed)
-            assertEquals(InclineTenths(80), context.effectiveMaxIncline)
+            assertEquals(SpeedTenths(40), context.effectiveMaxSpeed)
+            assertEquals(InclineTenths(60), context.effectiveMaxIncline)
         } finally {
             Dispatchers.resetMain()
         }
@@ -200,63 +228,88 @@ class Zone2WorkoutSetupViewModelTest {
         Dispatchers.setMain(dispatcher)
         try {
             val staticCatalog = StaticProgramCatalog()
+            val notFoundCoordinator = InMemoryWorkoutSessionCoordinator(staticCatalog)
+            val unsupportedCoordinator = InMemoryWorkoutSessionCoordinator(staticCatalog)
+            val capabilityCoordinator = InMemoryWorkoutSessionCoordinator(staticCatalog)
+            val starterCoordinator = InMemoryWorkoutSessionCoordinator(staticCatalog)
             val failures = listOf(
-                viewModel(
-                    dispatcher = dispatcher,
-                    detailCatalog = staticCatalog,
-                    coordinator = InMemoryWorkoutSessionCoordinator(staticCatalog),
-                    zone2UseCase = StartZone2WorkoutPreview(
-                        programCatalog = ProgramDetailCatalog { null },
-                        sessionStarter = InMemoryWorkoutSessionCoordinator(staticCatalog),
+                Zone2FailureCase(
+                    viewModel = viewModel(
+                        dispatcher = dispatcher,
+                        detailCatalog = staticCatalog,
+                        coordinator = notFoundCoordinator,
+                        zone2UseCase = StartZone2WorkoutPreview(
+                            programCatalog = ProgramDetailCatalog { null },
+                            sessionStarter = InMemoryWorkoutSessionCoordinator(staticCatalog),
+                        ),
                     ),
+                    expectedMessage = "ZONE 2 PREVIEW IS UNAVAILABLE",
+                    coordinator = notFoundCoordinator,
                 ),
-                viewModel(
-                    dispatcher = dispatcher,
-                    detailCatalog = staticCatalog,
-                    coordinator = InMemoryWorkoutSessionCoordinator(staticCatalog),
-                    zone2UseCase = StartZone2WorkoutPreview(
-                        programCatalog = ProgramDetailCatalog { programId ->
-                            requireNotNull(staticCatalog.findProgramDetail(programId)).copy(
-                                defaultSettings = requireNotNull(staticCatalog.findProgramDetail(programId))
-                                    .defaultSettings.copy(duration = DurationMinutes(20)),
-                                supportedDurations = listOf(DurationMinutes(20)),
-                            )
-                        },
-                        sessionStarter = InMemoryWorkoutSessionCoordinator(staticCatalog),
+                Zone2FailureCase(
+                    viewModel = viewModel(
+                        dispatcher = dispatcher,
+                        detailCatalog = staticCatalog,
+                        coordinator = unsupportedCoordinator,
+                        zone2UseCase = StartZone2WorkoutPreview(
+                            programCatalog = ProgramDetailCatalog { programId ->
+                                staticCatalog.findProgramDetail(programId)?.let { detail ->
+                                    detail.copy(
+                                        defaultSettings = detail.defaultSettings.copy(
+                                            duration = DurationMinutes(20),
+                                        ),
+                                        supportedDurations = listOf(DurationMinutes(20)),
+                                    )
+                                }
+                            },
+                            sessionStarter = InMemoryWorkoutSessionCoordinator(staticCatalog),
+                        ),
                     ),
+                    expectedMessage = "SELECT 20, 30, 45, OR 60 MINUTES",
+                    coordinator = unsupportedCoordinator,
                 ),
-                viewModel(
-                    dispatcher = dispatcher,
-                    detailCatalog = staticCatalog,
-                    coordinator = InMemoryWorkoutSessionCoordinator(staticCatalog),
-                    capabilitiesOverride = capabilities.copy(
-                        speed = SpeedRange(SpeedTenths(60), SpeedTenths(120)),
+                Zone2FailureCase(
+                    viewModel = viewModel(
+                        dispatcher = dispatcher,
+                        detailCatalog = staticCatalog,
+                        coordinator = capabilityCoordinator,
+                        capabilitiesOverride = capabilities.copy(
+                            speed = SpeedRange(SpeedTenths(60), SpeedTenths(120)),
+                        ),
                     ),
+                    expectedMessage = "CAPABILITIES CANNOT SUPPORT ZONE 2 PREVIEW",
+                    coordinator = capabilityCoordinator,
                 ),
-                viewModel(
-                    dispatcher = dispatcher,
-                    detailCatalog = staticCatalog,
-                    coordinator = InMemoryWorkoutSessionCoordinator(staticCatalog),
-                    zone2UseCase = StartZone2WorkoutPreview(
-                        programCatalog = staticCatalog,
-                        sessionStarter = RecordingZone2Starter(
-                            WorkoutSessionStarterResult.Failed(
-                                WorkoutSessionStartFailure.ActiveSessionExists,
+                Zone2FailureCase(
+                    viewModel = viewModel(
+                        dispatcher = dispatcher,
+                        detailCatalog = staticCatalog,
+                        coordinator = starterCoordinator,
+                        zone2UseCase = StartZone2WorkoutPreview(
+                            programCatalog = staticCatalog,
+                            sessionStarter = RecordingZone2Starter(
+                                WorkoutSessionStarterResult.Failed(
+                                    WorkoutSessionStartFailure.ActiveSessionExists,
+                                ),
                             ),
                         ),
                     ),
+                    expectedMessage = "UNABLE TO START ZONE 2 PREVIEW",
+                    coordinator = starterCoordinator,
                 ),
             )
 
-            failures.forEach { viewModel ->
-                openZone2(viewModel)
-                viewModel.onAction(ProgramSetupAction.SetZone2LowerBpm("120"))
-                viewModel.onAction(ProgramSetupAction.SetZone2UpperBpm("140"))
-                viewModel.onAction(ProgramSetupAction.StartZone2Preview)
+            failures.forEach { failure ->
+                openZone2Ready(failure.viewModel)
+                failure.viewModel.onAction(ProgramSetupAction.StartDefault)
+                failure.viewModel.onAction(ProgramSetupAction.SetZone2LowerBpm("120"))
+                failure.viewModel.onAction(ProgramSetupAction.SetZone2UpperBpm("140"))
+                failure.viewModel.onAction(ProgramSetupAction.StartZone2Preview)
 
-                val state = viewModel.state.value as ProgramSetupUiState.Zone2Configuring
-                assertNotNull(state.errorMessage)
-                assertTrue(viewModel.state.value !is ProgramSetupUiState.Started)
+                val state = failure.viewModel.state.value as ProgramSetupUiState.Zone2Configuring
+                assertEquals(failure.expectedMessage, state.errorMessage)
+                assertTrue(failure.viewModel.state.value !is ProgramSetupUiState.Started)
+                assertNull(failure.coordinator.currentState())
             }
         } finally {
             Dispatchers.resetMain()
@@ -270,7 +323,7 @@ class Zone2WorkoutSetupViewModelTest {
         try {
             val catalog = StaticProgramCatalog()
             val viewModel = viewModel(dispatcher, catalog, InMemoryWorkoutSessionCoordinator(catalog))
-            openZone2(viewModel)
+            openZone2Ready(viewModel)
             viewModel.onAction(ProgramSetupAction.StartDefault)
             viewModel.onAction(ProgramSetupAction.Back)
             assertTrue(viewModel.state.value is ProgramSetupUiState.Ready)
@@ -298,7 +351,7 @@ class Zone2WorkoutSetupViewModelTest {
                 coordinator = coordinator,
                 capabilitiesOverride = null,
             )
-            openZone2(viewModel)
+            openZone2Ready(viewModel)
             viewModel.onAction(ProgramSetupAction.StartDefault)
 
             assertEquals(ProgramSetupUiState.DeviceUnavailable, viewModel.state.value)
@@ -308,10 +361,10 @@ class Zone2WorkoutSetupViewModelTest {
         }
     }
 
-    private fun TestScope.openZone2(viewModel: ProgramSetupViewModel) {
+    private fun TestScope.openZone2Ready(viewModel: ProgramSetupViewModel) {
         viewModel.onAction(ProgramSetupAction.OpenProgram(ProgramId("ZONE_2")))
         advanceUntilIdle()
-        viewModel.onAction(ProgramSetupAction.StartDefault)
+        assertTrue(viewModel.state.value is ProgramSetupUiState.Ready)
     }
 
     private fun viewModel(
@@ -350,3 +403,15 @@ class Zone2WorkoutSetupViewModelTest {
         ): WorkoutSessionStarterResult = result
     }
 }
+
+private data class Zone2FailureCase(
+    val viewModel: ProgramSetupViewModel,
+    val expectedMessage: String,
+    val coordinator: InMemoryWorkoutSessionCoordinator,
+)
+
+private data class Zone2TargetCase(
+    val lower: String,
+    val upper: String,
+    val expectedMessage: String,
+)

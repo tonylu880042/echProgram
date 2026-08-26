@@ -35,6 +35,8 @@ internal class FitOsEquipmentAdapter(
     private val callback = AdapterCallback()
     private var client: FitOsClient? = null
     private var connectRequested = false
+    private var serviceConnected = false
+    private var sessionGeneration = 0L
     private var connectTimeoutJob: Job? = null
     private var staleMonitorJob: Job? = null
     private var queryJob: Job? = null
@@ -45,6 +47,8 @@ internal class FitOsEquipmentAdapter(
         synchronized(stateLock) {
             if (connectRequested) return
             connectRequested = true
+            serviceConnected = false
+            sessionGeneration += 1L
         }
         updateState { current -> current.copy(connection = EquipmentConnection.Connecting) }
 
@@ -74,6 +78,8 @@ internal class FitOsEquipmentAdapter(
     override fun disconnect() {
         val oldClient = synchronized(stateLock) {
             connectRequested = false
+            serviceConnected = false
+            sessionGeneration += 1L
             val value = client
             client = null
             value
@@ -136,6 +142,12 @@ internal class FitOsEquipmentAdapter(
     }
 
     private fun onServiceConnected() {
+        val generation = synchronized(stateLock) {
+            if (!connectRequested) return
+            serviceConnected = true
+            sessionGeneration += 1L
+            sessionGeneration
+        }
         connectTimeoutJob?.cancel()
         queryJob?.cancel()
         queryJob = scope.launch {
@@ -147,20 +159,19 @@ internal class FitOsEquipmentAdapter(
                 val snapshot = runCatching { host.getSnapshot() }.getOrNull()
                 InitialQuery(apiVersion, state, limits, snapshot)
             }
-            if (!isConnectionRequested()) return@launch
-            publishInitialQuery(result)
+            publishInitialQuery(result, generation)
         }
     }
 
-    private fun publishInitialQuery(result: InitialQuery) {
+    private fun publishInitialQuery(result: InitialQuery, generation: Long) {
         if (result.apiVersion < 0) {
-            updateState { current ->
+            updateIfCurrentSession(generation) { current ->
                 current.copy(connection = EquipmentConnection.ServiceUnavailable("FitOS API query failed"))
             }
             return
         }
-        if (result.apiVersion != FITOS_API_VERSION) {
-            updateState { current ->
+        if (result.apiVersion < FITOS_API_VERSION) {
+            updateIfCurrentSession(generation) { current ->
                 current.copy(
                     apiVersion = result.apiVersion,
                     connection = EquipmentConnection.UnsupportedApi(result.apiVersion),
@@ -177,7 +188,7 @@ internal class FitOsEquipmentAdapter(
         }
         val connection = descriptor?.let(FitOsPayloadMapper::mapConnection)
             ?: EquipmentConnection.EquipmentDisconnected(null)
-        updateState { current ->
+        updateIfCurrentSession(generation) { current ->
             current.copy(
                 connection = connection,
                 apiVersion = result.apiVersion,
@@ -190,7 +201,7 @@ internal class FitOsEquipmentAdapter(
 
     private fun onConnectionStateChanged(payload: FitOsStatePayload?) {
         val descriptor = payload?.let(FitOsPayloadMapper::mapState)
-        updateState { current ->
+        updateConnectedState { current ->
             val nextConnection = if (current.connection is EquipmentConnection.UnsupportedApi) {
                 current.connection
             } else {
@@ -206,10 +217,13 @@ internal class FitOsEquipmentAdapter(
 
     private fun onEquipmentDataChanged(payload: FitOsSnapshotPayload?) {
         if (payload == null) return
-        updateState { current ->
-            val descriptor = current.equipment ?: return@updateState current
-            val telemetry = FitOsPayloadMapper.mapTelemetry(payload, descriptor) ?: return@updateState current
-            if (current.apiVersion != FITOS_API_VERSION) return@updateState current.copy(telemetry = telemetry)
+        updateConnectedState { current ->
+            val descriptor = current.equipment ?: return@updateConnectedState current
+            val telemetry = FitOsPayloadMapper.mapTelemetry(payload, descriptor)
+                ?: return@updateConnectedState current
+            if (current.apiVersion == null || current.apiVersion < FITOS_API_VERSION) {
+                return@updateConnectedState current.copy(telemetry = telemetry)
+            }
             current.copy(
                 connection = if (FitOsPayloadMapper.mapConnection(descriptor) is EquipmentConnection.Ready) {
                     EquipmentConnection.Ready
@@ -222,8 +236,8 @@ internal class FitOsEquipmentAdapter(
     }
 
     private fun onControlStateChanged(controlState: Int) {
-        updateState { current ->
-            val equipment = current.equipment ?: return@updateState current
+        updateConnectedState { current ->
+            val equipment = current.equipment ?: return@updateConnectedState current
             current.copy(equipment = equipment.copy(controlState = FitOsPayloadMapper.mapControlState(controlState)))
         }
     }
@@ -234,14 +248,40 @@ internal class FitOsEquipmentAdapter(
         }
     }
 
-    private fun currentClient(): FitOsClient? = synchronized(stateLock) { client }
+    private fun updateConnectedState(transform: (EquipmentReadState) -> EquipmentReadState) {
+        synchronized(stateLock) {
+            if (!connectRequested || !serviceConnected) return
+            _state.value = transform(_state.value)
+        }
+    }
 
-    private fun isConnectionRequested(): Boolean = synchronized(stateLock) { connectRequested }
+    private fun updateIfCurrentSession(
+        generation: Long,
+        transform: (EquipmentReadState) -> EquipmentReadState,
+    ) {
+        synchronized(stateLock) {
+            if (!connectRequested || !serviceConnected || sessionGeneration != generation) return
+            _state.value = transform(_state.value)
+        }
+    }
+
+    private fun currentClient(): FitOsClient? = synchronized(stateLock) { client }
 
     private inner class AdapterCallback : FitOsClientCallback {
         override fun onServiceConnected() = this@FitOsEquipmentAdapter.onServiceConnected()
 
         override fun onServiceDisconnected() {
+            val shouldPublish = synchronized(stateLock) {
+                if (!connectRequested) {
+                    false
+                } else {
+                    serviceConnected = false
+                    sessionGeneration += 1L
+                    true
+                }
+            }
+            queryJob?.cancel()
+            if (!shouldPublish) return
             updateState { current ->
                 current.copy(connection = EquipmentConnection.ServiceUnavailable("FitOS service disconnected"))
             }

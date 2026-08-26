@@ -140,8 +140,37 @@ class LiveWorkoutViewModelTest {
     }
 
     @Test
+    fun `exact completion cancels the tick subscription`() = runTest {
+        val coordinator = startedCoordinator()
+        val ticks = TrackingTickSource()
+        val viewModel = viewModel(coordinator, ticks, StandardTestDispatcher(testScheduler))
+        advanceUntilIdle()
+        assertTrue(ticks.subscribed)
+
+        ticks.emit(360)
+        advanceUntilIdle()
+
+        assertTrue(ticks.cancelled)
+        assertTrue(viewModel.state.value is LiveWorkoutUiState.Completed)
+    }
+
+    @Test
+    fun `end action cancels the tick subscription`() = runTest {
+        val ticks = TrackingTickSource()
+        val viewModel = viewModel(startedCoordinator(), ticks, StandardTestDispatcher(testScheduler))
+        advanceUntilIdle()
+        assertTrue(ticks.subscribed)
+
+        viewModel.onAction(LiveWorkoutAction.End)
+        advanceUntilIdle()
+
+        assertTrue(ticks.cancelled)
+        assertTrue(viewModel.state.value is LiveWorkoutUiState.Stopped)
+    }
+
+    @Test
     fun `no session remains explicit and transition failure maps safe error`() = runTest {
-        val noSessionTicks = ManualTickSource()
+        val noSessionTicks = TrackingTickSource()
         val noSession = viewModel(
             controller = InMemoryWorkoutSessionCoordinator(ProgramDetailCatalog { null }),
             tickSource = noSessionTicks,
@@ -150,6 +179,7 @@ class LiveWorkoutViewModelTest {
         advanceUntilIdle()
 
         assertEquals(LiveWorkoutUiState.NoSession, noSession.state.value)
+        assertTrue(noSessionTicks.subscribed)
         noSession.onAction(LiveWorkoutAction.PauseResume)
         noSession.onAction(LiveWorkoutAction.End)
         noSessionTicks.emit(1)
@@ -200,6 +230,21 @@ class LiveWorkoutViewModelTest {
         assertTrue(viewModel.state.value !is LiveWorkoutUiState.Error)
     }
 
+    @Test
+    fun `tick source failure maps to a safe error`() = runTest {
+        val viewModel = viewModel(
+            controller = startedCoordinator(),
+            tickSource = FailingTickSource(),
+            dispatcher = StandardTestDispatcher(testScheduler),
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            LiveWorkoutUiState.Error("Workout session updates are unavailable right now."),
+            viewModel.state.value,
+        )
+    }
+
     private fun viewModel(
         controller: InMemoryWorkoutSessionCoordinator,
         tickSource: WorkoutSessionTickSource,
@@ -231,6 +276,34 @@ class LiveWorkoutViewModelTest {
 
         suspend fun emit(seconds: Int) {
             events.emit(seconds)
+        }
+    }
+
+    private class TrackingTickSource : WorkoutSessionTickSource {
+        private val events = MutableSharedFlow<Int>(extraBufferCapacity = 16)
+
+        var subscribed = false
+            private set
+        var cancelled = false
+            private set
+
+        override fun ticks(): Flow<Int> = flow {
+            subscribed = true
+            try {
+                events.collect { emit(it) }
+            } finally {
+                cancelled = true
+            }
+        }
+
+        suspend fun emit(seconds: Int) {
+            events.emit(seconds)
+        }
+    }
+
+    private class FailingTickSource : WorkoutSessionTickSource {
+        override fun ticks(): Flow<Int> = flow {
+            throw IllegalStateException("private tick source details")
         }
     }
 

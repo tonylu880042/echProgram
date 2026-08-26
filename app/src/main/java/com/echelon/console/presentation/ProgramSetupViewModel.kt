@@ -131,6 +131,8 @@ class ProgramSetupViewModel(
                         _state.value = invalidState?.copy(fieldErrors = result.errors)
                             ?: ProgramSetupUiState.Error("Unable to start workout")
                     }
+                    is StartWorkoutResult.StarterFailure -> _state.value =
+                        ProgramSetupUiState.Error("Unable to start workout")
                 }
             } catch (exception: CancellationException) {
                 throw exception

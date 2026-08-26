@@ -4,6 +4,8 @@ import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.WorkoutSessionStarter
+import com.echelon.console.application.usecase.WorkoutSessionStarterResult
+import com.echelon.console.application.usecase.WorkoutSessionStartFailure
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
 import com.echelon.console.domain.DurationMinutes
@@ -317,7 +319,7 @@ class ProgramSetupViewModelTest {
         try {
             val viewModel = viewModel(
                 dispatcher = dispatcher,
-                starter = RecordingStarter(CancellationException("cancelled")),
+                starter = CancellationStarter(),
             )
 
             viewModel.onAction(ProgramSetupAction.OpenProgram(detail.programId))
@@ -349,7 +351,11 @@ class ProgramSetupViewModelTest {
 
             val startFailure = viewModel(
                 dispatcher = dispatcher,
-                starter = RecordingStarter(IllegalStateException("private stack")),
+                starter = RecordingStarter(
+                    WorkoutSessionStarterResult.Failed(
+                        WorkoutSessionStartFailure.ActiveSessionExists,
+                    ),
+                ),
             )
             startFailure.onAction(ProgramSetupAction.OpenProgram(detail.programId))
             advanceUntilIdle()
@@ -425,7 +431,7 @@ class ProgramSetupViewModelTest {
     private fun viewModel(
         dispatcher: CoroutineDispatcher,
         catalog: ProgramDetailCatalog = ProgramDetailCatalog { detail },
-        starter: RecordingStarter = RecordingStarter(),
+        starter: WorkoutSessionStarter = RecordingStarter(),
         capabilities: DeviceCapabilities? = this.capabilities,
     ): ProgramSetupViewModel = ProgramSetupViewModel(
         getProgramDetail = GetProgramDetail(catalog),
@@ -435,13 +441,19 @@ class ProgramSetupViewModelTest {
     )
 
     private class RecordingStarter(
-        private val failure: Throwable? = null,
+        private val result: WorkoutSessionStarterResult = WorkoutSessionStarterResult.Accepted,
     ) : WorkoutSessionStarter {
         var received: ValidatedWorkoutPlan? = null
 
-        override fun start(plan: ValidatedWorkoutPlan) {
-            failure?.let { throw it }
+        override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
             received = plan
+            return result
+        }
+    }
+
+    private class CancellationStarter : WorkoutSessionStarter {
+        override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
+            throw CancellationException("cancelled")
         }
     }
 }

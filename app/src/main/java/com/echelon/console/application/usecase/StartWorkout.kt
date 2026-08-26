@@ -16,8 +16,15 @@ class StartWorkout(
         val validation = ValidatedWorkoutPlan.create(plan, capabilities)
     ) {
         is ValidatedWorkoutPlanResult.Valid -> {
-            sessionStarter.start(validation.plan)
-            StartWorkoutResult.Valid(validation.plan)
+            when (val result = sessionStarter.start(validation.plan)) {
+                is WorkoutSessionStarterResult.Started,
+                WorkoutSessionStarterResult.Accepted,
+                -> StartWorkoutResult.Valid(validation.plan)
+
+                is WorkoutSessionStarterResult.Failed -> StartWorkoutResult.StarterFailure(
+                    result.failure,
+                )
+            }
         }
 
         is ValidatedWorkoutPlanResult.Invalid -> StartWorkoutResult.Invalid(validation.errors)
@@ -28,4 +35,8 @@ sealed interface StartWorkoutResult {
     data class Valid(val plan: ValidatedWorkoutPlan) : StartWorkoutResult
 
     data class Invalid(val errors: List<PlanValidationError>) : StartWorkoutResult
+
+    data class StarterFailure(
+        val failure: WorkoutSessionStartFailure,
+    ) : StartWorkoutResult
 }

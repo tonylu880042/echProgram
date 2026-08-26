@@ -100,6 +100,31 @@ class StartWorkoutTest {
         assertEquals(true, starter.received?.plan?.settings?.adaptToYou)
     }
 
+    @Test
+    fun `starter failure is returned distinctly after capability validation`() {
+        val failure = WorkoutSessionStartFailure.ActiveSessionExists
+
+        val result = StartWorkout(
+            ResultStarter(WorkoutSessionStarterResult.Failed(failure)),
+        ).invoke(plan(), capabilities)
+
+        assertEquals(StartWorkoutResult.StarterFailure(failure), result)
+    }
+
+    @Test
+    fun `capability validation takes precedence over starter failure`() {
+        val starter = ResultStarter(
+            WorkoutSessionStarterResult.Failed(WorkoutSessionStartFailure.ActiveSessionExists),
+        )
+
+        val result = StartWorkout(
+            starter,
+        ).invoke(plan(maxSpeed = SpeedTenths(121)), capabilities)
+
+        assertTrue(result is StartWorkoutResult.Invalid)
+        assertNull(starter.received)
+    }
+
     private fun assertInvalid(plan: WorkoutPlan, expectedField: PlanField) {
         val starter = RecordingStarter()
         val result = StartWorkout(starter).invoke(plan, capabilities)
@@ -131,8 +156,20 @@ class StartWorkoutTest {
     private class RecordingStarter : WorkoutSessionStarter {
         var received: ValidatedWorkoutPlan? = null
 
-        override fun start(plan: ValidatedWorkoutPlan) {
+        override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
             received = plan
+            return WorkoutSessionStarterResult.Accepted
+        }
+    }
+
+    private class ResultStarter(
+        private val result: WorkoutSessionStarterResult,
+    ) : WorkoutSessionStarter {
+        var received: ValidatedWorkoutPlan? = null
+
+        override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
+            received = plan
+            return result
         }
     }
 }

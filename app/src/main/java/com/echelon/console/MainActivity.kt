@@ -11,6 +11,7 @@ import com.echelon.console.application.usecase.ListProgramLibrary
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.WorkoutSessionStarter
+import com.echelon.console.application.usecase.WorkoutSessionStarterResult
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.data.fitos.AndroidFitOsClientFactory
 import com.echelon.console.data.fitos.FitOsEquipmentAdapter
@@ -119,7 +120,8 @@ class MainActivity : ComponentActivity() {
 }
 
 private object NoOpWorkoutSessionStarter : WorkoutSessionStarter {
-    override fun start(plan: ValidatedWorkoutPlan) {
+    override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
         // Gate3 will replace this composition-root seam with live session wiring.
+        return WorkoutSessionStarterResult.Accepted
     }
 }

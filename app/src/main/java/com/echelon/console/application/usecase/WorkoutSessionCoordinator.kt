@@ -1,5 +1,14 @@
 package com.echelon.console.application.usecase
 
+import com.echelon.console.domain.CalorieCompletionAuthority
+import com.echelon.console.domain.CalorieDeviceCommandStatus
+import com.echelon.console.domain.CalorieEstimateStatus
+import com.echelon.console.domain.CaloriePreviewStatus
+import com.echelon.console.domain.CalorieProgressSemantics
+import com.echelon.console.domain.CalorieSessionResetSemantics
+import com.echelon.console.domain.CalorieTargetSource
+import com.echelon.console.domain.CalorieTelemetrySource
+import com.echelon.console.domain.CalorieUnitSemantics
 import com.echelon.console.domain.FiveKReadySessionDraft
 import com.echelon.console.domain.AnnotatedWorkoutProfile
 import com.echelon.console.domain.AnnotatedWorkoutProfileSegment
@@ -22,10 +31,13 @@ import com.echelon.console.domain.WorkoutTimelineCompiler
 import com.echelon.console.domain.WorkoutTimelineAnnotation
 import com.echelon.console.domain.WorkoutTimelineContext
 import com.echelon.console.domain.toWorkoutTimelineProfile
+import com.echelon.console.domain.toCalorieTargetWorkoutTimelineProfile
 import com.echelon.console.domain.toZone2WorkoutTimelineProfile
 
 private const val VERTICAL_PROFILE_DURATION_MINUTES = 50
+private const val CALORIE_TARGET_REPRESENTATIVE_PROFILE_DURATION_MINUTES = 40
 private val ZONE_2_PROGRAM_ID = ProgramId("ZONE_2")
+private val CALORIE_TARGET_PROGRAM_ID = ProgramId("CALORIE_TARGET")
 
 sealed interface WorkoutSessionStarterResult {
     data class Started(
@@ -64,6 +76,29 @@ sealed interface WorkoutSessionStartFailure {
         val field: Zone2PreviewContextPlanMismatchField,
     ) : WorkoutSessionStartFailure
 
+    data class CalorieTargetPreviewProgramNotFound(
+        val programId: ProgramId,
+    ) : WorkoutSessionStartFailure
+
+    data class CalorieTargetPreviewDetailMismatch(
+        val expected: ProgramId,
+        val actual: ProgramId,
+    ) : WorkoutSessionStartFailure
+
+    data class CalorieTargetPreviewUnsupportedDuration(
+        val duration: DurationMinutes,
+        val supportedDurations: List<DurationMinutes>,
+    ) : WorkoutSessionStartFailure
+
+    data class CalorieTargetPreviewProfileDurationMismatch(
+        val expectedMinutes: Int,
+        val actualMinutes: Long,
+    ) : WorkoutSessionStartFailure
+
+    data class CalorieTargetPreviewContextPlanMismatch(
+        val field: CalorieTargetPreviewContextPlanMismatchField,
+    ) : WorkoutSessionStartFailure
+
     data object ActiveSessionExists : WorkoutSessionStartFailure
 }
 
@@ -82,6 +117,25 @@ enum class Zone2PreviewContextPlanMismatchField {
     INTENSITY,
     FOCUS,
     ADAPT_TO_YOU,
+}
+
+enum class CalorieTargetPreviewContextPlanMismatchField {
+    PROGRAM_ID,
+    DURATION,
+    MAX_SPEED,
+    MAX_INCLINE,
+    INTENSITY,
+    FOCUS,
+    ADAPT_TO_YOU,
+    TARGET_SOURCE,
+    ESTIMATE_STATUS,
+    TELEMETRY_SOURCE,
+    UNIT_SEMANTICS,
+    SESSION_RESET_SEMANTICS,
+    COMPLETION_AUTHORITY,
+    PROGRESS_SEMANTICS,
+    PREVIEW_STATUS,
+    DEVICE_COMMAND_STATUS,
 }
 
 sealed interface WorkoutSessionCommandResult {
@@ -109,6 +163,7 @@ class InMemoryWorkoutSessionCoordinator(
     FiveKReadySessionDraftSessionStarter,
     VerticalWorkoutDraftSessionStarter,
     Zone2WorkoutPreviewSessionStarter,
+    CalorieTargetPreviewSessionStarter,
     WorkoutSessionController {
     private var sessionState: WorkoutSessionState? = null
 
@@ -240,6 +295,95 @@ class InMemoryWorkoutSessionCoordinator(
         )
     }
 
+    override fun start(
+        context: WorkoutTimelineContext.CalorieTargetPreview,
+        plan: ValidatedWorkoutPlan,
+    ): WorkoutSessionStarterResult {
+        activeSessionFailure()?.let { return it }
+        calorieContextPlanMismatch(context, plan)?.let { field ->
+            return WorkoutSessionStarterResult.Failed(
+                WorkoutSessionStartFailure.CalorieTargetPreviewContextPlanMismatch(field),
+            )
+        }
+
+        val detail = catalog.findProgramDetail(CALORIE_TARGET_PROGRAM_ID)
+            ?: return WorkoutSessionStarterResult.Failed(
+                WorkoutSessionStartFailure.CalorieTargetPreviewProgramNotFound(
+                    CALORIE_TARGET_PROGRAM_ID,
+                ),
+            )
+        if (detail.programId != CALORIE_TARGET_PROGRAM_ID) {
+            return WorkoutSessionStarterResult.Failed(
+                WorkoutSessionStartFailure.CalorieTargetPreviewDetailMismatch(
+                    expected = CALORIE_TARGET_PROGRAM_ID,
+                    actual = detail.programId,
+                ),
+            )
+        }
+        val representativeDuration = DurationMinutes(
+            CALORIE_TARGET_REPRESENTATIVE_PROFILE_DURATION_MINUTES,
+        )
+        if (
+            detail.defaultSettings.duration != representativeDuration ||
+            representativeDuration !in detail.supportedDurations
+        ) {
+            return WorkoutSessionStarterResult.Failed(
+                WorkoutSessionStartFailure.CalorieTargetPreviewUnsupportedDuration(
+                    duration = representativeDuration,
+                    supportedDurations = detail.supportedDurations,
+                ),
+            )
+        }
+
+        val profileDurationMinutes = detail.profile.sumOf { it.duration.value.toLong() }
+        if (
+            profileDurationMinutes != CALORIE_TARGET_REPRESENTATIVE_PROFILE_DURATION_MINUTES.toLong() ||
+            detail.profile.any { it.duration.value <= 0 }
+        ) {
+            return WorkoutSessionStarterResult.Failed(
+                WorkoutSessionStartFailure.CalorieTargetPreviewProfileDurationMismatch(
+                    expectedMinutes = CALORIE_TARGET_REPRESENTATIVE_PROFILE_DURATION_MINUTES,
+                    actualMinutes = profileDurationMinutes,
+                ),
+            )
+        }
+
+        val settings = plan.plan.settings
+        val reviewedSettingsMismatch = when {
+            settings.intensity != detail.defaultSettings.intensity ->
+                CalorieTargetPreviewContextPlanMismatchField.INTENSITY
+
+            settings.focus != detail.defaultSettings.focus ->
+                CalorieTargetPreviewContextPlanMismatchField.FOCUS
+
+            settings.adaptToYou -> CalorieTargetPreviewContextPlanMismatchField.ADAPT_TO_YOU
+            settings.maxSpeed.value > minOf(
+                detail.defaultSettings.maxSpeed.value,
+                detail.speedRange.max.value,
+            ) -> CalorieTargetPreviewContextPlanMismatchField.MAX_SPEED
+
+            settings.maxIncline.value > minOf(
+                detail.defaultSettings.maxIncline.value,
+                detail.inclineRange.max.value,
+            ) -> CalorieTargetPreviewContextPlanMismatchField.MAX_INCLINE
+
+            else -> null
+        }
+        reviewedSettingsMismatch?.let { field ->
+            return WorkoutSessionStarterResult.Failed(
+                WorkoutSessionStartFailure.CalorieTargetPreviewContextPlanMismatch(field),
+            )
+        }
+
+        return startTimeline(
+            WorkoutTimelineCompiler.compile(
+                programId = CALORIE_TARGET_PROGRAM_ID,
+                profile = detail.toCalorieTargetWorkoutTimelineProfile(context),
+                settings = settings,
+            ),
+        )
+    }
+
     private fun startDraft(
         draftProgramId: ProgramId,
         draftDurationMinutes: Int,
@@ -310,6 +454,86 @@ class InMemoryWorkoutSessionCoordinator(
                 WorkoutSessionStartFailure.Zone2PreviewContextPlanMismatch(it),
             )
         }
+    }
+
+    private fun calorieContextPlanMismatch(
+        context: WorkoutTimelineContext.CalorieTargetPreview,
+        plan: ValidatedWorkoutPlan,
+    ): CalorieTargetPreviewContextPlanMismatchField? {
+        val settings = plan.plan.settings
+        val representativeDuration = DurationMinutes(
+            CALORIE_TARGET_REPRESENTATIVE_PROFILE_DURATION_MINUTES,
+        )
+        val mismatch = when {
+            context.programId != CALORIE_TARGET_PROGRAM_ID ||
+                plan.plan.programId != CALORIE_TARGET_PROGRAM_ID ->
+                CalorieTargetPreviewContextPlanMismatchField.PROGRAM_ID
+
+            context.representativeProfileDuration != representativeDuration ||
+                settings.duration != representativeDuration ||
+                context.representativeProfileDuration != settings.duration ->
+                CalorieTargetPreviewContextPlanMismatchField.DURATION
+
+            context.effectiveMaxSpeed != settings.maxSpeed ->
+                CalorieTargetPreviewContextPlanMismatchField.MAX_SPEED
+
+            context.effectiveMaxIncline != settings.maxIncline ->
+                CalorieTargetPreviewContextPlanMismatchField.MAX_INCLINE
+
+            else -> null
+        }
+        return mismatch ?: calorieContextMetadataMismatch(context)
+    }
+
+    @Suppress("REDUNDANT_ELSE_IN_WHEN")
+    private fun calorieContextMetadataMismatch(
+        context: WorkoutTimelineContext.CalorieTargetPreview,
+    ): CalorieTargetPreviewContextPlanMismatchField? {
+        val targetSourceMismatch = when (context.target.source) {
+            CalorieTargetSource.USER_SELECTED -> null
+            else -> CalorieTargetPreviewContextPlanMismatchField.TARGET_SOURCE
+        }
+        val estimateStatusMismatch = when (context.estimateStatus) {
+            CalorieEstimateStatus.ESTIMATED -> null
+            else -> CalorieTargetPreviewContextPlanMismatchField.ESTIMATE_STATUS
+        }
+        val telemetrySourceMismatch = when (context.source) {
+            CalorieTelemetrySource.FITOS_EQUIPMENT_SNAPSHOT_CALORIES -> null
+            else -> CalorieTargetPreviewContextPlanMismatchField.TELEMETRY_SOURCE
+        }
+        val unitSemanticsMismatch = when (context.unitSemantics) {
+            CalorieUnitSemantics.UNIT_SEMANTICS_UNCONFIRMED -> null
+            else -> CalorieTargetPreviewContextPlanMismatchField.UNIT_SEMANTICS
+        }
+        val sessionResetSemanticsMismatch = when (context.sessionResetSemantics) {
+            CalorieSessionResetSemantics.SESSION_RESET_SEMANTICS_UNCONFIRMED -> null
+            else -> CalorieTargetPreviewContextPlanMismatchField.SESSION_RESET_SEMANTICS
+        }
+        val completionAuthorityMismatch = when (context.completionAuthority) {
+            CalorieCompletionAuthority.COMPLETION_AUTHORITY_NOT_APPROVED -> null
+            else -> CalorieTargetPreviewContextPlanMismatchField.COMPLETION_AUTHORITY
+        }
+        val progressSemanticsMismatch = when (context.progressSemantics) {
+            CalorieProgressSemantics.DISPLAY_ONLY_NO_TARGET_PROGRESS -> null
+            else -> CalorieTargetPreviewContextPlanMismatchField.PROGRESS_SEMANTICS
+        }
+        val previewStatusMismatch = when (context.previewStatus) {
+            CaloriePreviewStatus.PREVIEW_ONLY -> null
+            else -> CalorieTargetPreviewContextPlanMismatchField.PREVIEW_STATUS
+        }
+        val deviceCommandStatusMismatch = when (context.deviceCommandStatus) {
+            CalorieDeviceCommandStatus.NO_DEVICE_COMMANDS -> null
+            else -> CalorieTargetPreviewContextPlanMismatchField.DEVICE_COMMAND_STATUS
+        }
+        return targetSourceMismatch
+            ?: estimateStatusMismatch
+            ?: telemetrySourceMismatch
+            ?: unitSemanticsMismatch
+            ?: sessionResetSemanticsMismatch
+            ?: completionAuthorityMismatch
+            ?: progressSemanticsMismatch
+            ?: previewStatusMismatch
+            ?: deviceCommandStatusMismatch
     }
 
     private fun startTimeline(

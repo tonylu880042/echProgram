@@ -2,12 +2,15 @@ package com.echelon.console.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.echelon.console.application.usecase.GetProgramDetail
+import com.echelon.console.application.usecase.ProgramDetailResult
 import com.echelon.console.application.usecase.WorkoutSessionController
 import com.echelon.console.application.usecase.WorkoutSessionCommandFailure
 import com.echelon.console.application.usecase.WorkoutSessionCommandResult
 import com.echelon.console.domain.WorkoutSessionProgress
 import com.echelon.console.domain.WorkoutSessionState
 import com.echelon.console.domain.WorkoutTimeline
+import com.echelon.console.domain.ProgramId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -18,11 +21,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class LiveWorkoutViewModel(
     private val controller: WorkoutSessionController,
     private val tickSource: WorkoutSessionTickSource = DefaultWorkoutSessionTickSource,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
+    private val getProgramDetail: GetProgramDetail,
 ) : ViewModel() {
     private val initialSessionState = controller.currentState()
     private val _state = MutableStateFlow<LiveWorkoutUiState>(
@@ -103,59 +108,70 @@ class LiveWorkoutViewModel(
         }
     }
 
+    private fun stateFor(state: WorkoutSessionState?): LiveWorkoutUiState = when (state) {
+        null,
+        is WorkoutSessionState.NotStarted,
+        -> LiveWorkoutUiState.NoSession
+
+        is WorkoutSessionState.Running -> LiveWorkoutUiState.Active(
+            workout = readModel(state.timeline, state.progress, isPaused = false),
+        )
+        is WorkoutSessionState.Paused -> LiveWorkoutUiState.Active(
+            workout = readModel(state.timeline, state.progress, isPaused = true),
+        )
+        is WorkoutSessionState.Completed -> LiveWorkoutUiState.Completed(
+            summary = summaryFor(state.timeline, state.elapsedSeconds),
+        )
+        is WorkoutSessionState.Stopped -> LiveWorkoutUiState.Stopped(
+            summary = summaryFor(state.timeline, state.elapsedSeconds),
+        )
+    }
+
+    private fun summaryFor(
+        timeline: WorkoutTimeline,
+        elapsedSeconds: Int,
+    ): LiveWorkoutSummary = LiveWorkoutSummary(
+        programId = timeline.programId,
+        elapsedSeconds = elapsedSeconds,
+        totalDurationSeconds = timeline.totalDurationSeconds,
+        programTitle = titleFor(timeline.programId),
+    )
+
+    private fun readModel(
+        timeline: WorkoutTimeline,
+        progress: WorkoutSessionProgress,
+        isPaused: Boolean,
+    ): LiveWorkoutReadModel = LiveWorkoutReadModel(
+        programId = timeline.programId,
+        elapsedSeconds = progress.elapsedSeconds,
+        remainingSeconds = progress.remainingSeconds,
+        currentSegment = LiveWorkoutSegment(
+            index = progress.currentSegmentIndex,
+            name = progress.currentSegment.name,
+        ),
+        nextSegment = progress.nextSegment?.let { segment ->
+            LiveWorkoutSegment(
+                index = progress.currentSegmentIndex + 1,
+                name = segment.name,
+            )
+        },
+        secondsUntilNextSegment = progress.secondsUntilNextSegment,
+        targetSpeed = progress.target.speed,
+        targetIncline = progress.target.incline,
+        isPaused = isPaused,
+        programTitle = titleFor(timeline.programId),
+    )
+
+    private fun titleFor(programId: ProgramId): String =
+        when (val result = getProgramDetail(programId)) {
+            is ProgramDetailResult.Ready -> result.detail.title
+            is ProgramDetailResult.NotFound -> result.programId.value
+                .replace('_', ' ')
+                .uppercase(Locale.US)
+        }
+
     private companion object {
         const val COMMAND_ERROR_MESSAGE = "Workout controls are unavailable right now."
         const val TICK_SOURCE_ERROR_MESSAGE = "Workout session updates are unavailable right now."
-
-        fun stateFor(state: WorkoutSessionState?): LiveWorkoutUiState = when (state) {
-            null,
-            is WorkoutSessionState.NotStarted,
-            -> LiveWorkoutUiState.NoSession
-
-            is WorkoutSessionState.Running -> LiveWorkoutUiState.Active(
-                workout = readModel(state.timeline, state.progress, isPaused = false),
-            )
-            is WorkoutSessionState.Paused -> LiveWorkoutUiState.Active(
-                workout = readModel(state.timeline, state.progress, isPaused = true),
-            )
-            is WorkoutSessionState.Completed -> LiveWorkoutUiState.Completed(
-                summary = LiveWorkoutSummary(
-                    programId = state.timeline.programId,
-                    elapsedSeconds = state.elapsedSeconds,
-                    totalDurationSeconds = state.timeline.totalDurationSeconds,
-                ),
-            )
-            is WorkoutSessionState.Stopped -> LiveWorkoutUiState.Stopped(
-                summary = LiveWorkoutSummary(
-                    programId = state.timeline.programId,
-                    elapsedSeconds = state.elapsedSeconds,
-                    totalDurationSeconds = state.timeline.totalDurationSeconds,
-                ),
-            )
-        }
-
-        private fun readModel(
-            timeline: WorkoutTimeline,
-            progress: WorkoutSessionProgress,
-            isPaused: Boolean,
-        ): LiveWorkoutReadModel = LiveWorkoutReadModel(
-            programId = timeline.programId,
-            elapsedSeconds = progress.elapsedSeconds,
-            remainingSeconds = progress.remainingSeconds,
-            currentSegment = LiveWorkoutSegment(
-                index = progress.currentSegmentIndex,
-                name = progress.currentSegment.name,
-            ),
-            nextSegment = progress.nextSegment?.let { segment ->
-                LiveWorkoutSegment(
-                    index = progress.currentSegmentIndex + 1,
-                    name = segment.name,
-                )
-            },
-            secondsUntilNextSegment = progress.secondsUntilNextSegment,
-            targetSpeed = progress.target.speed,
-            targetIncline = progress.target.incline,
-            isPaused = isPaused,
-        )
     }
 }

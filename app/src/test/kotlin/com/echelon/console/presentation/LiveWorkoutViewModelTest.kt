@@ -1,6 +1,7 @@
 package com.echelon.console.presentation
 
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
+import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.WorkoutSessionCommandFailure
 import com.echelon.console.application.usecase.WorkoutSessionCommandResult
@@ -55,6 +56,42 @@ class LiveWorkoutViewModelTest {
         assertEquals(SpeedTenths(55), active.targetSpeed)
         assertEquals(InclineTenths(50), active.targetIncline)
         assertEquals(false, active.isPaused)
+    }
+
+    @Test
+    fun `read model and summary use the catalog official title`() = runTest {
+        val coordinator = startedCoordinator()
+        val ticks = ManualTickSource()
+        val viewModel = viewModel(
+            controller = coordinator,
+            tickSource = ticks,
+            dispatcher = StandardTestDispatcher(testScheduler),
+            getProgramDetail = GetProgramDetail(
+                ProgramDetailCatalog { detail().copy(title = "CLIENT CATALOG TITLE") },
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals("CLIENT CATALOG TITLE", assertActive(viewModel.state.value).programTitle)
+
+        ticks.emit(360)
+        advanceUntilIdle()
+
+        val completed = viewModel.state.value as LiveWorkoutUiState.Completed
+        assertEquals("CLIENT CATALOG TITLE", completed.summary.programTitle)
+    }
+
+    @Test
+    fun `missing catalog detail uses the program id as a safe title fallback`() = runTest {
+        val coordinator = startedCoordinator()
+        val viewModel = viewModel(
+            controller = coordinator,
+            tickSource = ManualTickSource(),
+            dispatcher = StandardTestDispatcher(testScheduler),
+        )
+        advanceUntilIdle()
+
+        assertEquals("FAT BURN", assertActive(viewModel.state.value).programTitle)
     }
 
     @Test
@@ -249,7 +286,13 @@ class LiveWorkoutViewModelTest {
         controller: InMemoryWorkoutSessionCoordinator,
         tickSource: WorkoutSessionTickSource,
         dispatcher: CoroutineDispatcher,
-    ): LiveWorkoutViewModel = LiveWorkoutViewModel(controller, tickSource, dispatcher)
+        getProgramDetail: GetProgramDetail = GetProgramDetail(ProgramDetailCatalog { null }),
+    ): LiveWorkoutViewModel = LiveWorkoutViewModel(
+        controller,
+        tickSource,
+        dispatcher,
+        getProgramDetail,
+    )
 
     private fun startedCoordinator(): InMemoryWorkoutSessionCoordinator {
         val coordinator = InMemoryWorkoutSessionCoordinator(

@@ -34,6 +34,7 @@ data class LiveWorkoutReadModel(
     val targetSpeed: SpeedTenths,
     val targetIncline: InclineTenths,
     val isPaused: Boolean,
+    val programTitle: String,
 )
 
 data class LiveWorkoutSegment(
@@ -45,4 +46,5 @@ data class LiveWorkoutSummary(
     val programId: ProgramId,
     val elapsedSeconds: Int,
     val totalDurationSeconds: Int,
+    val programTitle: String,
 )

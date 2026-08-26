@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.echelon.console.domain.EquipmentConnection
+import com.echelon.console.domain.EquipmentDistanceUnit
 import com.echelon.console.domain.EquipmentReadState
 import com.echelon.console.domain.EquipmentSpeedUnit
 import com.echelon.console.domain.EquipmentTelemetry
@@ -47,7 +48,7 @@ fun EquipmentTelemetryPanel(
 
             is EquipmentConnection.UnsupportedApi -> StatusBody(
                 title = "FITOS API UNSUPPORTED",
-                message = "This console requires FitOS equipment API v1.",
+                message = "This console requires FitOS equipment API v1 or newer.",
             )
 
             EquipmentConnection.Disconnected -> StatusBody(
@@ -105,8 +106,14 @@ private fun ReadyBody(telemetry: EquipmentTelemetry?) {
         }
         telemetry.incline?.let { TelemetryRow("INCLINE", "${it.value} LEVEL") }
         telemetry.heartRateBpm?.let { TelemetryRow("HEART RATE", "$it BPM") }
-        telemetry.distance?.let { TelemetryRow("DISTANCE", it.formatOneDecimal()) }
-        telemetry.calories?.let { TelemetryRow("CALORIES", it.formatOneDecimal()) }
+        telemetry.distance?.let { distance ->
+            val unit = when (distance.unit) {
+                EquipmentDistanceUnit.KILOMETERS -> "KM"
+                EquipmentDistanceUnit.MILES -> "MI"
+            }
+            TelemetryRow("DISTANCE", "${distance.displayValue.formatOneDecimal()} $unit")
+        }
+        telemetry.calories?.let { TelemetryRow("CALORIES", "${it.formatOneDecimal()} KCAL") }
     }
 }
 

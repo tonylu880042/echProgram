@@ -8,6 +8,8 @@ import com.echelon.console.MainActivity
 import com.echelon.console.domain.EquipmentConnection
 import com.echelon.console.domain.EquipmentControlState
 import com.echelon.console.domain.EquipmentDescriptor
+import com.echelon.console.domain.EquipmentDistance
+import com.echelon.console.domain.EquipmentDistanceUnit
 import com.echelon.console.domain.EquipmentInclineLevel
 import com.echelon.console.domain.EquipmentReadState
 import com.echelon.console.domain.EquipmentSpeed
@@ -56,7 +58,7 @@ class EquipmentTelemetryPanelTest {
                     speed = EquipmentSpeed(SpeedKmh(12.87472), 8.0, EquipmentSpeedUnit.MILES_PER_HOUR),
                     incline = EquipmentInclineLevel(3),
                     heartRateBpm = 142,
-                    distance = 2.1,
+                    distance = EquipmentDistance(2.1, EquipmentDistanceUnit.MILES),
                     calories = 88.5,
                 ),
             ),
@@ -67,6 +69,8 @@ class EquipmentTelemetryPanelTest {
         composeTestRule.onNodeWithText("8.0 MPH").assertIsDisplayed()
         composeTestRule.onNodeWithText("3 LEVEL").assertIsDisplayed()
         composeTestRule.onNodeWithText("142 BPM").assertIsDisplayed()
+        composeTestRule.onNodeWithText("2.1 MI").assertIsDisplayed()
+        composeTestRule.onNodeWithText("88.5 KCAL").assertIsDisplayed()
     }
 
     @Test

@@ -3,6 +3,8 @@ package com.echelon.console.data.fitos
 import com.echelon.console.domain.EquipmentConnection
 import com.echelon.console.domain.EquipmentControlState
 import com.echelon.console.domain.EquipmentDescriptor
+import com.echelon.console.domain.EquipmentDistance
+import com.echelon.console.domain.EquipmentDistanceUnit
 import com.echelon.console.domain.EquipmentInclineLevel
 import com.echelon.console.domain.EquipmentInclineRange
 import com.echelon.console.domain.EquipmentLimits
@@ -67,7 +69,16 @@ internal object FitOsPayloadMapper {
             speed = speed,
             incline = payload.incline.parseNonNegativeInt()?.let(::EquipmentInclineLevel),
             heartRateBpm = payload.hr.parseNonNegativeInt(),
-            distance = payload.distance.parseNonNegativeDouble(),
+            distance = payload.distance.parseNonNegativeDouble()?.let { value ->
+                EquipmentDistance(
+                    displayValue = value,
+                    unit = if (state.isMetric) {
+                        EquipmentDistanceUnit.KILOMETERS
+                    } else {
+                        EquipmentDistanceUnit.MILES
+                    },
+                )
+            },
             calories = payload.calories.parseNonNegativeDouble(),
         )
     }

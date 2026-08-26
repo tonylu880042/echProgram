@@ -1,7 +1,8 @@
 # FitOS equipment SDK boundary
 
 Gate 3A vendors the API v1 Android archive required for the read-only
-equipment telemetry boundary.
+equipment telemetry boundary. API v1 is the minimum supported read contract;
+newer API versions use the same backward-compatible read path.
 
 - Gradle artifact: `app/libs/FitOSEquipmentSDK-v1.aar`
 - Source supplied in this workspace: `AIDL/FitOSEquipmentSDK.aar`
@@ -17,6 +18,11 @@ The application manifest declares the host service permission and package
 visibility query required by the API guide for target SDK 30 and higher.
 This increment consumes only connection, state, limits, and telemetry reads;
 workout and equipment-control methods remain outside the application boundary.
+
+The app displays snapshot distance in `KM` when `EquipmentState.isMetric` is
+true and `MI` otherwise, and displays calories as `KCAL`. FitOS documents the
+console-unit behavior for snapshots via `isMetric`; the exact distance source
+semantics should still be confirmed with FitOS before production release.
 
 The adapter reports the service as unavailable when no service callback arrives
 within five seconds, and marks a ready telemetry stream stale when the host

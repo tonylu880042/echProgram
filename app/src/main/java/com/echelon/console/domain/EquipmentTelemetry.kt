@@ -5,6 +5,11 @@ enum class EquipmentSpeedUnit {
     MILES_PER_HOUR,
 }
 
+enum class EquipmentDistanceUnit {
+    KILOMETERS,
+    MILES,
+}
+
 @JvmInline
 value class SpeedKmh(val value: Double) {
     init {
@@ -25,13 +30,24 @@ data class EquipmentSpeed(
     val unit: EquipmentSpeedUnit,
 )
 
+data class EquipmentDistance(
+    val displayValue: Double,
+    val unit: EquipmentDistanceUnit,
+) {
+    init {
+        require(displayValue.isFinite() && displayValue >= 0.0) {
+            "Equipment distance must be finite and non-negative"
+        }
+    }
+}
+
 data class EquipmentTelemetry(
     val elapsedRealtimeMillis: Long,
     val elapsedTime: String?,
     val speed: EquipmentSpeed?,
     val incline: EquipmentInclineLevel?,
     val heartRateBpm: Int?,
-    val distance: Double?,
+    val distance: EquipmentDistance?,
     val calories: Double?,
 )
 

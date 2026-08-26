@@ -2,6 +2,7 @@ package com.echelon.console.data.fitos
 
 import com.echelon.console.domain.EquipmentConnection
 import com.echelon.console.domain.EquipmentControlState
+import com.echelon.console.domain.EquipmentDistanceUnit
 import com.echelon.console.domain.EquipmentSpeedUnit
 import com.echelon.console.domain.EquipmentType
 import org.junit.Assert.assertEquals
@@ -38,7 +39,8 @@ class FitOsPayloadMapperTest {
         assertEquals(EquipmentSpeedUnit.KILOMETERS_PER_HOUR, mapped.speed?.unit)
         assertEquals(3, mapped.incline?.value)
         assertEquals(142, mapped.heartRateBpm)
-        assertEquals(2.1, mapped.distance ?: 0.0, 0.0001)
+        assertEquals(EquipmentDistanceUnit.KILOMETERS, mapped.distance?.unit)
+        assertEquals(2.1, mapped.distance?.displayValue ?: 0.0, 0.0001)
         assertEquals(88.5, mapped.calories ?: 0.0, 0.0001)
     }
 
@@ -51,7 +53,12 @@ class FitOsPayloadMapperTest {
             isMetric = false,
             isBindDevice = true,
         )
-        val snapshot = FitOsSnapshotPayload(speed = "10", incline = "12", elapsedRealtimeMillis = 2000L)
+        val snapshot = FitOsSnapshotPayload(
+            speed = "10",
+            incline = "12",
+            distance = "2.5",
+            elapsedRealtimeMillis = 2000L,
+        )
 
         val mappedState = FitOsPayloadMapper.mapState(state)
         val mapped = requireNotNull(FitOsPayloadMapper.mapTelemetry(snapshot, mappedState))
@@ -59,6 +66,8 @@ class FitOsPayloadMapperTest {
         assertEquals(16.0934, mapped.speed?.canonicalKmh?.value ?: 0.0, 0.0001)
         assertEquals(EquipmentSpeedUnit.MILES_PER_HOUR, mapped.speed?.unit)
         assertEquals(12, mapped.incline?.value)
+        assertEquals(EquipmentDistanceUnit.MILES, mapped.distance?.unit)
+        assertEquals(2.5, mapped.distance?.displayValue ?: 0.0, 0.0001)
         assertTrue(mapped.incline?.value != 120)
         assertEquals(EquipmentType.RUN, mappedState.equipmentType)
         assertEquals(EquipmentControlState.STOPPED, mappedState.controlState)

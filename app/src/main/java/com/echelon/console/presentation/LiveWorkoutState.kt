@@ -2,7 +2,6 @@ package com.echelon.console.presentation
 
 import com.echelon.console.domain.EquipmentConnection
 import com.echelon.console.domain.EquipmentType
-import com.echelon.console.domain.HeartRateSampleFailure
 import com.echelon.console.domain.HeartRateTargetRange
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.ProgramId
@@ -16,7 +15,6 @@ import com.echelon.console.domain.VerticalWorkoutDraftControlStatus
 import com.echelon.console.domain.WorkoutTimelineAnnotation
 import com.echelon.console.domain.Zone2HeartRateAdvice
 import com.echelon.console.domain.Zone2HeartRateAdviceMode
-import com.echelon.console.domain.Zone2HeartRateEvaluationFailure
 import com.echelon.console.domain.Zone2HeartRateHysteresisStatus
 import com.echelon.console.domain.Zone2HeartRateIntendedSource
 import com.echelon.console.domain.Zone2HeartRatePreviewStatus
@@ -104,6 +102,10 @@ sealed interface LiveZone2HeartRateReading {
 }
 
 sealed interface LiveZone2HeartRateUnavailableReason {
+    data class EvaluationSnapshotMismatch(
+        val field: LiveZone2HeartRateSnapshotField,
+    ) : LiveZone2HeartRateUnavailableReason
+
     data class ContextContractMismatch(
         val field: LiveZone2HeartRateContextField,
     ) : LiveZone2HeartRateUnavailableReason
@@ -127,6 +129,14 @@ sealed interface LiveZone2HeartRateUnavailableReason {
     data class EvaluatorFailure(
         val reason: LiveZone2HeartRateEvaluatorReason,
     ) : LiveZone2HeartRateUnavailableReason
+}
+
+enum class LiveZone2HeartRateSnapshotField {
+    TARGET,
+    PREVIEW_STATUS,
+    ADVICE_MODE,
+    THRESHOLD_MODE,
+    HYSTERESIS_STATUS,
 }
 
 enum class LiveZone2HeartRateContextField {

@@ -31,6 +31,7 @@ import com.echelon.console.domain.Zone2HeartRatePreviewStatus
 import com.echelon.console.domain.Zone2HeartRateStatus
 import com.echelon.console.domain.Zone2HeartRateThresholdMode
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -68,6 +69,43 @@ class LiveZone2HeartRateMapperTest {
             ),
             mapped.reading,
         )
+    }
+
+    @Test
+    fun `different evaluation target yields typed unavailable without an evaluated payload`() {
+        // The current safety metadata enums each have one value; target is the constructible mismatch.
+        val timeline = zone2Timeline()
+        val result = Zone2EquipmentHeartRateResult.Evaluated(
+            Zone2HeartRateEvaluation(
+                status = Zone2HeartRateStatus.IN_ZONE,
+                advice = Zone2HeartRateAdvice.HOLD,
+                sampleAgeMillis = 250L,
+                currentBpm = 130,
+                target = target(lowerBpm = 125, upperBpm = 145),
+                previewStatus = Zone2HeartRatePreviewStatus.PREVIEW_ONLY,
+                adviceMode = Zone2HeartRateAdviceMode.ADVISORY_ONLY,
+                thresholdMode = Zone2HeartRateThresholdMode.DIRECT_THRESHOLD_PREVIEW,
+                hysteresisStatus = Zone2HeartRateHysteresisStatus.NO_HYSTERESIS_APPROVED,
+            ),
+        )
+
+        val mapped = requireNotNull(LiveZone2HeartRateMapper.map(timeline, result))
+        val timelineContext = requireNotNull(timeline.context as? WorkoutTimelineContext.Zone2Preview)
+        assertEquals(timelineContext.target, mapped.target)
+        assertEquals(timelineContext.intendedSource, mapped.intendedSource)
+        assertEquals(timelineContext.previewStatus, mapped.previewStatus)
+        assertEquals(timelineContext.adviceMode, mapped.adviceMode)
+        assertEquals(timelineContext.thresholdMode, mapped.thresholdMode)
+        assertEquals(timelineContext.hysteresisStatus, mapped.hysteresisStatus)
+        assertEquals(
+            LiveZone2HeartRateReading.Unavailable(
+                LiveZone2HeartRateUnavailableReason.EvaluationSnapshotMismatch(
+                    LiveZone2HeartRateSnapshotField.TARGET,
+                ),
+            ),
+            mapped.reading,
+        )
+        assertFalse(mapped.reading is LiveZone2HeartRateReading.Evaluated)
     }
 
     @Test
@@ -277,8 +315,11 @@ class LiveZone2HeartRateMapperTest {
         ),
     )
 
-    private fun target(): HeartRateTargetRange = when (
-        val result = HeartRateTargetRange.createUserConfirmed(120, 140)
+    private fun target(
+        lowerBpm: Int = 120,
+        upperBpm: Int = 140,
+    ): HeartRateTargetRange = when (
+        val result = HeartRateTargetRange.createUserConfirmed(lowerBpm, upperBpm)
     ) {
         is HeartRateTargetRangeResult.Accepted -> result.target
         is HeartRateTargetRangeResult.Rejected -> error("Expected target, got $result")

@@ -8,6 +8,7 @@ import com.echelon.console.domain.HeartRateSampleFailure
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.WorkoutTimeline
 import com.echelon.console.domain.WorkoutTimelineContext
+import com.echelon.console.domain.Zone2HeartRateEvaluation
 import com.echelon.console.domain.Zone2HeartRateEvaluationFailure
 
 /** Maps an evaluated application result into the read-only Zone 2 presentation contract. */
@@ -24,31 +25,65 @@ internal object LiveZone2HeartRateMapper {
             return null
         }
 
-        val reading = when (result) {
+        return when (result) {
             is Zone2EquipmentHeartRateResult.Evaluated -> {
                 val evaluation = result.evaluation
-                LiveZone2HeartRateReading.Evaluated(
-                    currentBpm = evaluation.currentBpm,
-                    sampleAgeMillis = evaluation.sampleAgeMillis,
-                    status = evaluation.status,
-                    advice = evaluation.advice,
-                )
+                val mismatch = evaluationSnapshotMismatch(context, evaluation)
+                if (mismatch != null) {
+                    context.toLiveContext(
+                        reading = LiveZone2HeartRateReading.Unavailable(
+                            LiveZone2HeartRateUnavailableReason.EvaluationSnapshotMismatch(mismatch),
+                        ),
+                    )
+                } else {
+                    LiveZone2HeartRateContext(
+                        target = evaluation.target,
+                        intendedSource = context.intendedSource,
+                        previewStatus = evaluation.previewStatus,
+                        adviceMode = evaluation.adviceMode,
+                        thresholdMode = evaluation.thresholdMode,
+                        hysteresisStatus = evaluation.hysteresisStatus,
+                        reading = LiveZone2HeartRateReading.Evaluated(
+                            currentBpm = evaluation.currentBpm,
+                            sampleAgeMillis = evaluation.sampleAgeMillis,
+                            status = evaluation.status,
+                            advice = evaluation.advice,
+                        ),
+                    )
+                }
             }
 
             is Zone2EquipmentHeartRateResult.Unavailable ->
-                LiveZone2HeartRateReading.Unavailable(mapFailure(result.failure))
+                context.toLiveContext(
+                    reading = LiveZone2HeartRateReading.Unavailable(mapFailure(result.failure)),
+                )
         }
-
-        return LiveZone2HeartRateContext(
-            target = context.target,
-            intendedSource = context.intendedSource,
-            previewStatus = context.previewStatus,
-            adviceMode = context.adviceMode,
-            thresholdMode = context.thresholdMode,
-            hysteresisStatus = context.hysteresisStatus,
-            reading = reading,
-        )
     }
+
+    private fun evaluationSnapshotMismatch(
+        context: WorkoutTimelineContext.Zone2Preview,
+        evaluation: Zone2HeartRateEvaluation,
+    ): LiveZone2HeartRateSnapshotField? = when {
+        evaluation.target != context.target -> LiveZone2HeartRateSnapshotField.TARGET
+        evaluation.previewStatus != context.previewStatus -> LiveZone2HeartRateSnapshotField.PREVIEW_STATUS
+        evaluation.adviceMode != context.adviceMode -> LiveZone2HeartRateSnapshotField.ADVICE_MODE
+        evaluation.thresholdMode != context.thresholdMode -> LiveZone2HeartRateSnapshotField.THRESHOLD_MODE
+        evaluation.hysteresisStatus != context.hysteresisStatus ->
+            LiveZone2HeartRateSnapshotField.HYSTERESIS_STATUS
+        else -> null
+    }
+
+    private fun WorkoutTimelineContext.Zone2Preview.toLiveContext(
+        reading: LiveZone2HeartRateReading,
+    ): LiveZone2HeartRateContext = LiveZone2HeartRateContext(
+        target = target,
+        intendedSource = intendedSource,
+        previewStatus = previewStatus,
+        adviceMode = adviceMode,
+        thresholdMode = thresholdMode,
+        hysteresisStatus = hysteresisStatus,
+        reading = reading,
+    )
 
     private fun mapFailure(
         failure: Zone2EquipmentHeartRateFailure,

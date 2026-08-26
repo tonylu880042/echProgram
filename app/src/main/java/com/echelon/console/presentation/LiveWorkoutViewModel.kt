@@ -249,6 +249,7 @@ class LiveWorkoutViewModel(
                 }
             }
             is WorkoutTimelineContext.Zone2Preview -> null
+            is WorkoutTimelineContext.CalorieTargetPreview -> null
         }
 
     private fun displayLabel(segment: WorkoutTimelineSegment): String = when (

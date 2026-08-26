@@ -29,6 +29,27 @@ sealed interface WorkoutTimelineContext {
         val effectiveMaxSpeed: SpeedTenths,
         val effectiveMaxIncline: InclineTenths,
     ) : WorkoutTimelineContext
+
+    /**
+     * Static CALORIE TARGET metadata. The representative profile duration is
+     * the reviewed session duration; the selected target owns a separate
+     * proposed maximum-time disclosure.
+     */
+    data class CalorieTargetPreview(
+        val programId: ProgramId,
+        val target: CalorieTargetSelection,
+        val estimateStatus: CalorieEstimateStatus,
+        val source: CalorieTelemetrySource,
+        val unitSemantics: CalorieUnitSemantics,
+        val sessionResetSemantics: CalorieSessionResetSemantics,
+        val completionAuthority: CalorieCompletionAuthority,
+        val progressSemantics: CalorieProgressSemantics,
+        val previewStatus: CaloriePreviewStatus,
+        val deviceCommandStatus: CalorieDeviceCommandStatus,
+        val representativeProfileDuration: DurationMinutes,
+        val effectiveMaxSpeed: SpeedTenths,
+        val effectiveMaxIncline: InclineTenths,
+    ) : WorkoutTimelineContext
 }
 
 /** Typed coaching meaning carried with a compiled timeline segment. */
@@ -348,6 +369,45 @@ object WorkoutTimelineCompiler {
 
             else -> null
         }
+        is WorkoutTimelineContext.CalorieTargetPreview -> when {
+            context.programId != CALORIE_TARGET_PROGRAM_ID ->
+                WorkoutTimelineCompileError.ContextProgramIdMismatch(
+                    expected = CALORIE_TARGET_PROGRAM_ID,
+                    actual = context.programId,
+                )
+
+            programId != CALORIE_TARGET_PROGRAM_ID ->
+                WorkoutTimelineCompileError.ContextProgramIdMismatch(
+                    expected = CALORIE_TARGET_PROGRAM_ID,
+                    actual = programId,
+                )
+
+            context.programId != programId ->
+                WorkoutTimelineCompileError.ContextProgramIdMismatch(
+                    expected = programId,
+                    actual = context.programId,
+                )
+
+            context.representativeProfileDuration != settings.duration ->
+                WorkoutTimelineCompileError.ContextDurationMismatch(
+                    expected = settings.duration,
+                    actual = context.representativeProfileDuration,
+                )
+
+            context.effectiveMaxSpeed != settings.maxSpeed ->
+                WorkoutTimelineCompileError.ContextMaxSpeedMismatch(
+                    expected = settings.maxSpeed,
+                    actual = context.effectiveMaxSpeed,
+                )
+
+            context.effectiveMaxIncline != settings.maxIncline ->
+                WorkoutTimelineCompileError.ContextMaxInclineMismatch(
+                    expected = settings.maxIncline,
+                    actual = context.effectiveMaxIncline,
+                )
+
+            else -> null
+        }
     }
 
     private fun validateAnnotations(
@@ -426,6 +486,7 @@ object WorkoutTimelineCompiler {
     private const val SECONDS_PER_MINUTE = 60L
     private val VERTICAL_PROGRAM_ID = ProgramId("VERTICAL")
     private val ZONE_2_PROGRAM_ID = ProgramId("ZONE_2")
+    private val CALORIE_TARGET_PROGRAM_ID = ProgramId("CALORIE_TARGET")
 }
 
 /** Maps a generated 5K draft into the generic typed timeline boundary. */
@@ -472,6 +533,20 @@ fun VerticalWorkoutDraft.toWorkoutTimelineProfile(): AnnotatedWorkoutProfile =
 /** Maps the reviewed static ZONE 2 profile into its typed preview context. */
 fun ProgramDetail.toZone2WorkoutTimelineProfile(
     context: WorkoutTimelineContext.Zone2Preview,
+): AnnotatedWorkoutProfile = AnnotatedWorkoutProfile(
+    programId = programId,
+    context = context,
+    segments = profile.map { summary ->
+        AnnotatedWorkoutProfileSegment(
+            summary = summary,
+            annotation = WorkoutTimelineAnnotation.Unannotated,
+        )
+    },
+)
+
+/** Maps the reviewed static CALORIE TARGET profile into its typed preview context. */
+fun ProgramDetail.toCalorieTargetWorkoutTimelineProfile(
+    context: WorkoutTimelineContext.CalorieTargetPreview,
 ): AnnotatedWorkoutProfile = AnnotatedWorkoutProfile(
     programId = programId,
     context = context,

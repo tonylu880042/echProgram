@@ -49,6 +49,16 @@ object WorkoutTimelineCompiler {
     fun compile(
         detail: ProgramDetail,
         settings: PlanSettings,
+    ): WorkoutTimelineCompileResult = compile(
+        programId = detail.programId,
+        profile = detail.profile,
+        settings = settings,
+    )
+
+    fun compile(
+        programId: ProgramId,
+        profile: List<ProgramSegmentSummary>,
+        settings: PlanSettings,
     ): WorkoutTimelineCompileResult {
         val selectedDurationMinutes = settings.duration.value
         if (selectedDurationMinutes <= 0) {
@@ -57,11 +67,11 @@ object WorkoutTimelineCompiler {
             )
         }
 
-        if (detail.profile.isEmpty()) {
+        if (profile.isEmpty()) {
             return WorkoutTimelineCompileResult.Invalid(WorkoutTimelineCompileError.EmptyProfile)
         }
 
-        detail.profile.forEachIndexed { index, segment ->
+        profile.forEachIndexed { index, segment ->
             if (segment.duration.value <= 0) {
                 return WorkoutTimelineCompileResult.Invalid(
                     WorkoutTimelineCompileError.NonPositiveProfileDuration(
@@ -72,26 +82,26 @@ object WorkoutTimelineCompiler {
             }
         }
 
-        val totalProfileMinutes = detail.profile.sumOf { it.duration.value.toLong() }
+        val totalProfileMinutes = profile.sumOf { it.duration.value.toLong() }
         val totalDurationSeconds = selectedDurationMinutes.toLong() * SECONDS_PER_MINUTE
         if (totalDurationSeconds > Int.MAX_VALUE) {
             return WorkoutTimelineCompileResult.Invalid(
                 WorkoutTimelineCompileError.SelectedDurationTooLarge(selectedDurationMinutes),
             )
         }
-        if (totalDurationSeconds < detail.profile.size) {
+        if (totalDurationSeconds < profile.size) {
             return WorkoutTimelineCompileResult.Invalid(
                 WorkoutTimelineCompileError.SelectedDurationTooShort(
                     durationMinutes = selectedDurationMinutes,
-                    segmentCount = detail.profile.size,
+                    segmentCount = profile.size,
                 ),
             )
         }
 
         var cumulativeProfileMinutes = 0L
-        val roundedBoundaries = detail.profile.mapIndexed { index, segment ->
+        val roundedBoundaries = profile.mapIndexed { index, segment ->
             cumulativeProfileMinutes += segment.duration.value
-            if (index == detail.profile.lastIndex) {
+            if (index == profile.lastIndex) {
                 totalDurationSeconds
             } else {
                 roundedBoundarySeconds(
@@ -103,9 +113,9 @@ object WorkoutTimelineCompiler {
         }
 
         var previousEndSecond = 0
-        val segments = detail.profile.mapIndexed { index, profileSegment ->
+        val segments = profile.mapIndexed { index, profileSegment ->
             val minimumEndSecond = previousEndSecond + 1
-            val maximumEndSecond = totalDurationSeconds.toInt() - (detail.profile.size - index - 1)
+            val maximumEndSecond = totalDurationSeconds.toInt() - (profile.size - index - 1)
             val endSecond = roundedBoundaries[index]
                 .toInt()
                 .coerceIn(minimumEndSecond, maximumEndSecond)
@@ -126,7 +136,7 @@ object WorkoutTimelineCompiler {
 
         return WorkoutTimelineCompileResult.Valid(
             WorkoutTimeline(
-                programId = detail.programId,
+                programId = programId,
                 totalDurationSeconds = totalDurationSeconds.toInt(),
                 segments = segments.toList(),
             ),

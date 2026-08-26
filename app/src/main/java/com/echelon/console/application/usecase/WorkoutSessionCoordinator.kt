@@ -1,6 +1,7 @@
 package com.echelon.console.application.usecase
 
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.WorkoutSessionAction
 import com.echelon.console.domain.WorkoutSessionError
@@ -57,40 +58,44 @@ sealed interface WorkoutSessionCommandFailure {
 
 class InMemoryWorkoutSessionCoordinator(
     private val catalog: ProgramDetailCatalog,
-) : WorkoutSessionStarter, WorkoutSessionController {
+) : WorkoutSessionStarter, WorkoutDraftSessionStarter, WorkoutSessionController {
     private var sessionState: WorkoutSessionState? = null
 
     override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
-        when (sessionState) {
-            is WorkoutSessionState.NotStarted,
-            is WorkoutSessionState.Running,
-            is WorkoutSessionState.Paused,
-            -> return WorkoutSessionStarterResult.Failed(
-                WorkoutSessionStartFailure.ActiveSessionExists,
-            )
-
-            null,
-            is WorkoutSessionState.Completed,
-            is WorkoutSessionState.Stopped,
-            -> Unit
-        }
+        activeSessionFailure()?.let { return it }
 
         val detail = catalog.findProgramDetail(plan.plan.programId)
             ?: return WorkoutSessionStarterResult.Failed(
                 WorkoutSessionStartFailure.ProgramNotFound(plan.plan.programId),
             )
-        val timeline = when (
-            val result = WorkoutTimelineCompiler.compile(detail, plan.plan.settings)
-        ) {
-            is WorkoutTimelineCompileResult.Valid -> result.timeline
+        return startTimeline(WorkoutTimelineCompiler.compile(detail, plan.plan.settings))
+    }
+
+    override fun start(
+        draft: SurpriseWorkoutDraft,
+        plan: ValidatedWorkoutPlan,
+    ): WorkoutSessionStarterResult {
+        activeSessionFailure()?.let { return it }
+        return startTimeline(
+            WorkoutTimelineCompiler.compile(
+                programId = draft.metadata.programId,
+                profile = draft.profile,
+                settings = plan.plan.settings,
+            ),
+        )
+    }
+
+    private fun startTimeline(
+        compiled: WorkoutTimelineCompileResult,
+    ): WorkoutSessionStarterResult {
+        val timeline = when (compiled) {
+            is WorkoutTimelineCompileResult.Valid -> compiled.timeline
             is WorkoutTimelineCompileResult.Invalid -> return WorkoutSessionStarterResult.Failed(
-                WorkoutSessionStartFailure.TimelineCompileFailed(result.error),
+                WorkoutSessionStartFailure.TimelineCompileFailed(compiled.error),
             )
         }
 
-        val notStarted = when (
-            val result = WorkoutSessionStateMachine.create(timeline)
-        ) {
+        val notStarted = when (val result = WorkoutSessionStateMachine.create(timeline)) {
             is WorkoutSessionResult.Valid -> result.state
             is WorkoutSessionResult.Invalid -> return failedTransition(result.error)
         }
@@ -109,6 +114,18 @@ class InMemoryWorkoutSessionCoordinator(
 
         sessionState = running
         return WorkoutSessionStarterResult.Started(running)
+    }
+
+    private fun activeSessionFailure(): WorkoutSessionStarterResult.Failed? = when (sessionState) {
+        is WorkoutSessionState.NotStarted,
+        is WorkoutSessionState.Running,
+        is WorkoutSessionState.Paused,
+        -> WorkoutSessionStarterResult.Failed(WorkoutSessionStartFailure.ActiveSessionExists)
+
+        null,
+        is WorkoutSessionState.Completed,
+        is WorkoutSessionState.Stopped,
+        -> null
     }
 
     override fun advance(elapsedSeconds: Int): WorkoutSessionCommandResult = updateSession { state ->

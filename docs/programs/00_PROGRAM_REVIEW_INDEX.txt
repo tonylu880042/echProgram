@@ -66,6 +66,7 @@ idea.txt 提出 22 個 Program／體驗；目前 App library 實作上只有 8 �
 - Hero：FAT_BURN、GLUTE_BLAST、VERTICAL、SURPRISE_ME。
 - Supporting：EASY_STROLL、SPEED_DEMON、ROLLING_HILLS、HEART_HEALTH。
 目前 detail catalog 只提供 FAT_BURN；其餘可見項目會進入 unavailable。`MainActivity` 仍以 `NoOpWorkoutSessionStarter` 接線，因此 Start 只證明 setup／validated boundary，沒有真正 workout session。
+已知 duration conflict（客戶決策必須明確標記）：目前 App 的 FAT_BURN hero tile 顯示 `45 MIN`，目前 FAT_BURN detail 的 default 也為 `45 MIN`；idea.txt 的詳細 FAT BURN draft 是 `30 MIN`。目前 App 的 GLUTE_BLAST hero tile 顯示 `20 MIN`，目前 detail 尚未提供；idea.txt 的 GLUTE BLAST 詳細 draft 是 `30 MIN`。客戶需決定以現行 App、idea.txt，或新的 launch spec 作為單一 duration source of truth，並同步 tile、detail、profile 與可選時長。
 Gate3A 已具備 FitOS 唯讀 telemetry boundary，但尚未具備 Gate3B 的 speed／incline control、command ACK、pause／resume、安全 stop 與真實 session reconciliation。HR、history／persistence、generator 亦尚未實作。
 本次 txt 不會假裝上述差異已被程式修正；下一個程式增量應先以這些規格建立單一 ProgramDefinition source 與 completeness tests。
 

@@ -41,7 +41,7 @@ Manual override（提案）：core block 顯示 MANUAL，後續不強行恢復 1
 五、Live／完成／安全
 ------------------------------------------------------------
 Live 顯示 `12-3-30`、core／warm-up／cool-down 狀態、speed／incline、remaining、NEXT／countdown、profile、clamp notice、connection／stale／PREVIEW ONLY、end。完成顯示時間、距離、坡度與 calories estimate caveat；不得宣稱固定 12-3-30 能帶來特定體重／燃脂結果。
-無 host／stale／control 未核准時只 preview；12% 不可用或使用者 cap 較低時須提供安全版本，不可直接送 command。HR lost 不觸發推斜。
+無 host／stale／control 未核准時只 preview；12% 不可用或使用者 cap 較低時須提供安全版本，不可直接送 command。HR lost 不觸發任何未核准的自動坡度或強度變更；應維持目前安全值或退回 preview，直到行為獲得核准。
 
 六、依賴能力
 ------------------------------------------------------------

@@ -19,7 +19,7 @@ Hero：否（一般 Program）
 不適合／前置條件：使用者需能安全跑步、設定個人 max speed／incline；疼痛、暈眩或無法控制速度時應停止並依需要尋求專業意見。未收集 baseline 時只能採保守 Preview。
 Echelon 提案預設單次：30 分鐘。可選時長：20／30／40／60 分鐘。
 運動型態：Personalized progressive run／walk-run。
-建議速度：以個人化 baseline 為主；Echelon UI 提案示例 3.0-6.0 mph（約 4.8-9.7 km/h），不能當成所有人固定處方。
+建議速度：以個人化 baseline 為主；Echelon UI 提案示例 2.8-6.0 mph（約 4.5-9.7 km/h），不能當成所有人固定處方。
 建議坡度：0-6%。
 建議強度：easy 到 moderate，逐步增加 running time；數值均為提案值，必須套用 user cap 與 machine limits clamp。
 

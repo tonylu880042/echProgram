@@ -48,7 +48,7 @@ Manual override（提案）：使用者改值後標示 MANUAL，當前 block 保
 ------------------------------------------------------------
 可顯示完成時間、距離、速度／坡度摘要、裝置 calories estimate、各 round 完成率與手動變更。不得聲稱臀部塑形、特定肌群成效、精準 calories 或未比較過的 PR。
 
-七、安​​全與降級
+七、安全與降級
 ------------------------------------------------------------
 無裝置、bind／permission 失敗或 telemetry stale 時只顯示 profile preview，不送 control。若裝置不支援 15% 或使用者 cap 較低，整張 profile 需 clamp 並在開始前讓使用者確認。HR lost 不觸發推測性升降坡。AIDL 控制仍屬 Gate3B 未核准。
 

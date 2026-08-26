@@ -13,7 +13,7 @@ Hero：否（一般 Program；goal-first 的 CHALLENGE ME 對應）
 適合對象：已有至少一筆符合條件、可驗證且由 persistence 保存的完成紀錄，並願意使用個人基準挑戰的使用者。
 不適合／前置條件：沒有 history、歷史紀錄不完整、設備／單位不一致或資料 stale 時，不應啟動正式 Challenge；可提供 `BASELINE WALK` fallback preview，但必須標示不是挑戰。
 
-二、時長與運動型態
+二、時長、基準相容性與運動型態
 ------------------------------------------------------------
 Echelon 提案預設：30 分鐘。可選時長：20／30／45／60 分鐘。
 運動型態：Adaptive speed／incline，依歷史基準個人化。
@@ -21,18 +21,28 @@ Echelon 提案預設：30 分鐘。可選時長：20／30／45／60 分鐘。
 建議坡度：由 baseline 推導；展示用提案範例 0-10%。
 建議強度：略高於可比歷史區塊但需使用者確認；所有值為提案且受 cap／machine limits clamp。
 
+Baseline compatibility（提案規則）：B_speed 必須先轉成目前 UI／domain 的 canonical speed unit（本文件示例使用 mph），B_incline 必須是同一種 incline level／percent 定義；baseline 必須來自同類型 treadmill、有效完成 session、非 stale、且保留可比較的區塊與裝置能力資料。若單位、設備類型、incline 定義或資料品質不一致，顯示 `CHALLENGE UNAVAILABLE`，不得用猜測或靜默換算補救。
+只有當 baseline 的每個值都在目前 machine limits 內，且不超過使用者本次設定的 cap，才可作為正式 Challenge baseline。baseline 不相容時不得先 clamp 再宣稱可公平比較；只能走無 PR 語言的 fallback preview。
+
+Clamp semantics（提案規則）：
+- `speedLower = max(userMinSpeed, machineMinSpeed)`、`speedUpper = min(userMaxSpeed, machineMaxSpeed)`。
+- `clampSpeed(candidate) = min(max(candidate, speedLower), speedUpper)`；任何相對速度公式都必須先產生 candidate，再經 `clampSpeed`。
+- `inclineLower = max(userMinIncline, machineMinIncline)`、`inclineUpper = min(userMaxIncline, machineMaxIncline)`。
+- `clampIncline(candidate) = min(max(candidate, inclineLower), inclineUpper)`；任何相對坡度公式都必須先產生 candidate，再經 `clampIncline`。
+- 若上下限交錯、limits 尚未取得或資料 stale，停止 Challenge 生成並回到 fallback preview；不得送出未經 clamp 的值。
+
 三、30 分鐘 Challenge Profile（以基準 B 的相對值表示）
 ------------------------------------------------------------
 前置定義：B_speed 與 B_incline 必須從同單位、同類型、可驗證歷史 session 取得；下表是提案規則，不是虛構的使用者數值。
 時間       區塊                 速度／坡度規則                       UI coaching
-00:00-05:00 WARM UP             max(2.5 mph, B_speed - 1.0)／B_inc     CHECK THE BASELINE
-05:00-12:00 BASE MATCH          B_speed／B_inc                          MATCH YOUR LAST
-12:00-19:00 CHALLENGE BLOCK     min(B_speed + 0.3, cap)／B_inc + 1%     BEAT ONE BLOCK
-19:00-25:00 HOLD                B_speed + 0.1／B_inc + 0-1%             STAY CONSISTENT
-25:00-28:00 FINAL PUSH           min(B_speed + 0.5, cap)／B_inc + 1%     YOUR FINISH
-28:00-30:00 COOL DOWN            max(2.5, B_speed - 1.2)／1%             RECOVER
+00:00-05:00 WARM UP             clampSpeed(max(2.5 mph, B_speed - 1.0 mph))／clampIncline(B_inc)     CHECK THE BASELINE
+05:00-12:00 BASE MATCH          clampSpeed(B_speed)／clampIncline(B_inc)                          MATCH YOUR LAST
+12:00-19:00 CHALLENGE BLOCK     clampSpeed(B_speed + 0.3 mph)／clampIncline(B_inc + 1%)              BEAT ONE BLOCK
+19:00-25:00 HOLD                clampSpeed(B_speed + 0.1 mph)／clampIncline(B_inc + 1%)              STAY CONSISTENT
+25:00-28:00 FINAL PUSH           clampSpeed(B_speed + 0.5 mph)／clampIncline(B_inc + 1%)              YOUR FINISH
+28:00-30:00 COOL DOWN            clampSpeed(max(2.5 mph, B_speed - 1.2 mph))／clampIncline(1%)         RECOVER
 總和：5+7+7+6+3+2 = 30 分鐘，包含 warm-up 與 cool-down。
-例：若歷史 baseline 為 5.0 mph／3%，畫面可預覽 4.0／3%、5.0／3%、5.3／4%、5.1／3-4%、5.5／4%、3.8／1%；這只是演算法示例，不能當作任何使用者真實 PR。
+例：若相容 baseline 為 5.0 mph／3%，本次 userMaxSpeed 為 5.3 mph、machineMaxSpeed 為 6.0 mph，userMaxIncline 為 4%、machineMaxIncline 為 10%，則畫面可預覽 4.0／3%、5.0／3%、5.3／4%、5.1／4%、`clampSpeed(5.5)=5.3`／4%、3.8／1%。每個值都先經 `clampSpeed`／`clampIncline`；這只是演算法示例，不能當作任何使用者真實 PR。若 baseline 5.0 mph／3% 本身超過本次 cap，則不進入此表，改走 fallback preview。
 
 四、無歷史資料的 Fallback
 ------------------------------------------------------------
@@ -40,7 +50,7 @@ Echelon 提案預設：30 分鐘。可選時長：20／30／45／60 分鐘。
 
 五、Echelon Adapt、EFFORT 與手動覆寫
 ------------------------------------------------------------
-Echelon Adapt（提案）：只在歷史基準可信且使用者 opt-in 時，把「可比區塊」小幅調整到 baseline 以上；遇到 stale／異常立即退回 baseline preview。
+Echelon Adapt（提案）：只在歷史基準可信、相容且使用者 opt-in 時，把「可比區塊」小幅調整到 baseline 以上；每次調整都必須經 `clampSpeed`／`clampIncline`，遇到 stale／異常立即退回 baseline preview。
 EFFORT +/-（提案）：EFFORT + 只影響下一個 challenge block；EFFORT - 取消超越 baseline 的增量，回到 match／recovery。不得為了挑戰跳過冷身。
 Manual override（提案）：標示 MANUAL，該區塊不再比較自動目標；結果頁明確列出覆寫，避免把手動紀錄誤當成公平比較。
 

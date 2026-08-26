@@ -33,34 +33,37 @@ Echelon 提案初始 profile 以 300 kcal 為例，其他 target 由同一 plann
 25:00-35:00 PUSH                5.5 mph/8.9 km/h  6%         STAY CONTROLLED
 35:00-40:00 COOL DOWN            2.8 mph/4.5 km/h  1%         RECOVER
 總和：5+10+10+10+5 = 40 分鐘，包含 warm-up 與 cool-down。
-Planner 必須在每個 telemetry tick 更新 `estimatedKcal`；不可把上表 40 分鐘直接宣稱等於 300 kcal。實際達標時顯示 target reached，進入安全 cool-down；未達標時到 max time 顯示 partial completion。
+Live calorie source（提案邊界）：目標進度應以 FitOS `snapshot.calories` 作為 intended live source；這個欄位仍必須顯示 `ESTIMATED`，不能視為精準測量。FitOS／客戶尚未確認其單位、是否為本次 session 累積值、reset 時機、update cadence、staleness／timestamp 語意，因此在確認前不可把它當作已核准的完成公式。
+不可用或 stale 時：凍結／暫停 target progress，顯示 `CALORIES UNAVAILABLE` 或 `CALORIES STALE` 與資料時間，不得以 speed、incline、elapsed 單獨推導並靜默替代。任何 app-side calories formula 都是另一個未核准 fallback，必須明確標示來源與低信心，且不得自動取代 FitOS `snapshot.calories`。
+實際達標時顯示 target reached，進入安全 cool-down；未達標時到 max time 顯示 partial completion。
 
 四、目標狀態與 safe completion（提案）
 ------------------------------------------------------------
-狀態：TARGET SET／IN PROGRESS／TARGET REACHED／TIME LIMIT／DATA LOW CONFIDENCE／STOPPED。
+狀態：TARGET SET／IN PROGRESS／TARGET REACHED／TIME LIMIT／CALORIES UNAVAILABLE／CALORIES STALE／DATA LOW CONFIDENCE／STOPPED。
 達到估算 target：停止增加強度，進入至少 3-5 分鐘的安全 cool-down（時間需核准），完成頁標示 estimate。
 到達最大時限仍未達標：停止自動加強，顯示實際 estimated kcal、未達原因與 safe cool-down／結束選項；不得把未達標改寫成達標。
-資料缺少或 stale：暫停估算更新，顯示 `CALORIE ESTIMATE PAUSED`；不得用靜態數字填補。
+`snapshot.calories` 缺少或 stale：凍結 goal progress，顯示 `CALORIE ESTIMATE PAUSED`、`CALORIES UNAVAILABLE`／`CALORIES STALE` 與資料狀態；不得用靜態數字或未核准 app-side 公式填補。
 
 五、Echelon Adapt、EFFORT 與手動覆寫
 ------------------------------------------------------------
-Echelon Adapt（提案）：依實際 estimatedKcal rate、user cap 與資料信心調整下一個 block；不可為追 target 超過安全上限，也不可把估算誤差視為使用者表現。
+Echelon Adapt（提案）：只有在 FitOS `snapshot.calories` 新鮮且語意已被核准時，才可依實際 estimatedKcal rate、user cap 與資料信心調整下一個 block；不可為追 target 超過安全上限，也不可把估算誤差視為使用者表現。資料缺少／stale 時不調整。
 EFFORT +/-（提案）：EFFORT + 提高下一個可調 block 一小級；EFFORT - 降低下一段並延長預估完成時間。達 target 或 data low confidence 後不再升強度。
 Manual override（提案）：顯示 MANUAL，估算仍依真實資料；控制尚未核准時只更新 preview。
 
 六、Live／完成／安全
 ------------------------------------------------------------
-Live 顯示 `183 / 300 CAL EST.`、`117 TO GO`、estimate confidence／data age、speed／incline、elapsed／max time、目前 block、NEXT／countdown、EFFORT +/-、connection／stale／PREVIEW ONLY、end 與 caveat。完成顯示 estimated kcal、target reached／partial、時間、距離與資料來源；不得聲稱精準卡路里、燃脂或減重。
-無 host／stale／未核准 control 時只 preview；無 profile 時必須降低 confidence／顯示 caveat。HR lost 不可被當成 calories 的替代輸入。
+Live 顯示 `183 / 300 CAL EST.`、`117 TO GO`、`snapshot.calories` source／estimate confidence／data age、speed／incline、elapsed／max time、目前 block、NEXT／countdown、EFFORT +/-、connection／stale／PREVIEW ONLY、end 與 caveat。FitOS calories unavailable／stale 時改顯示 frozen progress 與原因，不顯示虛構的 `TO GO`。完成顯示 estimated kcal、target reached／partial、時間、距離與資料來源；不得聲稱精準卡路里、燃脂或減重。
+無 host／stale／未核准 control 時只 preview；無 profile 或 `snapshot.calories` 時必須降低 confidence／顯示 caveat，且不得用 speed／incline／elapsed 靜默替代。HR lost 不可被當成 calories 的替代輸入。
 
 七、依賴能力
 ------------------------------------------------------------
-Gate3A：唯讀速度、坡度、elapsed，供估算／preview；AIDL host 是否提供 calories 需明確區分。Gate3B：speed／incline control、ACK、safe stop。HR：可提高估算但尚未實作。History／persistence：保存 profile、target、結果，尚未實作。Generator／planner：必要，尚未實作。
+Gate3A：可讀 FitOS telemetry； intended live source 為 FitOS `snapshot.calories`，但其單位、reset、update、staleness 語意仍待 FitOS／客戶確認。速度／坡度／elapsed 只能支援 preview／context，不能單獨當作已核准 estimator。Gate3B：speed／incline control、ACK、safe stop。HR：可提高估算但尚未實作。History／persistence：保存 profile、target、結果，尚未實作。Generator／planner：必要，尚未實作。App-side formula：未核准 fallback，不能靜默取代 snapshot。
 
 八、客戶待確認
 ------------------------------------------------------------
 [ ] 100／200／300／500 target 與最大時限是否核准？
-[ ] calories 估算公式、輸入資料、confidence 與 rounding 由誰定義？
+[ ] FitOS `snapshot.calories` 的單位、session reset、update cadence、timestamp／staleness 與累積範圍由誰確認？
+[ ] 若 `snapshot.calories` 不可用，是否允許明確標示的 app-side fallback？其公式、輸入資料、confidence 與 rounding 由誰定義？
 [ ] target reached 後 cool-down 應為幾分鐘？
 [ ] 到時限未達標要否允許「延長」？若允許，安全上限為何？
 [ ] UI 是否固定使用 `CAL EST.` 與上述 caveat？

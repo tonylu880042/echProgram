@@ -133,14 +133,26 @@ class LiveWorkoutScreenTest {
 
         setContent(
             state = LiveWorkoutUiState.Completed(
-                summary = LiveWorkoutSummary(ProgramId("FAT_BURN"), 3_600, 3_600, "FAT BURN"),
+                summary = LiveWorkoutSummary(
+                    ProgramId("FAT_BURN"),
+                    3_600,
+                    3_600,
+                    "FAT BURN",
+                    ProgramPreviewMode.FIXED_PROFILE_PREVIEW,
+                ),
             ),
         )
         composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
 
         setContent(
             state = LiveWorkoutUiState.Stopped(
-                summary = LiveWorkoutSummary(ProgramId("FAT_BURN"), 59, 3_600, "FAT BURN"),
+                summary = LiveWorkoutSummary(
+                    ProgramId("FAT_BURN"),
+                    59,
+                    3_600,
+                    "FAT BURN",
+                    ProgramPreviewMode.FIXED_PROFILE_PREVIEW,
+                ),
             ),
         )
         composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
@@ -187,7 +199,13 @@ class LiveWorkoutScreenTest {
         var doneCount = 0
         setContent(
             state = LiveWorkoutUiState.Completed(
-                summary = LiveWorkoutSummary(ProgramId("FAT_BURN"), 3_600, 3_600, "FAT BURN"),
+                summary = LiveWorkoutSummary(
+                    ProgramId("FAT_BURN"),
+                    3_600,
+                    3_600,
+                    "FAT BURN",
+                    ProgramPreviewMode.FIXED_PROFILE_PREVIEW,
+                ),
             ),
             onBackToPrograms = { doneCount++ },
         )
@@ -198,13 +216,39 @@ class LiveWorkoutScreenTest {
 
         setContent(
             state = LiveWorkoutUiState.Stopped(
-                summary = LiveWorkoutSummary(ProgramId("FAT_BURN"), 59, 3_600, "FAT BURN"),
+                summary = LiveWorkoutSummary(
+                    ProgramId("FAT_BURN"),
+                    59,
+                    3_600,
+                    "FAT BURN",
+                    ProgramPreviewMode.FIXED_PROFILE_PREVIEW,
+                ),
             ),
             onBackToPrograms = { doneCount++ },
         )
         composeTestRule.onNodeWithText("WORKOUT STOPPED").assertIsDisplayed()
         composeTestRule.onNodeWithText("DONE").performClick()
         assertEquals(2, doneCount)
+    }
+
+    @Test
+    fun `non fixed completion is presented as preview with its mode caveat`() {
+        val mode = ProgramPreviewMode.ELEVATION_TARGET_PREVIEW
+        setContent(
+            state = LiveWorkoutUiState.Completed(
+                summary = LiveWorkoutSummary(
+                    programId = ProgramId("VERTICAL"),
+                    elapsedSeconds = 3_000,
+                    totalDurationSeconds = 3_000,
+                    programTitle = "VERTICAL",
+                    previewMode = mode,
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("PREVIEW COMPLETE").assertIsDisplayed()
+        composeTestRule.onNodeWithText("WORKOUT COMPLETE").assertDoesNotExist()
+        composeTestRule.onNodeWithText(mode.disclosureMessage()).assertIsDisplayed()
     }
 
     @Test
@@ -216,6 +260,7 @@ class LiveWorkoutScreenTest {
                     elapsedSeconds = 1_800,
                     totalDurationSeconds = 1_800,
                     programTitle = "12-3-30",
+                    previewMode = ProgramPreviewMode.FIXED_PROFILE_PREVIEW,
                 ),
             ),
         )

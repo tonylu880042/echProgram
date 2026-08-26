@@ -49,4 +49,5 @@ data class LiveWorkoutSummary(
     val elapsedSeconds: Int,
     val totalDurationSeconds: Int,
     val programTitle: String,
+    val previewMode: ProgramPreviewMode,
 )

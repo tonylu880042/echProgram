@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.echelon.console.domain.EquipmentReadState
+import com.echelon.console.domain.ProgramPreviewMode
 import java.util.Locale
 
 @Composable
@@ -89,7 +90,7 @@ fun LiveWorkoutScreen(
             )
 
             is LiveWorkoutUiState.Completed -> LiveWorkoutTerminalContent(
-                title = "WORKOUT COMPLETE",
+                title = completionTitle(state.summary.previewMode),
                 summary = state.summary,
                 onDone = onBackToPrograms,
             )
@@ -170,6 +171,14 @@ private fun LiveWorkoutTerminalContent(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 8.dp),
         )
+        if (summary.previewMode != ProgramPreviewMode.FIXED_PROFILE_PREVIEW) {
+            Text(
+                text = summary.previewMode.disclosureMessage(),
+                color = MutedText,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -195,4 +204,15 @@ private fun LiveWorkoutTerminalContent(
                 .widthIn(min = 140.dp),
         )
     }
+}
+
+private fun completionTitle(previewMode: ProgramPreviewMode): String = when (previewMode) {
+    ProgramPreviewMode.FIXED_PROFILE_PREVIEW -> "WORKOUT COMPLETE"
+    ProgramPreviewMode.BASELINE_PREVIEW,
+    ProgramPreviewMode.ELEVATION_TARGET_PREVIEW,
+    ProgramPreviewMode.HISTORY_ADAPTIVE_PREVIEW,
+    ProgramPreviewMode.HEART_RATE_PREVIEW,
+    ProgramPreviewMode.GENERATED_PREVIEW,
+    ProgramPreviewMode.CALORIE_TARGET_PREVIEW,
+    -> "PREVIEW COMPLETE"
 }

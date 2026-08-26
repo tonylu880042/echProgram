@@ -63,12 +63,22 @@ class StaticProgramCatalogWorkoutPreviewTest {
                 running.progress.target.speed.value <= started.plan.settings.maxSpeed.value,
             )
             assertTrue(
+                "${detail.programId.value} initial speed is below composition minimum",
+                running.progress.target.speed.value >= compositionCapabilities.speed.min.value,
+            )
+            assertTrue(
                 "${detail.programId.value} initial incline exceeds selected cap",
                 running.progress.target.incline.value <= started.plan.settings.maxIncline.value,
             )
+            assertTrue(
+                "${detail.programId.value} initial incline is below composition minimum",
+                running.progress.target.incline.value >= compositionCapabilities.incline.min.value,
+            )
             running.timeline.segments.forEach { segment ->
                 assertTrue(segment.targetSpeed.value <= started.plan.settings.maxSpeed.value)
+                assertTrue(segment.targetSpeed.value >= compositionCapabilities.speed.min.value)
                 assertTrue(segment.targetIncline.value <= started.plan.settings.maxIncline.value)
+                assertTrue(segment.targetIncline.value >= compositionCapabilities.incline.min.value)
                 assertTrue(segment.targetSpeed.value <= compositionCapabilities.speed.max.value)
                 assertTrue(segment.targetIncline.value <= compositionCapabilities.incline.max.value)
             }

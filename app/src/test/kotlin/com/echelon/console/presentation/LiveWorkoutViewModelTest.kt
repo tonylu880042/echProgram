@@ -188,6 +188,28 @@ class LiveWorkoutViewModelTest {
     }
 
     @Test
+    fun `completed summary preserves every preview mode`() = runTest {
+        ProgramPreviewMode.values().forEach { mode ->
+            val ticks = ManualTickSource()
+            val viewModel = viewModel(
+                controller = startedCoordinator(),
+                tickSource = ticks,
+                dispatcher = StandardTestDispatcher(testScheduler),
+                getProgramDetail = GetProgramDetail(
+                    ProgramDetailCatalog { detail().copy(previewMode = mode) },
+                ),
+            )
+            advanceUntilIdle()
+
+            ticks.emit(360)
+            advanceUntilIdle()
+
+            val completed = viewModel.state.value as LiveWorkoutUiState.Completed
+            assertEquals(mode, completed.summary.previewMode)
+        }
+    }
+
+    @Test
     fun `exact completion cancels the tick subscription`() = runTest {
         val coordinator = startedCoordinator()
         val ticks = TrackingTickSource()

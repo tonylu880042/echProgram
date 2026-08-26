@@ -157,12 +157,16 @@ class LiveWorkoutViewModel(
     private fun summaryFor(
         timeline: WorkoutTimeline,
         elapsedSeconds: Int,
-    ): LiveWorkoutSummary = LiveWorkoutSummary(
-        programId = timeline.programId,
-        elapsedSeconds = elapsedSeconds,
-        totalDurationSeconds = timeline.totalDurationSeconds,
-        programTitle = presentationFor(timeline.programId).title,
-    )
+    ): LiveWorkoutSummary {
+        val presentation = presentationFor(timeline.programId)
+        return LiveWorkoutSummary(
+            programId = timeline.programId,
+            elapsedSeconds = elapsedSeconds,
+            totalDurationSeconds = timeline.totalDurationSeconds,
+            programTitle = presentation.title,
+            previewMode = presentation.previewMode,
+        )
+    }
 
     private fun presentationFor(programId: ProgramId): LiveWorkoutPresentation =
         when (val result = getProgramDetail(programId)) {

@@ -89,6 +89,18 @@ class MainActivityProgramSetupTest {
 
         composeTestRule.onNodeWithText("DONE").performClick()
         waitForText("WHAT DO YOU WANT TODAY?")
+
+        composeTestRule.onNodeWithText("FAT BURN").performClick()
+        waitForText("START WORKOUT")
+        composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
+
+        waitForText("PREVIEW ONLY")
+        composeTestRule.onNodeWithText("WORKOUT STOPPED").assertDoesNotExist()
+        composeTestRule.onNodeWithText("PAUSE").assertIsDisplayed()
+        assertTrue(
+            composeTestRule.activity.workoutSessionCoordinator.currentState()
+                is WorkoutSessionState.Running,
+        )
     }
 
     @Test

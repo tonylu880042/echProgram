@@ -29,31 +29,28 @@ class LiveWorkoutViewModel(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
     private val getProgramDetail: GetProgramDetail,
 ) : ViewModel() {
-    private val initialSessionState = controller.currentState()
-    private val _state = MutableStateFlow<LiveWorkoutUiState>(
-        stateFor(initialSessionState),
-    )
+    private val _state = MutableStateFlow<LiveWorkoutUiState>(LiveWorkoutUiState.NoSession)
     private var tickJob: Job? = null
 
     val state: StateFlow<LiveWorkoutUiState> = _state.asStateFlow()
 
     init {
-        if (initialSessionState !is WorkoutSessionState.Completed &&
-            initialSessionState !is WorkoutSessionState.Stopped
-        ) {
-            // Keep NoSession subscribed so a coordinator started elsewhere can be observed.
-            tickJob = viewModelScope.launch(dispatcher) {
-                tickSource.ticks()
-                    .catch { exception ->
-                        if (exception is CancellationException) {
-                            throw exception
-                        }
-                        _state.value = LiveWorkoutUiState.Error(TICK_SOURCE_ERROR_MESSAGE)
-                    }
-                    .collect { elapsedSeconds ->
-                        advanceIfRunning(elapsedSeconds)
-                    }
-            }
+        attachCurrentSession()
+    }
+
+    fun attachCurrentSession() {
+        val current = controller.currentState()
+        _state.value = stateFor(current)
+        when (current) {
+            null,
+            is WorkoutSessionState.NotStarted,
+            is WorkoutSessionState.Running,
+            is WorkoutSessionState.Paused,
+            -> ensureTicking()
+
+            is WorkoutSessionState.Completed,
+            is WorkoutSessionState.Stopped,
+            -> stopTicking()
         }
     }
 
@@ -94,7 +91,7 @@ class LiveWorkoutViewModel(
                 if (result.state is WorkoutSessionState.Completed ||
                     result.state is WorkoutSessionState.Stopped
                 ) {
-                    tickJob?.cancel()
+                    stopTicking()
                 }
             }
             is WorkoutSessionCommandResult.Failed -> when (result.failure) {
@@ -169,6 +166,30 @@ class LiveWorkoutViewModel(
                 .replace('_', ' ')
                 .uppercase(Locale.US)
         }
+
+    private fun ensureTicking() {
+        if (tickJob?.isActive == true) {
+            return
+        }
+        // Keep NoSession subscribed so a coordinator started elsewhere can be observed.
+        tickJob = viewModelScope.launch(dispatcher) {
+            tickSource.ticks()
+                .catch { exception ->
+                    if (exception is CancellationException) {
+                        throw exception
+                    }
+                    _state.value = LiveWorkoutUiState.Error(TICK_SOURCE_ERROR_MESSAGE)
+                }
+                .collect { elapsedSeconds ->
+                    advanceIfRunning(elapsedSeconds)
+                }
+        }
+    }
+
+    private fun stopTicking() {
+        tickJob?.cancel()
+        tickJob = null
+    }
 
     private companion object {
         const val COMMAND_ERROR_MESSAGE = "Workout controls are unavailable right now."

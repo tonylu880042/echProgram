@@ -5,6 +5,7 @@ import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.WorkoutSessionCommandFailure
 import com.echelon.console.application.usecase.WorkoutSessionCommandResult
+import com.echelon.console.application.usecase.WorkoutSessionStarterResult
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
 import com.echelon.console.domain.DurationMinutes
@@ -206,6 +207,56 @@ class LiveWorkoutViewModelTest {
     }
 
     @Test
+    fun `reattach refreshes a new session after stopped without duplicate subscriptions`() = runTest {
+        val ticks = TrackingTickSource()
+        val coordinator = startedCoordinator()
+        val viewModel = viewModel(coordinator, ticks, StandardTestDispatcher(testScheduler))
+        advanceUntilIdle()
+
+        viewModel.onAction(LiveWorkoutAction.End)
+        advanceUntilIdle()
+        assertTrue(ticks.cancelled)
+
+        assertTrue(coordinator.start(validatedPlan()) is WorkoutSessionStarterResult.Started)
+        viewModel.attachCurrentSession()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.state.value is LiveWorkoutUiState.Active)
+        assertEquals(2, ticks.subscriptionCount)
+        assertEquals(1, ticks.activeSubscriptionCount)
+
+        viewModel.attachCurrentSession()
+        advanceUntilIdle()
+        assertEquals(2, ticks.subscriptionCount)
+        assertEquals(1, ticks.activeSubscriptionCount)
+
+        ticks.emit(15)
+        advanceUntilIdle()
+        assertEquals(15, assertActive(viewModel.state.value).elapsedSeconds)
+    }
+
+    @Test
+    fun `reattach refreshes a new session after completion`() = runTest {
+        val ticks = TrackingTickSource()
+        val coordinator = startedCoordinator()
+        val viewModel = viewModel(coordinator, ticks, StandardTestDispatcher(testScheduler))
+        advanceUntilIdle()
+
+        ticks.emit(360)
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value is LiveWorkoutUiState.Completed)
+        assertTrue(ticks.cancelled)
+
+        assertTrue(coordinator.start(validatedPlan()) is WorkoutSessionStarterResult.Started)
+        viewModel.attachCurrentSession()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.state.value is LiveWorkoutUiState.Active)
+        assertEquals(2, ticks.subscriptionCount)
+        assertEquals(1, ticks.activeSubscriptionCount)
+    }
+
+    @Test
     fun `no session remains explicit and transition failure maps safe error`() = runTest {
         val noSessionTicks = TrackingTickSource()
         val noSession = viewModel(
@@ -329,12 +380,19 @@ class LiveWorkoutViewModelTest {
             private set
         var cancelled = false
             private set
+        var subscriptionCount = 0
+            private set
+        var activeSubscriptionCount = 0
+            private set
 
         override fun ticks(): Flow<Int> = flow {
             subscribed = true
+            subscriptionCount += 1
+            activeSubscriptionCount += 1
             try {
                 events.collect { emit(it) }
             } finally {
+                activeSubscriptionCount -= 1
                 cancelled = true
             }
         }
@@ -361,6 +419,13 @@ class LiveWorkoutViewModelTest {
             programId = ProgramId("FAT_BURN"),
             settings = detail().defaultSettings,
         )
+
+        fun validatedPlan(): ValidatedWorkoutPlan = when (
+            val result = ValidatedWorkoutPlan.create(plan(), capabilities)
+        ) {
+            is ValidatedWorkoutPlanResult.Valid -> result.plan
+            is ValidatedWorkoutPlanResult.Invalid -> error("Expected valid plan, got $result")
+        }
 
         fun detail(): ProgramDetail = ProgramDetail(
             programId = ProgramId("FAT_BURN"),

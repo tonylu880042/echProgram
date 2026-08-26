@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -31,6 +32,9 @@ fun LiveWorkoutRoute(
     equipmentState: EquipmentReadState = EquipmentReadState(),
     modifier: Modifier = Modifier,
 ) {
+    LaunchedEffect(viewModel) {
+        viewModel.attachCurrentSession()
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LiveWorkoutScreen(
         state = state,

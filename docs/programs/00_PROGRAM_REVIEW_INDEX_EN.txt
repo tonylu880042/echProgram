@@ -1,0 +1,112 @@
+Echelon Program Client Review Index
+============================================================
+Document status: Echelon proposal overview / pending item-by-item client confirmation. This index and the individual Program txt files are specification discussion materials; they do not represent completed functionality.
+Source: idea.txt lines 16-30 and 32-249; each individual Program document lists more specific source line references.
+Document count: 22 Program specs + this index.
+
+1. 22-Program List
+------------------------------------------------------------
+No.   Program ID             Official name             Category          Hero  Default duration / target       Primary dependencies / Gate3A availability
+01    FAT_BURN               FAT BURN                  BURN              Yes   30 min (20/30/45)              telemetry; preview can proceed
+02    GLUTE_BLAST            GLUTE BLAST               GLUTES + LEGS     Yes   30 min (15/20/30/45)           telemetry; preview can proceed
+03    SUMMIT                 SUMMIT                    CLIMB             No    30 min (20/30/45/60)           telemetry; preview can proceed
+04    HIIT_20                HIIT 20                   SWEAT             No    20 min (10/20/30)              telemetry; preview can proceed
+05    SWEAT_30               SWEAT 30                  SWEAT             No    30 min (20/30/45)              telemetry; preview can proceed
+06    SPEED_LAB              SPEED LAB                 GET FASTER        No    30 min (20/30/40)              telemetry; preview can proceed
+07    BOOTY_BURN_15          BOOTY BURN 15             GLUTES + LEGS     No    15 min (10/15/20)              telemetry; preview can proceed
+08    5K_READY               5K READY                  RUN               No    30 min session (20/30/40/60)   telemetry; single-session preview can proceed
+09    VERTICAL               VERTICAL                  CLIMB             Yes   500/1,000/2,000/5,280 FT      telemetry; requires elevation contract, preview first
+10    ECHELON_CHALLENGE      ECHELON CHALLENGE          CHALLENGE         No    30 min (20/30/45/60)           history + telemetry; fallback preview only without history
+11    TWELVE_3_30            12-3-30                   CLIMB             No    30 min / core target            telemetry; Safe version can be previewed first
+12    POWER_WALK             POWER WALK                WALK              No    30 min (15/30/45/60)           telemetry; preview can proceed
+13    ROLLING_HILLS          ROLLING HILLS              STAMINA           No    45 min (30/45/60)              telemetry; preview can proceed
+14    ZONE_2                 ZONE 2                    HEART RATE        No    30 min (20/30/45/60)           HR + telemetry; preview only without HR
+15    WALK_RUN               WALK + RUN                RUN               No    30 min (20/30/45/60)           telemetry; preview can proceed
+16    ENDURANCE              ENDURANCE                 STAMINA           No    45 min (30/45/60/90)           telemetry; preview can proceed
+17    PYRAMID                PYRAMID                   SWEAT             No    30 min (20/30/45)              telemetry; preview can proceed
+18    RECOVERY_WALK          RECOVERY WALK             RECOVERY          No    20 min (10/20/30)              telemetry; preview can proceed
+19    QUICK_10               QUICK 10                  QUICK             No    10 min (10/15/20)              telemetry; preview can proceed
+20    SURPRISE_ME            SURPRISE ME               SURPRISE          Yes   10/20/30/45 min + effort      generator; preview only until generator exists
+21    CALORIE_TARGET         CALORIE TARGET             BURN              No    100/200/300/500 est. kcal     planner + telemetry; preview only
+22    ECHELON_HYBRID_RUN     ECHELON HYBRID RUN         HYBRID            No    30 min (20/30/45)              telemetry; preview can proceed
+
+Notes:
+- “Preview can proceed” means that Gate3A read-only telemetry and/or a static profile can be used to validate data and screens first; it does not mean AIDL control is available.
+- The warm-up/cool-down structure and exact segment-minute totals for every fixed-time profile are documented in the individual files. The target-oriented Programs (VERTICAL, CALORIE TARGET, ZONE 2, SURPRISE ME, and ECHELON CHALLENGE) must not be interpreted as fixed-time Programs or as having automatic control already.
+- All mph/km/h, speed, and incline values are Echelon proposal values. Production implementation must apply the user cap, machine limits, unit settings, and stale-data guard together.
+
+2. Individual Program Files
+------------------------------------------------------------
+01 [01_fat_burn.txt] FAT BURN
+02 [02_glute_blast.txt] GLUTE BLAST
+03 [03_summit.txt] SUMMIT
+04 [04_hiit_20.txt] HIIT 20
+05 [05_sweat_30.txt] SWEAT 30
+06 [06_speed_lab.txt] SPEED LAB
+07 [07_booty_burn_15.txt] BOOTY BURN 15
+08 [08_5k_ready.txt] 5K READY
+09 [09_vertical.txt] VERTICAL
+10 [10_echelon_challenge.txt] ECHELON CHALLENGE
+11 [11_12_3_30.txt] 12-3-30
+12 [12_power_walk.txt] POWER WALK
+13 [13_rolling_hills.txt] ROLLING HILLS
+14 [14_zone_2.txt] ZONE 2
+15 [15_walk_run.txt] WALK + RUN
+16 [16_endurance.txt] ENDURANCE
+17 [17_pyramid.txt] PYRAMID
+18 [18_recovery_walk.txt] RECOVERY WALK
+19 [19_quick_10.txt] QUICK 10
+20 [20_surprise_me.txt] SURPRISE ME
+21 [21_calorie_target.txt] CALORIE TARGET
+22 [22_echelon_hybrid_run.txt] ECHELON HYBRID RUN
+
+3. Differences Between idea.txt and the Current App (record only; no code changes)
+------------------------------------------------------------
+idea.txt proposes 22 Programs/experiences; the current App library implements only 8 items:
+- Hero: FAT_BURN, GLUTE_BLAST, VERTICAL, SURPRISE_ME.
+- Supporting: EASY_STROLL, SPEED_DEMON, ROLLING_HILLS, HEART_HEALTH.
+The current detail catalog provides only FAT_BURN; the other visible items enter an unavailable state. `MainActivity` is still wired to `NoOpWorkoutSessionStarter`, so Start only proves the setup/validated boundary and does not create a real workout session.
+Known duration conflict (client decision required): the current App FAT_BURN hero tile displays `45 MIN`, and the current FAT_BURN detail default is also `45 MIN`; the detailed FAT BURN draft in idea.txt is `30 MIN`. The current App GLUTE_BLAST hero tile displays `20 MIN`, while its current detail is not available; the detailed GLUTE BLAST draft in idea.txt is `30 MIN`. The client must decide whether the current App, idea.txt, or a new launch spec is the single source of truth, then align the tile, detail, profile, and selectable durations.
+Gate3A already provides a FitOS read-only telemetry boundary, but Gate3B speed/incline control, command ACK, pause/resume, safe stop, and real session reconciliation are not yet available. HR, history/persistence, and the generator are also not implemented.
+These txt files do not imply that the above gaps have been fixed. The next code increment should first establish one ProgramDefinition source and completeness tests against these specifications.
+
+4. Shared Client Decisions Across Programs
+------------------------------------------------------------
+1. Units: Should the UI default to MPH or KM/H? Should speed, distance, and history comparisons be stored in a fixed canonical unit?
+2. Machine capability: What are the maximum speed/incline, step size, ramp rate, and support for 0% and 15%+ on each launch model?
+3. Naming: Which names and external copy for FAT BURN, BOOTY BURN, 12-3-30, VERTICAL MILE, RECOVERY, and related terms receive legal/marketing approval?
+4. AIDL control: What are the ACK, timeout, rejection reason, pause/resume, Binder death, host restart, safety-key, and app-crash behaviors for start/stop/speed/incline?
+5. HR: Which Apple Watch and other HR monitor paths are supported? What is the authoritative target-zone source, HR LOST timeout, hysteresis, and control authorization?
+6. Estimated calories/elevation: What are the data sources, formulas, confidence, rounding, `ESTIMATED` caveat, and whether FitOS may report an authoritative value?
+7. Persistence: What are the data and privacy/deletion policies for profile, user cap, manual override, Adapt preference, history, PR, generator seed, and generator version?
+8. Safety/UX: What common UI copy and default safe behavior apply to no device, stale data, clamp, control failure, and user-initiated stop?
+
+5. Recommended Confirmation Order and MVP Groups
+------------------------------------------------------------
+Batch 1: Confirm units, machine caps/limits, and common safety/preview copy. Use read-only/static profiles to complete detail/profile previews for FAT BURN, GLUTE BLAST, POWER WALK, ROLLING HILLS, RECOVERY WALK, QUICK 10, SWEAT 30, PYRAMID, SUMMIT, BOOTY BURN 15, HIIT 20, SPEED LAB, WALK + RUN, ENDURANCE, and ECHELON HYBRID RUN.
+Batch 2: After the control contract is approved, connect the fixed-profile session engine; implement countdown, NEXT, manual override, stale/clamp handling first, without enabling unvalidated automatic control.
+Batch 3: After the HR contract is confirmed, build ZONE 2; after the elevation authority/formula is confirmed, build VERTICAL; after the calories estimator/time limit is confirmed, build CALORIE TARGET.
+Batch 4: Build ECHELON CHALLENGE after sufficient history exists; build the 5K READY progression after its baseline/cycle decisions; build SURPRISE ME after the deterministic generator contract is approved.
+Batch 5: Complete persistence, the results screen, evidence rules for comparisons/PRs, and client/legal copy before deciding which Programs may enable real device control.
+
+6. Current Unresolved Client Decision Checklist
+------------------------------------------------------------
+[ ] Official names, categories, Hero order, and launch scope for all 22 Programs.
+[ ] Default durations, selectable durations, profile segment minutes, and variable-length rules.
+[ ] Speed/incline caps, clamp, ramp/step, and units for each target machine model.
+[ ] Gate3B AIDL command ACK/timeout/pause/resume/safety semantics.
+[ ] HR monitor, target zone, signal loss, and automatic-control authorization.
+[ ] Authoritative elevation/calorie sources, estimation, and display caveat.
+[ ] History/persistence/PR/Adapt data and privacy policy.
+[ ] SURPRISE ME seed/generator version/preview/accept/regenerate contract.
+[ ] 5K READY progression cycle length, frequency, baseline, and non-medical positioning.
+[ ] VERTICAL elevation formula, maximum time limit, and incomplete-target flow.
+[ ] Whether the 12-3-30 Safe version may retain the original name.
+[ ] ECHELON HYBRID RUN trademark/external-copy review and the explicit no-sled-mode rule.
+
+7. Non-Functional and Implementation Cautions
+------------------------------------------------------------
+- This documentation is not a substitute for tests; implementation must still follow the AGENTS.md RED -> GREEN -> REFACTOR process.
+- Gate3A proves only the read-only telemetry/stale/connection boundary; it must not be presented as real device control.
+- Any `EFFORT +/-`, Adapt, target generator, or HR auto-adjustment requires an application port, fake/boundary test, and safe fallback first.
+- Do not add emoji as UI icons. Official English Program names and coaching copy may remain in the UI, but icons must use the approved icon set.

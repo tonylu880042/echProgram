@@ -36,6 +36,9 @@ fun LiveWorkoutRoute(
     LaunchedEffect(viewModel) {
         viewModel.attachCurrentSession()
     }
+    LaunchedEffect(viewModel, equipmentState) {
+        viewModel.onEquipmentStateChanged(equipmentState)
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LiveWorkoutScreen(
         state = state,

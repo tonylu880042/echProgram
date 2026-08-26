@@ -1,20 +1,24 @@
 package com.echelon.console.presentation
 
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.echelon.console.application.usecase.EvaluateZone2EquipmentHeartRate
+import com.echelon.console.application.usecase.EvaluateZone2EquipmentHeartRateRequest
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailResult
 import com.echelon.console.application.usecase.WorkoutSessionController
 import com.echelon.console.application.usecase.WorkoutSessionCommandFailure
 import com.echelon.console.application.usecase.WorkoutSessionCommandResult
+import com.echelon.console.domain.EquipmentReadState
+import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.WorkoutSessionProgress
 import com.echelon.console.domain.WorkoutSessionState
 import com.echelon.console.domain.WorkoutTimeline
 import com.echelon.console.domain.WorkoutTimelineAnnotation
 import com.echelon.console.domain.WorkoutTimelineSegment
 import com.echelon.console.domain.WorkoutTimelineContext
-import com.echelon.console.domain.ProgramId
-import com.echelon.console.domain.ProgramPreviewMode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -32,9 +36,13 @@ class LiveWorkoutViewModel(
     private val tickSource: WorkoutSessionTickSource = DefaultWorkoutSessionTickSource,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
     private val getProgramDetail: GetProgramDetail,
+    private val evaluateZone2EquipmentHeartRate: EvaluateZone2EquipmentHeartRate =
+        EvaluateZone2EquipmentHeartRate(),
+    private val nowElapsedRealtimeMillis: () -> Long = { SystemClock.elapsedRealtime() },
 ) : ViewModel() {
     private val _state = MutableStateFlow<LiveWorkoutUiState>(LiveWorkoutUiState.NoSession)
     private var tickJob: Job? = null
+    private var equipmentState: EquipmentReadState = EquipmentReadState()
 
     val state: StateFlow<LiveWorkoutUiState> = _state.asStateFlow()
 
@@ -56,6 +64,11 @@ class LiveWorkoutViewModel(
             is WorkoutSessionState.Stopped,
             -> stopTicking()
         }
+    }
+
+    fun onEquipmentStateChanged(equipmentState: EquipmentReadState) {
+        this.equipmentState = equipmentState
+        _state.value = stateFor(controller.currentState())
     }
 
     fun onAction(action: LiveWorkoutAction) {
@@ -86,6 +99,21 @@ class LiveWorkoutViewModel(
             return
         }
         apply(controller.advance(elapsedSeconds))
+    }
+
+    private fun refreshIfPausedOrRunning() {
+        val current = controller.currentState()
+        when (current) {
+            is WorkoutSessionState.Paused,
+            is WorkoutSessionState.Running,
+            -> _state.value = stateFor(current)
+
+            null,
+            is WorkoutSessionState.NotStarted,
+            is WorkoutSessionState.Completed,
+            is WorkoutSessionState.Stopped,
+            -> Unit
+        }
     }
 
     private fun apply(result: WorkoutSessionCommandResult) {
@@ -160,6 +188,7 @@ class LiveWorkoutViewModel(
             previewMode = presentation.previewMode,
             runWalkSummary = runWalkSummaryFor(timeline),
             verticalContext = verticalContextFor(timeline),
+            zone2Context = zone2ContextFor(timeline),
         )
     }
 
@@ -176,7 +205,28 @@ class LiveWorkoutViewModel(
             previewMode = presentation.previewMode,
             runWalkSummary = runWalkSummaryFor(timeline),
             verticalContext = verticalContextFor(timeline),
+            zone2Context = zone2ContextFor(timeline),
         )
+    }
+
+    private fun zone2ContextFor(timeline: WorkoutTimeline): LiveZone2HeartRateContext? {
+        val context = timeline.context as? WorkoutTimelineContext.Zone2Preview ?: return null
+        if (
+            timeline.programId != ZONE_2_PROGRAM_ID ||
+            context.programId != ZONE_2_PROGRAM_ID ||
+            context.programId != timeline.programId
+        ) {
+            return null
+        }
+        val result = evaluateZone2EquipmentHeartRate(
+            EvaluateZone2EquipmentHeartRateRequest(
+                context = context,
+                equipmentState = equipmentState,
+                nowElapsedRealtimeMillis = nowElapsedRealtimeMillis(),
+                staleAfterMillis = ZONE_2_PREVIEW_STALE_AFTER_MILLIS,
+            ),
+        )
+        return LiveZone2HeartRateMapper.map(timeline, result)
     }
 
     private fun verticalContextFor(timeline: WorkoutTimeline): LiveVerticalWorkoutContext? =
@@ -268,9 +318,15 @@ class LiveWorkoutViewModel(
                     }
                     _state.value = LiveWorkoutUiState.Error(TICK_SOURCE_ERROR_MESSAGE)
                 }
-                .collect { elapsedSeconds ->
-                    advanceIfRunning(elapsedSeconds)
-                }
+                .collect(::onTick)
+        }
+    }
+
+    private fun onTick(elapsedSeconds: Int) {
+        if (controller.currentState() is WorkoutSessionState.Running && elapsedSeconds > 0) {
+            advanceIfRunning(elapsedSeconds)
+        } else {
+            refreshIfPausedOrRunning()
         }
     }
 
@@ -284,6 +340,8 @@ class LiveWorkoutViewModel(
         const val COMMAND_ERROR_MESSAGE = "Workout controls are unavailable right now."
         const val TICK_SOURCE_ERROR_MESSAGE = "Workout session updates are unavailable right now."
         val VERTICAL_PROGRAM_ID = ProgramId("VERTICAL")
+        val ZONE_2_PROGRAM_ID = ProgramId("ZONE_2")
+        const val ZONE_2_PREVIEW_STALE_AFTER_MILLIS = 3_000L
     }
 }
 

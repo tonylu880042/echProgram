@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.echelon.console.application.usecase.EvaluateZone2EquipmentHeartRate
 import com.echelon.console.application.usecase.EquipmentTelemetrySource
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
@@ -101,6 +102,7 @@ class MainActivity : ComponentActivity() {
         LiveWorkoutViewModelFactory(
             controller = workoutSessionCoordinator,
             getProgramDetail = GetProgramDetail(programCatalog),
+            evaluateZone2EquipmentHeartRate = EvaluateZone2EquipmentHeartRate(),
         )
     }
 

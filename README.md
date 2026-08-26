@@ -34,9 +34,10 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
 
 The clean gate covers pure JVM tests, Android lint, import-direction checking,
 debug packaging, and the aggregate `check` task. Gate 1 has been runtime
-verified by Sol on an Android 36 emulator. Gate 2's final runtime review is
-still pending with Sol; the current **WORKOUT READY** state is a setup-boundary
-handoff, not live workout or Gate 3 device execution.
+verified by Sol on an Android 36 emulator. Gate 2's detail, Make It Yours, and
+setup journey have also been runtime verified by Sol on an Android 36 emulator.
+The current **WORKOUT READY** state remains a setup-boundary handoff, not live
+workout or Gate 3 device execution.
 
 ## Architecture
 

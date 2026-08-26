@@ -60,7 +60,7 @@ keeping the shared console chrome from Gate 1:
   arrangement; no 5:4 export dimensions are hard-coded.
 
 The current runtime scope is Gate 1's program library plus the Gate 2 detail
-and Make It Yours setup journey. `WORKOUT READY` proves the validated setup
-boundary only; live workout UI, treadmill commands, and Gate 3 device
-integration are intentionally out of scope. Gate 1 is runtime-verified on an
-Android 36 emulator; Gate 2's final runtime review remains with Sol.
+and Make It Yours setup journey. Gate 1 and this Gate 2 setup journey are
+runtime-verified by Sol on an Android 36 emulator. `WORKOUT READY` proves the
+validated setup boundary only; live workout UI, treadmill commands, and Gate 3
+device integration are intentionally out of scope.

@@ -1,11 +1,11 @@
 # Echelon treadmill console
 
 Android/Kotlin foundation for a landscape treadmill touchscreen built with
-Jetpack Compose and Clean Architecture. The current increment is a walking
-skeleton: it wires a static goal-first program catalog into a single-activity
-Compose shell that exposes **Fat Burn**, **Glute Blast**, **Vertical**, and
-**Surprise Me**. The twelve production screens are planned, but not implemented
-yet; Gate 1 is the next slice.
+Jetpack Compose and Clean Architecture. Gate 1 now wires a static goal-first
+program library into a lifecycle-aware Compose route with loading, ready,
+empty, and error states. The ready page exposes **Fat Burn**, **Glute Blast**,
+**Vertical**, and **Surprise Me** in catalog order, plus filtering and
+navigation seams for the remaining screens.
 
 ## Prerequisites and verified toolchain
 
@@ -55,6 +55,8 @@ static adapter, and presentation receives the use-case result. Run
 - [`docs/PLAN.md`](docs/PLAN.md) — staged implementation and acceptance gates
 - [`DESIGN.md`](DESIGN.md) — Echelon Console visual system for Android/Compose
 - [`docs/STITCH_BRIEF.md`](docs/STITCH_BRIEF.md) — 12-screen Stitch handoff
+- [`docs/STITCH_OUTPUT.md`](docs/STITCH_OUTPUT.md) — tracked Stitch archive and
+  Gate 1 screen adaptation notes
 
 ## Source references
 
@@ -63,3 +65,8 @@ The product source material is tracked read-only: [`idea.txt`](idea.txt),
 [`design/home.png`](design/home.png), and [`design/profile.png`](design/profile.png).
 `idea.png` is the primary 12-screen storyboard; the other images are secondary
 visual references. Google Stitch is not operated by the code workflow.
+
+The supplied Stitch export is tracked at
+[`design/stitch_echelon_android_treadmill_console.zip`](design/stitch_echelon_android_treadmill_console.zip).
+It remains an archive; its web prototype is not extracted into the runtime or
+source tree.

@@ -3,6 +3,7 @@ package com.echelon.console.application.usecase
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.ValidatedWorkoutPlan
+import com.echelon.console.domain.WorkoutSessionAction
 import com.echelon.console.domain.WorkoutSessionError
 import com.echelon.console.domain.WorkoutSessionResult
 import com.echelon.console.domain.WorkoutSessionState
@@ -13,10 +14,8 @@ import com.echelon.console.domain.WorkoutTimelineCompiler
 
 sealed interface WorkoutSessionStarterResult {
     data class Started(
-        val state: WorkoutSessionState,
+        val state: WorkoutSessionState.Running,
     ) : WorkoutSessionStarterResult
-
-    data object Accepted : WorkoutSessionStarterResult
 
     data class Failed(
         val failure: WorkoutSessionStartFailure,
@@ -89,7 +88,15 @@ class InMemoryWorkoutSessionCoordinator(
             is WorkoutSessionResult.Invalid -> return failedTransition(result.error)
         }
         val running = when (val result = WorkoutSessionStateMachine.start(notStarted)) {
-            is WorkoutSessionResult.Valid -> result.state
+            is WorkoutSessionResult.Valid -> when (val state = result.state) {
+                is WorkoutSessionState.Running -> state
+                else -> return failedTransition(
+                    WorkoutSessionError.InvalidTransition(
+                        action = WorkoutSessionAction.START,
+                        state = state.kind,
+                    ),
+                )
+            }
             is WorkoutSessionResult.Invalid -> return failedTransition(result.error)
         }
 

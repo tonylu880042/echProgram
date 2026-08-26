@@ -112,6 +112,15 @@ class StartWorkoutTest {
     }
 
     @Test
+    fun `a started session is reported as valid`() {
+        val result = StartWorkout(
+            ResultStarter(testStartedWorkoutResult()),
+        ).invoke(plan(), capabilities)
+
+        assertTrue(result is StartWorkoutResult.Valid)
+    }
+
+    @Test
     fun `capability validation takes precedence over starter failure`() {
         val starter = ResultStarter(
             WorkoutSessionStarterResult.Failed(WorkoutSessionStartFailure.ActiveSessionExists),
@@ -158,7 +167,7 @@ class StartWorkoutTest {
 
         override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
             received = plan
-            return WorkoutSessionStarterResult.Accepted
+            return testStartedWorkoutResult()
         }
     }
 

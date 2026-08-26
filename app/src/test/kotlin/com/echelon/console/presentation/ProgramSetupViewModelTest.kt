@@ -3,6 +3,7 @@ package com.echelon.console.presentation
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.StartWorkout
+import com.echelon.console.application.usecase.testStartedWorkoutResult
 import com.echelon.console.application.usecase.WorkoutSessionStarter
 import com.echelon.console.application.usecase.WorkoutSessionStarterResult
 import com.echelon.console.application.usecase.WorkoutSessionStartFailure
@@ -441,7 +442,7 @@ class ProgramSetupViewModelTest {
     )
 
     private class RecordingStarter(
-        private val result: WorkoutSessionStarterResult = WorkoutSessionStarterResult.Accepted,
+        private val result: WorkoutSessionStarterResult = testStartedWorkoutResult(),
     ) : WorkoutSessionStarter {
         var received: ValidatedWorkoutPlan? = null
 

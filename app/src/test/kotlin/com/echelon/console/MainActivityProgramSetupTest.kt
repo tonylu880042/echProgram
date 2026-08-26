@@ -7,6 +7,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import com.echelon.console.domain.WorkoutSessionState
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,6 +46,10 @@ class MainActivityProgramSetupTest {
 
         waitForText("WORKOUT READY")
         composeTestRule.onNodeWithText("5.5 MPH").performScrollTo().assertIsDisplayed()
+        assertTrue(
+            composeTestRule.activity.workoutSessionCoordinator.currentState()
+                is WorkoutSessionState.Running,
+        )
     }
 
     @Test

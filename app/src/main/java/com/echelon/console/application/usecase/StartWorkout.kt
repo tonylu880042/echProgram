@@ -17,9 +17,7 @@ class StartWorkout(
     ) {
         is ValidatedWorkoutPlanResult.Valid -> {
             when (val result = sessionStarter.start(validation.plan)) {
-                is WorkoutSessionStarterResult.Started,
-                WorkoutSessionStarterResult.Accepted,
-                -> StartWorkoutResult.Valid(validation.plan)
+                is WorkoutSessionStarterResult.Started -> StartWorkoutResult.Valid(validation.plan)
 
                 is WorkoutSessionStarterResult.Failed -> StartWorkoutResult.StarterFailure(
                     result.failure,

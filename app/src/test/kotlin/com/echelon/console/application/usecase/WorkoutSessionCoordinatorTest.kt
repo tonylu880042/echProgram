@@ -37,7 +37,7 @@ class WorkoutSessionCoordinatorTest {
         val result = coordinator.start(validatedPlan())
 
         val started = assertStarted(result)
-        val running = started.state as WorkoutSessionState.Running
+        val running: WorkoutSessionState.Running = started.state
         assertEquals(0, running.progress.elapsedSeconds)
         assertEquals(360, running.progress.remainingSeconds)
         assertEquals("Warm Up", running.progress.currentSegment.name)
@@ -156,7 +156,6 @@ class WorkoutSessionCoordinatorTest {
         result: WorkoutSessionStarterResult,
     ): WorkoutSessionStarterResult.Started = when (result) {
         is WorkoutSessionStarterResult.Started -> result
-        is WorkoutSessionStarterResult.Accepted -> error("Expected stateful start result, got $result")
         is WorkoutSessionStarterResult.Failed -> error("Expected successful start, got $result")
     }
 }

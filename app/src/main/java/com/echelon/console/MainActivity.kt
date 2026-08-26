@@ -9,9 +9,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.echelon.console.application.usecase.EquipmentTelemetrySource
 import com.echelon.console.application.usecase.ListProgramLibrary
 import com.echelon.console.application.usecase.GetProgramDetail
+import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.StartWorkout
-import com.echelon.console.application.usecase.WorkoutSessionStarter
-import com.echelon.console.application.usecase.WorkoutSessionStarterResult
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.data.fitos.AndroidFitOsClientFactory
 import com.echelon.console.data.fitos.FitOsEquipmentAdapter
@@ -20,7 +19,6 @@ import com.echelon.console.domain.DurationLimits
 import com.echelon.console.domain.DurationMinutes
 import com.echelon.console.domain.InclineRange
 import com.echelon.console.domain.InclineTenths
-import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.presentation.ProgramLibraryDestination
@@ -40,6 +38,10 @@ import kotlinx.coroutines.SupervisorJob
 
 class MainActivity : ComponentActivity() {
     private val programCatalog: StaticProgramCatalog by lazy { StaticProgramCatalog() }
+
+    internal val workoutSessionCoordinator: InMemoryWorkoutSessionCoordinator by lazy {
+        InMemoryWorkoutSessionCoordinator(programCatalog)
+    }
 
     private val equipmentTelemetrySource: EquipmentTelemetrySource by lazy {
         FitOsEquipmentAdapter(
@@ -62,7 +64,7 @@ class MainActivity : ComponentActivity() {
     private val programSetupViewModel: ProgramSetupViewModel by viewModels {
         ProgramSetupViewModelFactory(
             getProgramDetail = GetProgramDetail(programCatalog),
-            startWorkout = StartWorkout(NoOpWorkoutSessionStarter),
+            startWorkout = StartWorkout(workoutSessionCoordinator),
             capabilities = DeviceCapabilities(
                 duration = DurationLimits(
                     min = DurationMinutes(10),
@@ -116,12 +118,5 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         equipmentTelemetryViewModel.onStop()
         super.onStop()
-    }
-}
-
-private object NoOpWorkoutSessionStarter : WorkoutSessionStarter {
-    override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
-        // Gate3 will replace this composition-root seam with live session wiring.
-        return WorkoutSessionStarterResult.Accepted
     }
 }

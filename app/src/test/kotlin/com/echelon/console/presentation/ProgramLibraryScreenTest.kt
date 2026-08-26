@@ -58,13 +58,15 @@ class ProgramLibraryScreenTest {
     }
 
     @Test
-    fun `clicking a hero emits select action`() {
+    fun `clicking a hero emits select and open events`() {
         val actions = mutableListOf<ProgramLibraryAction>()
+        val opened = mutableListOf<ProgramId>()
         composeTestRule.activity.setContent {
             ProgramLibraryScreen(
                 state = readyState(),
                 onAction = actions::add,
                 onNavigate = {},
+                onOpenProgram = opened::add,
             )
         }
 
@@ -74,6 +76,25 @@ class ProgramLibraryScreenTest {
             listOf(ProgramLibraryAction.SelectHero(ProgramId("VERTICAL"))),
             actions,
         )
+        assertEquals(listOf(ProgramId("VERTICAL")), opened)
+    }
+
+    @Test
+    fun `clicking a supporting program card opens its program`() {
+        val opened = mutableListOf<ProgramId>()
+        composeTestRule.activity.setContent {
+            ProgramLibraryScreen(
+                state = readyState(),
+                onAction = {},
+                onNavigate = {},
+                onOpenProgram = opened::add,
+            )
+        }
+
+        composeTestRule.onNodeWithText("ALL PROGRAMS").performScrollTo()
+        composeTestRule.onNodeWithText("Easy Stroll").performScrollTo().performClick()
+
+        assertEquals(listOf(ProgramId("EASY_STROLL")), opened)
     }
 
     @Test

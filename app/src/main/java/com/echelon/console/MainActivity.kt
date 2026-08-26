@@ -32,6 +32,9 @@ import com.echelon.console.presentation.ProgramSetupViewModel
 import com.echelon.console.presentation.ProgramSetupViewModelFactory
 import com.echelon.console.presentation.EquipmentTelemetryViewModel
 import com.echelon.console.presentation.EquipmentTelemetryViewModelFactory
+import com.echelon.console.presentation.LiveWorkoutRoute
+import com.echelon.console.presentation.LiveWorkoutViewModel
+import com.echelon.console.presentation.LiveWorkoutViewModelFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -77,6 +80,13 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private val liveWorkoutViewModel: LiveWorkoutViewModel by viewModels {
+        LiveWorkoutViewModelFactory(
+            controller = workoutSessionCoordinator,
+            getProgramDetail = GetProgramDetail(programCatalog),
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -84,8 +94,8 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 val setupState = programSetupViewModel.state.collectAsStateWithLifecycle().value
                 val equipmentState = equipmentTelemetryViewModel.state.collectAsStateWithLifecycle().value
-                if (setupState == ProgramSetupUiState.Library) {
-                    ProgramLibraryRoute(
+                when (setupState) {
+                    ProgramSetupUiState.Library -> ProgramLibraryRoute(
                         viewModel = programLibraryViewModel,
                         onNavigate = { _: ProgramLibraryDestination ->
                             // Rail navigation remains an explicit seam for future console modes.
@@ -94,8 +104,18 @@ class MainActivity : ComponentActivity() {
                             programSetupViewModel.onAction(ProgramSetupAction.OpenProgram(programId))
                         },
                     )
-                } else {
-                    ProgramSetupRoute(
+                    is ProgramSetupUiState.Started -> LiveWorkoutRoute(
+                        viewModel = liveWorkoutViewModel,
+                        onNavigate = { _: ProgramLibraryDestination ->
+                            // Active workouts keep rail navigation disabled.
+                        },
+                        onBackToPrograms = {
+                            programSetupViewModel.onAction(ProgramSetupAction.Back)
+                        },
+                        equipmentState = equipmentState,
+                    )
+
+                    else -> ProgramSetupRoute(
                         viewModel = programSetupViewModel,
                         onNavigate = { _: ProgramLibraryDestination ->
                             // Rail navigation remains an explicit seam for future console modes.

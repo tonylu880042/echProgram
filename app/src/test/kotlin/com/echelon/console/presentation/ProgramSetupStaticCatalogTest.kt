@@ -1,9 +1,11 @@
 package com.echelon.console.presentation
 
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
+import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
+import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
@@ -46,6 +48,8 @@ class ProgramSetupStaticCatalogTest {
                     startWorkout = StartWorkout(coordinator),
                     startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
                     generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
+                    startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
+                    generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
                     capabilities = compositionCapabilities,
                     dispatcher = dispatcher,
                 )

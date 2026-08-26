@@ -7,6 +7,12 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
+import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
+import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraftRequest
+import com.echelon.console.domain.FiveKReadyBaselinePace
+import com.echelon.console.domain.FiveKReadyBaselineSource
+import com.echelon.console.domain.FiveKReadySessionGenerationResult
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.SurpriseWorkoutEffort
@@ -129,6 +135,81 @@ class MainActivityProgramSetupTest {
         assertTrue(
             composeTestRule.activity.workoutSessionCoordinator.currentState()
                 is WorkoutSessionState.Running,
+        )
+    }
+
+    @Test
+    fun `5K ready enters user pace preview and accepts exact draft into live route`() {
+        waitForText("WHAT DO YOU WANT TODAY?")
+        composeTestRule.onNodeWithText("5K READY").performScrollTo().performClick()
+
+        waitForText("START WORKOUT")
+        composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
+
+        waitForText("SET YOUR RUN PACE")
+        assertNull(composeTestRule.activity.workoutSessionCoordinator.currentState())
+        composeTestRule.onNodeWithContentDescription("RUN PACE (MPH)").performTextInput("4.0")
+        composeTestRule.onNodeWithContentDescription("GENERATE 5K PREVIEW")
+            .performScrollTo()
+            .performClick()
+
+        waitForText("5K READY PREVIEW")
+        composeTestRule.onNodeWithText("SINGLE SESSION").performScrollTo().assertIsDisplayed()
+        assertTrue(composeTestRule.onAllNodesWithText("PREVIEW ONLY").fetchSemanticsNodes().isNotEmpty())
+        assertTrue(composeTestRule.onAllNodesWithText("NO DEVICE COMMANDS").fetchSemanticsNodes().isNotEmpty())
+        composeTestRule.onNodeWithText("USER-ENTERED", substring = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("RUN 1 OF 3").performScrollTo().assertIsDisplayed()
+        assertNull(composeTestRule.activity.workoutSessionCoordinator.currentState())
+
+        composeTestRule.onNodeWithContentDescription("ACCEPT 5K PREVIEW")
+            .performScrollTo()
+            .performClick()
+
+        waitForText("LIVE PREVIEW")
+        composeTestRule.onNodeWithText("WORKOUT READY").assertDoesNotExist()
+        composeTestRule.onNodeWithText("5K READY").assertIsDisplayed()
+        assertTrue(
+            composeTestRule.activity.workoutSessionCoordinator.currentState()
+                is WorkoutSessionState.Running,
+        )
+
+        val expectedDraft = when (
+            val result = GenerateFiveKReadySessionDraft()(
+                GenerateFiveKReadySessionDraftRequest(
+                    durationMinutes = 30,
+                    baselinePace = FiveKReadyBaselinePace(
+                        speed = SpeedTenths(40),
+                        source = FiveKReadyBaselineSource.USER_ENTERED,
+                    ),
+                    userMaxSpeed = SpeedTenths(60),
+                    machineMaxSpeed = SpeedTenths(120),
+                    userMaxIncline = InclineTenths(60),
+                    machineMaxIncline = InclineTenths(150),
+                ),
+            )
+        ) {
+            is FiveKReadySessionGenerationResult.Generated -> result.draft
+            is FiveKReadySessionGenerationResult.Rejected -> error("Expected generated 5K draft")
+        }
+        val running = composeTestRule.activity.workoutSessionCoordinator.currentState()
+            as WorkoutSessionState.Running
+        assertEquals(
+            expectedDraft.profile.map { it.name },
+            running.timeline.segments.map { it.name },
+        )
+        assertEquals(
+            expectedDraft.profile.map { it.duration.value * 60 },
+            running.timeline.segments.map { it.durationSeconds },
+        )
+        assertEquals(
+            expectedDraft.profile.map { it.speed.value },
+            running.timeline.segments.map { it.targetSpeed.value },
+        )
+        assertEquals(
+            expectedDraft.profile.map { it.incline.value },
+            running.timeline.segments.map { it.targetIncline.value },
         )
     }
 

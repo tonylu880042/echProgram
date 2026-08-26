@@ -7,6 +7,7 @@ import com.echelon.console.domain.PlanValidationError
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
+import com.echelon.console.domain.FiveKReadySessionDraft
 import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.SurpriseWorkoutEffort
 import com.echelon.console.domain.SpeedTenths
@@ -17,6 +18,13 @@ internal val SurpriseWorkoutDurationOptions = listOf(
     DurationMinutes(20),
     DurationMinutes(30),
     DurationMinutes(45),
+)
+
+internal val FiveKReadyDurationOptions = listOf(
+    DurationMinutes(20),
+    DurationMinutes(30),
+    DurationMinutes(40),
+    DurationMinutes(60),
 )
 
 sealed interface ProgramSetupUiState {
@@ -51,6 +59,28 @@ sealed interface ProgramSetupUiState {
     data class DraftPreview(
         val detail: ProgramDetail,
         val draft: SurpriseWorkoutDraft,
+        val userMaxSpeed: SpeedTenths,
+        val machineMaxSpeed: SpeedTenths,
+        val userMaxIncline: InclineTenths,
+        val machineMaxIncline: InclineTenths,
+        val errorMessage: String? = null,
+    ) : ProgramSetupUiState
+
+    data class FiveKReadyConfiguring(
+        val detail: ProgramDetail,
+        val duration: DurationMinutes,
+        val baselinePaceText: String,
+        val userMaxSpeed: SpeedTenths,
+        val machineMaxSpeed: SpeedTenths,
+        val userMaxIncline: InclineTenths,
+        val machineMaxIncline: InclineTenths,
+        val errorMessage: String? = null,
+    ) : ProgramSetupUiState
+
+    data class FiveKReadyDraftPreview(
+        val detail: ProgramDetail,
+        val draft: FiveKReadySessionDraft,
+        val baselinePaceText: String,
         val userMaxSpeed: SpeedTenths,
         val machineMaxSpeed: SpeedTenths,
         val userMaxIncline: InclineTenths,

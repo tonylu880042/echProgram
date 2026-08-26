@@ -120,6 +120,20 @@ fun ProgramSetupScreen(
             onNavigate = onNavigate,
         )
 
+        is ProgramSetupUiState.FiveKReadyConfiguring -> FiveKReadyConfiguringScreen(
+            state = state,
+            onAction = onAction,
+            onBack = { onAction(ProgramSetupAction.Back) },
+            onNavigate = onNavigate,
+        )
+
+        is ProgramSetupUiState.FiveKReadyDraftPreview -> FiveKReadyDraftPreviewScreen(
+            state = state,
+            onAction = onAction,
+            onBack = { onAction(ProgramSetupAction.Back) },
+            onNavigate = onNavigate,
+        )
+
         is ProgramSetupUiState.Unavailable -> ProgramSetupStatus(
             title = "PROGRAM UNAVAILABLE",
             message = "Program ${state.programId.value} is not available on this console.",

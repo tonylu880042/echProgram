@@ -40,4 +40,12 @@ sealed interface ProgramSetupAction {
     data object RegenerateSurprisePreview : ProgramSetupAction
 
     data object AcceptSurprisePlan : ProgramSetupAction
+
+    data class SetFiveKReadyDuration(val duration: DurationMinutes) : ProgramSetupAction
+
+    data class SetFiveKReadyBaselinePace(val text: String) : ProgramSetupAction
+
+    data object GenerateFiveKReadyPreview : ProgramSetupAction
+
+    data object AcceptFiveKReadyPlan : ProgramSetupAction
 }

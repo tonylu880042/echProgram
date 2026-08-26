@@ -3,13 +3,15 @@ package com.echelon.console.presentation
 import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.echelon.console.application.usecase.EvaluateCalorieTargetEquipmentSnapshot
+import com.echelon.console.application.usecase.EvaluateCalorieTargetEquipmentSnapshotRequest
 import com.echelon.console.application.usecase.EvaluateZone2EquipmentHeartRate
 import com.echelon.console.application.usecase.EvaluateZone2EquipmentHeartRateRequest
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailResult
-import com.echelon.console.application.usecase.WorkoutSessionController
 import com.echelon.console.application.usecase.WorkoutSessionCommandFailure
 import com.echelon.console.application.usecase.WorkoutSessionCommandResult
+import com.echelon.console.application.usecase.WorkoutSessionController
 import com.echelon.console.domain.EquipmentReadState
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
@@ -17,17 +19,17 @@ import com.echelon.console.domain.WorkoutSessionProgress
 import com.echelon.console.domain.WorkoutSessionState
 import com.echelon.console.domain.WorkoutTimeline
 import com.echelon.console.domain.WorkoutTimelineAnnotation
-import com.echelon.console.domain.WorkoutTimelineSegment
 import com.echelon.console.domain.WorkoutTimelineContext
+import com.echelon.console.domain.WorkoutTimelineSegment
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -38,6 +40,8 @@ class LiveWorkoutViewModel(
     private val getProgramDetail: GetProgramDetail,
     private val evaluateZone2EquipmentHeartRate: EvaluateZone2EquipmentHeartRate =
         EvaluateZone2EquipmentHeartRate(),
+    private val evaluateCalorieTargetEquipmentSnapshot: EvaluateCalorieTargetEquipmentSnapshot =
+        EvaluateCalorieTargetEquipmentSnapshot(),
     private val nowElapsedRealtimeMillis: () -> Long = { SystemClock.elapsedRealtime() },
 ) : ViewModel() {
     private val _state = MutableStateFlow<LiveWorkoutUiState>(LiveWorkoutUiState.NoSession)
@@ -189,6 +193,7 @@ class LiveWorkoutViewModel(
             runWalkSummary = runWalkSummaryFor(timeline),
             verticalContext = verticalContextFor(timeline),
             zone2Context = zone2ContextFor(timeline),
+            calorieTargetContext = calorieTargetContextFor(timeline),
         )
     }
 
@@ -206,6 +211,7 @@ class LiveWorkoutViewModel(
             runWalkSummary = runWalkSummaryFor(timeline),
             verticalContext = verticalContextFor(timeline),
             zone2Context = zone2ContextFor(timeline),
+            calorieTargetContext = calorieTargetContextFor(timeline),
         )
     }
 
@@ -227,6 +233,26 @@ class LiveWorkoutViewModel(
             ),
         )
         return LiveZone2HeartRateMapper.map(timeline, result)
+    }
+
+    private fun calorieTargetContextFor(timeline: WorkoutTimeline): LiveCalorieTargetContext? {
+        val context = timeline.context as? WorkoutTimelineContext.CalorieTargetPreview ?: return null
+        if (
+            timeline.programId != CALORIE_TARGET_PROGRAM_ID ||
+            context.programId != CALORIE_TARGET_PROGRAM_ID ||
+            context.programId != timeline.programId
+        ) {
+            return null
+        }
+        val result = evaluateCalorieTargetEquipmentSnapshot(
+            EvaluateCalorieTargetEquipmentSnapshotRequest(
+                context = context,
+                equipmentState = equipmentState,
+                nowElapsedRealtimeMillis = nowElapsedRealtimeMillis(),
+                staleAfterMillis = CALORIE_TARGET_PREVIEW_STALE_AFTER_MILLIS,
+            ),
+        )
+        return LiveCalorieTargetMapper.map(timeline, result)
     }
 
     private fun verticalContextFor(timeline: WorkoutTimeline): LiveVerticalWorkoutContext? =
@@ -342,7 +368,9 @@ class LiveWorkoutViewModel(
         const val TICK_SOURCE_ERROR_MESSAGE = "Workout session updates are unavailable right now."
         val VERTICAL_PROGRAM_ID = ProgramId("VERTICAL")
         val ZONE_2_PROGRAM_ID = ProgramId("ZONE_2")
+        val CALORIE_TARGET_PROGRAM_ID = ProgramId("CALORIE_TARGET")
         const val ZONE_2_PREVIEW_STALE_AFTER_MILLIS = 3_000L
+        const val CALORIE_TARGET_PREVIEW_STALE_AFTER_MILLIS = 3_000L
     }
 }
 

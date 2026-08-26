@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.echelon.console.application.usecase.EquipmentTelemetrySource
+import com.echelon.console.application.usecase.EvaluateCalorieTargetEquipmentSnapshot
 import com.echelon.console.application.usecase.EvaluateZone2EquipmentHeartRate
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
@@ -108,6 +109,7 @@ class MainActivity : ComponentActivity() {
             controller = workoutSessionCoordinator,
             getProgramDetail = GetProgramDetail(programCatalog),
             evaluateZone2EquipmentHeartRate = EvaluateZone2EquipmentHeartRate(),
+            evaluateCalorieTargetEquipmentSnapshot = EvaluateCalorieTargetEquipmentSnapshot(),
         )
     }
 

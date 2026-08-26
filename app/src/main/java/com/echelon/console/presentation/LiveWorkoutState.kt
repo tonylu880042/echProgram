@@ -56,6 +56,7 @@ data class LiveWorkoutReadModel(
     val runWalkSummary: LiveWorkoutRunWalkSummary? = null,
     val verticalContext: LiveVerticalWorkoutContext? = null,
     val zone2Context: LiveZone2HeartRateContext? = null,
+    val calorieTargetContext: LiveCalorieTargetContext? = null,
 )
 
 data class LiveWorkoutSegment(
@@ -198,4 +199,5 @@ data class LiveWorkoutSummary(
     val runWalkSummary: LiveWorkoutRunWalkSummary? = null,
     val verticalContext: LiveVerticalWorkoutContext? = null,
     val zone2Context: LiveZone2HeartRateContext? = null,
+    val calorieTargetContext: LiveCalorieTargetContext? = null,
 )

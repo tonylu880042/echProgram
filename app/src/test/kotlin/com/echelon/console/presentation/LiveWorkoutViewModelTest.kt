@@ -5,6 +5,7 @@ import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.WorkoutSessionCommandFailure
 import com.echelon.console.application.usecase.WorkoutSessionCommandResult
+import com.echelon.console.application.usecase.WorkoutSessionController
 import com.echelon.console.application.usecase.WorkoutSessionStarterResult
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
@@ -25,8 +26,13 @@ import com.echelon.console.domain.ValidatedWorkoutPlanResult
 import com.echelon.console.domain.WorkoutPlan
 import com.echelon.console.domain.WorkoutSessionAction
 import com.echelon.console.domain.WorkoutSessionError
+import com.echelon.console.domain.WorkoutSessionResult
 import com.echelon.console.domain.WorkoutSessionState
+import com.echelon.console.domain.WorkoutSessionStateMachine
 import com.echelon.console.domain.WorkoutSessionStateKind
+import com.echelon.console.domain.WorkoutTimeline
+import com.echelon.console.domain.WorkoutTimelineAnnotation
+import com.echelon.console.domain.WorkoutTimelineSegment
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -58,6 +64,59 @@ class LiveWorkoutViewModelTest {
         assertEquals(SpeedTenths(55), active.targetSpeed)
         assertEquals(InclineTenths(50), active.targetIncline)
         assertEquals(false, active.isPaused)
+        assertEquals(null, active.runWalkSummary)
+    }
+
+    @Test
+    fun `run walk summary excludes unannotated timeline segments`() = runTest {
+        val timeline = WorkoutTimeline(
+            programId = ProgramId("5K_READY"),
+            totalDurationSeconds = 180,
+            segments = listOf(
+                WorkoutTimelineSegment(
+                    name = "RUN",
+                    startSecond = 0,
+                    endSecond = 60,
+                    targetSpeed = SpeedTenths(40),
+                    targetIncline = InclineTenths(0),
+                    annotation = WorkoutTimelineAnnotation.Run(1, 1),
+                ),
+                WorkoutTimelineSegment(
+                    name = "WALK RECOVERY",
+                    startSecond = 60,
+                    endSecond = 120,
+                    targetSpeed = SpeedTenths(30),
+                    targetIncline = InclineTenths(0),
+                    annotation = WorkoutTimelineAnnotation.WalkRecovery,
+                ),
+                WorkoutTimelineSegment(
+                    name = "UNANNOTATED",
+                    startSecond = 120,
+                    endSecond = 180,
+                    targetSpeed = SpeedTenths(30),
+                    targetIncline = InclineTenths(0),
+                ),
+            ),
+        )
+        val running = when (
+            val result = WorkoutSessionStateMachine.start(
+                WorkoutSessionState.NotStarted(timeline),
+            )
+        ) {
+            is WorkoutSessionResult.Valid -> result.state as WorkoutSessionState.Running
+            is WorkoutSessionResult.Invalid -> error("Expected valid running state, got $result")
+        }
+        val viewModel = viewModel(
+            controller = FixedStateController(running),
+            tickSource = ManualTickSource(),
+            dispatcher = StandardTestDispatcher(testScheduler),
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            LiveWorkoutRunWalkSummary(runMinutes = 1, walkMinutes = 1),
+            assertActive(viewModel.state.value).runWalkSummary,
+        )
     }
 
     @Test
@@ -366,7 +425,7 @@ class LiveWorkoutViewModelTest {
     }
 
     private fun viewModel(
-        controller: InMemoryWorkoutSessionCoordinator,
+        controller: WorkoutSessionController,
         tickSource: WorkoutSessionTickSource,
         dispatcher: CoroutineDispatcher,
         getProgramDetail: GetProgramDetail = GetProgramDetail(ProgramDetailCatalog { null }),
@@ -376,6 +435,24 @@ class LiveWorkoutViewModelTest {
         dispatcher,
         getProgramDetail,
     )
+
+    private class FixedStateController(
+        private val state: WorkoutSessionState,
+    ) : WorkoutSessionController {
+        override fun currentState(): WorkoutSessionState = state
+
+        override fun advance(elapsedSeconds: Int): WorkoutSessionCommandResult =
+            WorkoutSessionCommandResult.Failed(WorkoutSessionCommandFailure.NoSession)
+
+        override fun pause(): WorkoutSessionCommandResult =
+            WorkoutSessionCommandResult.Failed(WorkoutSessionCommandFailure.NoSession)
+
+        override fun resume(): WorkoutSessionCommandResult =
+            WorkoutSessionCommandResult.Failed(WorkoutSessionCommandFailure.NoSession)
+
+        override fun stop(): WorkoutSessionCommandResult =
+            WorkoutSessionCommandResult.Failed(WorkoutSessionCommandFailure.NoSession)
+    }
 
     private fun startedCoordinator(): InMemoryWorkoutSessionCoordinator {
         val coordinator = InMemoryWorkoutSessionCoordinator(

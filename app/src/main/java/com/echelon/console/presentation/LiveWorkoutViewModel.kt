@@ -194,10 +194,26 @@ class LiveWorkoutViewModel(
         val runSeconds = timeline.segments
             .filter { it.annotation is WorkoutTimelineAnnotation.Run }
             .sumOf { it.durationSeconds }
+        val walkSeconds = timeline.segments
+            .filter { isExplicitWalkAnnotation(it.annotation) }
+            .sumOf { it.durationSeconds }
         return LiveWorkoutRunWalkSummary(
             runMinutes = runSeconds / SECONDS_PER_MINUTE,
-            walkMinutes = (timeline.totalDurationSeconds - runSeconds) / SECONDS_PER_MINUTE,
+            walkMinutes = walkSeconds / SECONDS_PER_MINUTE,
         )
+    }
+
+    private fun isExplicitWalkAnnotation(annotation: WorkoutTimelineAnnotation): Boolean = when (
+        annotation
+    ) {
+        WorkoutTimelineAnnotation.Unannotated,
+        is WorkoutTimelineAnnotation.Run,
+        -> false
+        WorkoutTimelineAnnotation.WarmUpWalk,
+        WorkoutTimelineAnnotation.WalkRecovery,
+        WorkoutTimelineAnnotation.EasyWalk,
+        WorkoutTimelineAnnotation.CoolDown,
+        -> true
     }
 
     private fun presentationFor(programId: ProgramId): LiveWorkoutPresentation =

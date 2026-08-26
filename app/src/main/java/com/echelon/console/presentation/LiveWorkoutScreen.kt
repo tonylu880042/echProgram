@@ -188,6 +188,9 @@ private fun LiveWorkoutTerminalContent(
         summary.zone2Context?.let { context ->
             LiveZone2HeartRatePanel(context)
         }
+        summary.calorieTargetContext?.let { context ->
+            LiveCalorieTargetPanel(context)
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()

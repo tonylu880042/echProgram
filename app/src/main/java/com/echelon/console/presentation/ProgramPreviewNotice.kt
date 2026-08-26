@@ -66,5 +66,5 @@ internal fun ProgramPreviewMode.disclosureMessage(): String = when (this) {
     ProgramPreviewMode.GENERATED_PREVIEW ->
         "Generated plans require an approved deterministic generator."
     ProgramPreviewMode.CALORIE_TARGET_PREVIEW ->
-        "Calorie target progress requires FitOS estimated calories; estimator semantics are pending."
+        "FitOS calories are display-only estimates; unit, session reset, and completion semantics are not approved."
 }

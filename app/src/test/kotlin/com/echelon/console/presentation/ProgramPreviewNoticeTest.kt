@@ -67,7 +67,7 @@ class ProgramPreviewNoticeTest {
             ProgramPreviewMode.GENERATED_PREVIEW to
                 "Generated plans require an approved deterministic generator.",
             ProgramPreviewMode.CALORIE_TARGET_PREVIEW to
-                "Calorie target progress requires FitOS estimated calories; estimator semantics are pending.",
+                "FitOS calories are display-only estimates; unit, session reset, and completion semantics are not approved.",
         )
 
         expected.forEach { (mode, message) ->

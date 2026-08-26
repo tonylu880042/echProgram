@@ -10,6 +10,7 @@ import com.echelon.console.domain.ProgramSegmentSummary
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.ValidatedWorkoutPlan
+import com.echelon.console.domain.VerticalWorkoutDraft
 import com.echelon.console.domain.WorkoutSessionAction
 import com.echelon.console.domain.WorkoutSessionError
 import com.echelon.console.domain.WorkoutSessionResult
@@ -20,6 +21,8 @@ import com.echelon.console.domain.WorkoutTimelineCompileResult
 import com.echelon.console.domain.WorkoutTimelineCompiler
 import com.echelon.console.domain.WorkoutTimelineAnnotation
 import com.echelon.console.domain.toWorkoutTimelineProfile
+
+private const val VERTICAL_PROFILE_DURATION_MINUTES = 50
 
 sealed interface WorkoutSessionStarterResult {
     data class Started(
@@ -87,6 +90,7 @@ class InMemoryWorkoutSessionCoordinator(
 ) : WorkoutSessionStarter,
     SurpriseWorkoutDraftSessionStarter,
     FiveKReadySessionDraftSessionStarter,
+    VerticalWorkoutDraftSessionStarter,
     WorkoutSessionController {
     private var sessionState: WorkoutSessionState? = null
 
@@ -130,6 +134,18 @@ class InMemoryWorkoutSessionCoordinator(
         draftMaxSpeed = draft.effectiveSpeedCap,
         draftMaxIncline = draft.effectiveInclineCap,
         profile = draft.toWorkoutTimelineProfile(),
+        plan = plan,
+    )
+
+    override fun start(
+        draft: VerticalWorkoutDraft,
+        plan: ValidatedWorkoutPlan,
+    ): WorkoutSessionStarterResult = startDraft(
+        draftProgramId = draft.metadata.programId,
+        draftDurationMinutes = VERTICAL_PROFILE_DURATION_MINUTES,
+        draftMaxSpeed = draft.metadata.effectiveSpeedCap,
+        draftMaxIncline = draft.metadata.effectiveInclineCap,
+        profile = unannotatedProfile(draft.metadata.programId, draft.profile),
         plan = plan,
     )
 

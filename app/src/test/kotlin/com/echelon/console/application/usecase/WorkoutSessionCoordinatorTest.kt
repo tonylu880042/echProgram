@@ -17,7 +17,10 @@ import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.ValidatedWorkoutPlanResult
 import com.echelon.console.domain.WorkoutPlan
+import com.echelon.console.domain.WorkoutSessionAction
+import com.echelon.console.domain.WorkoutSessionError
 import com.echelon.console.domain.WorkoutSessionState
+import com.echelon.console.domain.WorkoutSessionStateKind
 import com.echelon.console.domain.WorkoutTimelineCompileError
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -111,6 +114,132 @@ class WorkoutSessionCoordinatorTest {
         assertEquals(first.state, coordinator.currentState())
     }
 
+    @Test
+    fun `commands without an active session return explicit no session failures`() {
+        val coordinator = coordinator()
+        val commands = listOf<() -> WorkoutSessionCommandResult>(
+            { coordinator.advance(1) },
+            { coordinator.pause() },
+            { coordinator.resume() },
+            { coordinator.stop() },
+        )
+
+        commands.forEach { command ->
+            assertEquals(
+                WorkoutSessionCommandResult.Failed(WorkoutSessionCommandFailure.NoSession),
+                command(),
+            )
+        }
+        assertNull(coordinator.currentState())
+    }
+
+    @Test
+    fun `advance pause resume sequence updates state and paused advance stays frozen`() {
+        val coordinator = coordinator()
+        assertStarted(coordinator.start(validatedPlan()))
+
+        val advanced = assertRunning(coordinator.advance(120))
+        assertEquals(120, advanced.progress.elapsedSeconds)
+
+        val paused = assertPaused(coordinator.pause())
+        assertEquals(120, paused.progress.elapsedSeconds)
+
+        val frozen = assertPaused(coordinator.advance(90))
+        assertEquals(paused, frozen)
+        assertEquals(paused, coordinator.currentState())
+
+        val resumed = assertRunning(coordinator.resume())
+        assertEquals(120, resumed.progress.elapsedSeconds)
+
+        val continued = assertRunning(coordinator.advance(60))
+        assertEquals(180, continued.progress.elapsedSeconds)
+        assertEquals(continued, coordinator.currentState())
+    }
+
+    @Test
+    fun `exact and overshoot advance complete and completed or stopped states are terminal`() {
+        val exactCoordinator = coordinator()
+        assertStarted(exactCoordinator.start(validatedPlan()))
+
+        val completed = assertCompleted(exactCoordinator.advance(360))
+        assertEquals(360, completed.elapsedSeconds)
+        assertEquals(completed, exactCoordinator.currentState())
+
+        val completedStop = exactCoordinator.stop()
+        assertEquals(
+            WorkoutSessionCommandResult.Failed(
+                WorkoutSessionCommandFailure.Transition(
+                    WorkoutSessionError.InvalidTransition(
+                        WorkoutSessionAction.STOP,
+                        completed.kind,
+                    ),
+                ),
+            ),
+            completedStop,
+        )
+        assertEquals(completed, exactCoordinator.currentState())
+
+        val restarted = assertStarted(exactCoordinator.start(validatedPlan()))
+        assertEquals(0, restarted.state.progress.elapsedSeconds)
+
+        val stopped = coordinator()
+        assertStarted(stopped.start(validatedPlan()))
+        assertRunning(stopped.advance(30))
+        val stoppedState = assertStopped(stopped.stop())
+        assertEquals(30, stoppedState.elapsedSeconds)
+        assertEquals(stoppedState, stopped.currentState())
+
+        val stoppedAdvance = stopped.advance(1)
+        assertEquals(
+            WorkoutSessionCommandResult.Failed(
+                WorkoutSessionCommandFailure.Transition(
+                    WorkoutSessionError.InvalidTransition(
+                        WorkoutSessionAction.ADVANCE,
+                        stoppedState.kind,
+                    ),
+                ),
+            ),
+            stoppedAdvance,
+        )
+        assertEquals(stoppedState, stopped.currentState())
+        assertStarted(stopped.start(validatedPlan()))
+
+        val overshootCoordinator = coordinator()
+        assertStarted(overshootCoordinator.start(validatedPlan()))
+        val overshot = assertCompleted(overshootCoordinator.advance(999))
+        assertEquals(360, overshot.elapsedSeconds)
+        assertEquals(overshot, overshootCoordinator.currentState())
+        assertStarted(overshootCoordinator.start(validatedPlan()))
+    }
+
+    @Test
+    fun `invalid commands preserve the last valid state`() {
+        val coordinator = coordinator()
+        assertStarted(coordinator.start(validatedPlan()))
+        val running = assertRunning(coordinator.advance(30))
+
+        val nonPositive = coordinator.advance(0)
+        assertEquals(
+            WorkoutSessionCommandResult.Failed(
+                WorkoutSessionCommandFailure.Transition(
+                    WorkoutSessionError.NonPositiveElapsed(0),
+                ),
+            ),
+            nonPositive,
+        )
+        assertEquals(running, coordinator.currentState())
+
+        val paused = assertPaused(coordinator.pause())
+        val pauseAgain = coordinator.pause()
+        assertTransitionFailure(pauseAgain, WorkoutSessionAction.PAUSE, paused.kind)
+        assertEquals(paused, coordinator.currentState())
+
+        val resumed = assertRunning(coordinator.resume())
+        val resumeAgain = coordinator.resume()
+        assertTransitionFailure(resumeAgain, WorkoutSessionAction.RESUME, resumed.kind)
+        assertEquals(resumed, coordinator.currentState())
+    }
+
     private fun coordinator(
         catalog: (ProgramId) -> ProgramDetail? = { requestedId ->
             detail().takeIf { it.programId == requestedId }
@@ -157,5 +286,55 @@ class WorkoutSessionCoordinatorTest {
     ): WorkoutSessionStarterResult.Started = when (result) {
         is WorkoutSessionStarterResult.Started -> result
         is WorkoutSessionStarterResult.Failed -> error("Expected successful start, got $result")
+    }
+
+    private fun assertUpdated(
+        result: WorkoutSessionCommandResult,
+    ): WorkoutSessionCommandResult.Updated = when (result) {
+        is WorkoutSessionCommandResult.Updated -> result
+        is WorkoutSessionCommandResult.Failed -> error("Expected updated state, got $result")
+    }
+
+    private fun assertRunning(
+        result: WorkoutSessionCommandResult,
+    ): WorkoutSessionState.Running = when (val state = assertUpdated(result).state) {
+        is WorkoutSessionState.Running -> state
+        else -> error("Expected running state, got $state")
+    }
+
+    private fun assertPaused(
+        result: WorkoutSessionCommandResult,
+    ): WorkoutSessionState.Paused = when (val state = assertUpdated(result).state) {
+        is WorkoutSessionState.Paused -> state
+        else -> error("Expected paused state, got $state")
+    }
+
+    private fun assertCompleted(
+        result: WorkoutSessionCommandResult,
+    ): WorkoutSessionState.Completed = when (val state = assertUpdated(result).state) {
+        is WorkoutSessionState.Completed -> state
+        else -> error("Expected completed state, got $state")
+    }
+
+    private fun assertStopped(
+        result: WorkoutSessionCommandResult,
+    ): WorkoutSessionState.Stopped = when (val state = assertUpdated(result).state) {
+        is WorkoutSessionState.Stopped -> state
+        else -> error("Expected stopped state, got $state")
+    }
+
+    private fun assertTransitionFailure(
+        result: WorkoutSessionCommandResult,
+        action: WorkoutSessionAction,
+        state: WorkoutSessionStateKind,
+    ) {
+        assertEquals(
+            WorkoutSessionCommandResult.Failed(
+                WorkoutSessionCommandFailure.Transition(
+                    WorkoutSessionError.InvalidTransition(action, state),
+                ),
+            ),
+            result,
+        )
     }
 }

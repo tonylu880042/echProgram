@@ -42,6 +42,24 @@ sealed interface WorkoutSessionStartFailure {
     data object ActiveSessionExists : WorkoutSessionStartFailure
 }
 
+sealed interface WorkoutSessionCommandResult {
+    data class Updated(
+        val state: WorkoutSessionState,
+    ) : WorkoutSessionCommandResult
+
+    data class Failed(
+        val failure: WorkoutSessionCommandFailure,
+    ) : WorkoutSessionCommandResult
+}
+
+sealed interface WorkoutSessionCommandFailure {
+    data object NoSession : WorkoutSessionCommandFailure
+
+    data class Transition(
+        val error: WorkoutSessionError,
+    ) : WorkoutSessionCommandFailure
+}
+
 class InMemoryWorkoutSessionCoordinator(
     private val catalog: ProgramDetailCatalog,
 ) : WorkoutSessionStarter {
@@ -104,10 +122,44 @@ class InMemoryWorkoutSessionCoordinator(
         return WorkoutSessionStarterResult.Started(running)
     }
 
+    fun advance(elapsedSeconds: Int): WorkoutSessionCommandResult = updateSession { state ->
+        WorkoutSessionStateMachine.advance(state, elapsedSeconds)
+    }
+
+    fun pause(): WorkoutSessionCommandResult = updateSession { state ->
+        WorkoutSessionStateMachine.pause(state)
+    }
+
+    fun resume(): WorkoutSessionCommandResult = updateSession { state ->
+        WorkoutSessionStateMachine.resume(state)
+    }
+
+    fun stop(): WorkoutSessionCommandResult = updateSession { state ->
+        WorkoutSessionStateMachine.stop(state)
+    }
+
     fun currentState(): WorkoutSessionState? = sessionState
 
     private fun failedTransition(error: WorkoutSessionError): WorkoutSessionStarterResult =
         WorkoutSessionStarterResult.Failed(
             WorkoutSessionStartFailure.SessionTransitionFailed(error),
         )
+
+    private fun updateSession(
+        transition: (WorkoutSessionState) -> WorkoutSessionResult,
+    ): WorkoutSessionCommandResult {
+        val current = sessionState
+            ?: return WorkoutSessionCommandResult.Failed(
+                WorkoutSessionCommandFailure.NoSession,
+            )
+        return when (val result = transition(current)) {
+            is WorkoutSessionResult.Valid -> {
+                sessionState = result.state
+                WorkoutSessionCommandResult.Updated(result.state)
+            }
+            is WorkoutSessionResult.Invalid -> WorkoutSessionCommandResult.Failed(
+                WorkoutSessionCommandFailure.Transition(result.error),
+            )
+        }
+    }
 }

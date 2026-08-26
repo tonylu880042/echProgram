@@ -224,6 +224,51 @@ class SurpriseWorkoutGeneratorTest {
     }
 
     @Test
+    fun `every effort starts inside the conservative warm-up baseline`() {
+        SUPPORTED_DURATIONS.forEach { durationMinutes ->
+            (0..3).forEach { regenerationIndex ->
+                SurpriseWorkoutEffort.values().forEach { effort ->
+                    val warmUp = generate(
+                        input(
+                            durationMinutes = durationMinutes,
+                            effort = effort,
+                            regenerationIndex = regenerationIndex,
+                        ),
+                    ).profile.first()
+
+                    assertEquals("WARM UP", warmUp.name)
+                    assertTrue(warmUp.speed.value <= WARM_UP_MAX_SPEED_TENTHS)
+                    assertTrue(warmUp.incline.value <= WARM_UP_MAX_INCLINE_TENTHS)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `hard recovery follows an active block and precedes final push`() {
+        SUPPORTED_DURATIONS.forEach { durationMinutes ->
+            (0..3).forEach { regenerationIndex ->
+                val profile = generate(
+                    input(
+                        durationMinutes = durationMinutes,
+                        effort = SurpriseWorkoutEffort.HARD,
+                        regenerationIndex = regenerationIndex,
+                    ),
+                ).profile
+                val recoveryIndex = profile.indexOfFirst { it.name.startsWith("RECOVERY") }
+
+                assertTrue(recoveryIndex >= 2)
+                assertTrue(
+                    profile.subList(1, recoveryIndex).any {
+                        it.name.startsWith("BUILD") || it.name == "FINAL PUSH"
+                    },
+                )
+                assertTrue(profile.drop(recoveryIndex + 1).any { it.name == "FINAL PUSH" })
+            }
+        }
+    }
+
+    @Test
     fun `consecutive regeneration indexes differ for every effort and duration`() {
         val caps = listOf(
             SpeedTenths(80) to InclineTenths(100),
@@ -283,9 +328,18 @@ class SurpriseWorkoutGeneratorTest {
                     .average()
             }
 
-            assertTrue(scores.getValue(SurpriseWorkoutEffort.HARD) > scores.getValue(SurpriseWorkoutEffort.BURN))
-            assertTrue(scores.getValue(SurpriseWorkoutEffort.BURN) > scores.getValue(SurpriseWorkoutEffort.SWEAT))
-            assertTrue(scores.getValue(SurpriseWorkoutEffort.SWEAT) > scores.getValue(SurpriseWorkoutEffort.EASY))
+            assertTrue(
+                "Expected HARD > BURN, got $scores",
+                scores.getValue(SurpriseWorkoutEffort.HARD) > scores.getValue(SurpriseWorkoutEffort.BURN),
+            )
+            assertTrue(
+                "Expected BURN > SWEAT, got $scores",
+                scores.getValue(SurpriseWorkoutEffort.BURN) > scores.getValue(SurpriseWorkoutEffort.SWEAT),
+            )
+            assertTrue(
+                "Expected SWEAT > EASY, got $scores",
+                scores.getValue(SurpriseWorkoutEffort.SWEAT) > scores.getValue(SurpriseWorkoutEffort.EASY),
+            )
         }
     }
 
@@ -370,5 +424,7 @@ class SurpriseWorkoutGeneratorTest {
         val GLOBAL_INCLINE_RANGE = 0..100
         const val EASY_MAX_SPEED_TENTHS = 45
         const val EASY_MAX_INCLINE_TENTHS = 20
+        const val WARM_UP_MAX_SPEED_TENTHS = SurpriseWorkoutWarmUpBaselineProposal.MAX_SPEED_TENTHS
+        const val WARM_UP_MAX_INCLINE_TENTHS = SurpriseWorkoutWarmUpBaselineProposal.MAX_INCLINE_TENTHS
     }
 }

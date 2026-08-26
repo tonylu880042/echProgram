@@ -225,7 +225,6 @@ class SurpriseWorkoutGenerator {
         )
         val recoveryIndex = when {
             input.effort != SurpriseWorkoutEffort.HARD -> -1
-            activeBlockCount <= 2 -> 0
             else -> 1 + random.nextInt(activeBlockCount - 2)
         }
 
@@ -302,12 +301,11 @@ class SurpriseWorkoutGenerator {
                 previous = previous,
                 speedCap = speedCap,
                 inclineCap = inclineCap,
-                random = random,
             )
         }
 
         val band = when (stage) {
-            Stage.WARM_UP -> warmUpBand(effort, speedCap, inclineCap)
+            Stage.WARM_UP -> warmUpBand(speedCap, inclineCap)
             Stage.ACTIVE -> activeBand(effort, speedCap, inclineCap)
             Stage.RECOVERY,
             Stage.COOL_DOWN -> error("Handled before selecting a target band")
@@ -338,7 +336,6 @@ class SurpriseWorkoutGenerator {
         previous: Target,
         speedCap: Int,
         inclineCap: Int,
-        random: StablePrng,
     ): Target {
         val maximumSpeed = minOf(
             previous.speed - 1,
@@ -350,12 +347,12 @@ class SurpriseWorkoutGenerator {
         )
         val desired = Target(
             speed = if (maximumSpeed >= GLOBAL_MIN_SPEED_TENTHS) {
-                random.nextIntInclusive(GLOBAL_MIN_SPEED_TENTHS, maximumSpeed)
+                maximumSpeed
             } else {
                 GLOBAL_MIN_SPEED_TENTHS
             },
             incline = if (maximumIncline >= GLOBAL_MIN_INCLINE_TENTHS) {
-                random.nextIntInclusive(GLOBAL_MIN_INCLINE_TENTHS, maximumIncline)
+                maximumIncline
             } else {
                 GLOBAL_MIN_INCLINE_TENTHS
             },
@@ -368,16 +365,17 @@ class SurpriseWorkoutGenerator {
         )
     }
 
+    /** Baseline proposal only: warm-up stays below 4.0 mph and 2% incline. */
     private fun warmUpBand(
-        effort: SurpriseWorkoutEffort,
         speedCap: Int,
         inclineCap: Int,
-    ): TargetBand = when (effort) {
-        SurpriseWorkoutEffort.EASY -> TargetBand(25, 28, 0, 3).clampedTo(speedCap, inclineCap)
-        SurpriseWorkoutEffort.SWEAT -> TargetBand(30, 35, 5, 10).clampedTo(speedCap, inclineCap)
-        SurpriseWorkoutEffort.BURN -> TargetBand(40, 45, 20, 30).clampedTo(speedCap, inclineCap)
-        SurpriseWorkoutEffort.HARD -> TargetBand(55, 60, 45, 55).clampedTo(speedCap, inclineCap)
-    }
+    ): TargetBand = TargetBand(
+        SurpriseWorkoutWarmUpBaselineProposal.BASE_SPEED_TENTHS,
+        SurpriseWorkoutWarmUpBaselineProposal.BASE_SPEED_TENTHS,
+        0,
+        0,
+    )
+        .clampedTo(speedCap, inclineCap)
 
     /**
      * Baseline proposal only: disjoint active lanes make effort ordering
@@ -388,10 +386,10 @@ class SurpriseWorkoutGenerator {
         speedCap: Int,
         inclineCap: Int,
     ): TargetBand = when (effort) {
-        SurpriseWorkoutEffort.EASY -> TargetBand(25, 30, 0, 5).clampedTo(speedCap, inclineCap)
-        SurpriseWorkoutEffort.SWEAT -> TargetBand(35, 45, 10, 20).clampedTo(speedCap, inclineCap)
-        SurpriseWorkoutEffort.BURN -> TargetBand(50, 60, 30, 45).clampedTo(speedCap, inclineCap)
-        SurpriseWorkoutEffort.HARD -> TargetBand(65, 80, 60, 80).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.EASY -> TargetBand(28, 29, 0, 1).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.SWEAT -> TargetBand(30, 31, 3, 4).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.BURN -> TargetBand(33, 33, 6, 6).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.HARD -> TargetBand(48, 80, 20, 35).clampedTo(speedCap, inclineCap)
     }
 
     private fun validateProfile(
@@ -609,7 +607,7 @@ class SurpriseWorkoutGenerator {
                 45 -> 9
                 else -> error("Duration must be validated before profile generation")
             }
-            return baseline - (regenerationIndex and 1)
+            return baseline + (regenerationIndex and 1)
         }
 
         fun mix64(value: Long): Long {
@@ -629,4 +627,14 @@ class SurpriseWorkoutGenerator {
 object SurpriseWorkoutRampBaselineProposal {
     const val MAX_ADJACENT_SPEED_JUMP_TENTHS: Int = 5
     const val MAX_ADJACENT_INCLINE_JUMP_TENTHS: Int = 10
+}
+
+/**
+ * Baseline proposal only: warm-up bounds are conservative defaults until the
+ * customer/device safety envelope is approved.
+ */
+object SurpriseWorkoutWarmUpBaselineProposal {
+    const val BASE_SPEED_TENTHS: Int = 28
+    const val MAX_SPEED_TENTHS: Int = 40
+    const val MAX_INCLINE_TENTHS: Int = 20
 }

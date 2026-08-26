@@ -25,7 +25,10 @@ internal fun ProgramPreviewNotice(
     previewMode: ProgramPreviewMode,
     modifier: Modifier = Modifier,
 ) {
-    val message = previewMode.disclosureMessage() ?: return
+    if (previewMode == ProgramPreviewMode.FIXED_PROFILE_PREVIEW) {
+        return
+    }
+    val message = previewMode.disclosureMessage()
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -49,8 +52,9 @@ internal fun ProgramPreviewNotice(
     }
 }
 
-private fun ProgramPreviewMode.disclosureMessage(): String? = when (this) {
-    ProgramPreviewMode.FIXED_PROFILE_PREVIEW -> null
+internal fun ProgramPreviewMode.disclosureMessage(): String = when (this) {
+    ProgramPreviewMode.FIXED_PROFILE_PREVIEW ->
+        "Follow the displayed targets manually; FitOS control is not enabled."
     ProgramPreviewMode.BASELINE_PREVIEW ->
         "Baseline progression is not connected to approved workout history yet."
     ProgramPreviewMode.ELEVATION_TARGET_PREVIEW ->

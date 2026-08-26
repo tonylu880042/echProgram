@@ -2,6 +2,7 @@ package com.echelon.console.presentation
 
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.SpeedTenths
 
 sealed interface LiveWorkoutUiState {
@@ -35,6 +36,7 @@ data class LiveWorkoutReadModel(
     val targetIncline: InclineTenths,
     val isPaused: Boolean,
     val programTitle: String,
+    val previewMode: ProgramPreviewMode,
 )
 
 data class LiveWorkoutSegment(

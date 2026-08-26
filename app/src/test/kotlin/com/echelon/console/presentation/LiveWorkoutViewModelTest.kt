@@ -16,6 +16,7 @@ import com.echelon.console.domain.PlanIntensity
 import com.echelon.console.domain.PlanSettings
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.ProgramSegmentSummary
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
@@ -68,12 +69,19 @@ class LiveWorkoutViewModelTest {
             tickSource = ticks,
             dispatcher = StandardTestDispatcher(testScheduler),
             getProgramDetail = GetProgramDetail(
-                ProgramDetailCatalog { detail().copy(title = "CLIENT CATALOG TITLE") },
+                ProgramDetailCatalog {
+                    detail().copy(
+                        title = "CLIENT CATALOG TITLE",
+                        previewMode = ProgramPreviewMode.HEART_RATE_PREVIEW,
+                    )
+                },
             ),
         )
         advanceUntilIdle()
 
-        assertEquals("CLIENT CATALOG TITLE", assertActive(viewModel.state.value).programTitle)
+        val active = assertActive(viewModel.state.value)
+        assertEquals("CLIENT CATALOG TITLE", active.programTitle)
+        assertEquals(ProgramPreviewMode.HEART_RATE_PREVIEW, active.previewMode)
 
         ticks.emit(360)
         advanceUntilIdle()
@@ -92,7 +100,9 @@ class LiveWorkoutViewModelTest {
         )
         advanceUntilIdle()
 
-        assertEquals("FAT BURN", assertActive(viewModel.state.value).programTitle)
+        val active = assertActive(viewModel.state.value)
+        assertEquals("FAT BURN", active.programTitle)
+        assertEquals(ProgramPreviewMode.FIXED_PROFILE_PREVIEW, active.previewMode)
     }
 
     @Test

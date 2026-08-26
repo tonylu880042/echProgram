@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.echelon.console.domain.EquipmentConnection
 import com.echelon.console.domain.EquipmentReadState
+import com.echelon.console.domain.ProgramPreviewMode
 
 @Composable
 internal fun LiveWorkoutActiveContent(
@@ -113,12 +114,18 @@ private fun LiveWorkoutTitleBlock(
                 modifier = Modifier.padding(top = 6.dp),
             )
         }
-        LiveWorkoutPreviewNotice(equipmentState)
+        LiveWorkoutPreviewNotice(
+            previewMode = workout.previewMode,
+            equipmentState = equipmentState,
+        )
     }
 }
 
 @Composable
-private fun LiveWorkoutPreviewNotice(state: EquipmentReadState) {
+private fun LiveWorkoutPreviewNotice(
+    previewMode: ProgramPreviewMode,
+    equipmentState: EquipmentReadState,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -134,15 +141,23 @@ private fun LiveWorkoutPreviewNotice(state: EquipmentReadState) {
             fontWeight = FontWeight.Bold,
         )
         Text(
-            text = equipmentConnectionTitle(state.connection),
+            text = previewMode.disclosureMessage(),
             color = MutedText,
             fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 6.dp),
+        )
+        Text(
+            text = equipmentConnectionTitle(equipmentState.connection),
+            color = MutedText,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 6.dp),
         )
     }
 }

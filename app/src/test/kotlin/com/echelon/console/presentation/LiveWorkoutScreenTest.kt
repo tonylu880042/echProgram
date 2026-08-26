@@ -21,6 +21,7 @@ import com.echelon.console.domain.EquipmentReadState
 import com.echelon.console.domain.InclineRange
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.ValidatedWorkoutPlan
@@ -67,6 +68,30 @@ class LiveWorkoutScreenTest {
         composeTestRule.onNodeWithText("CONNECTING TO FITOS").assertIsDisplayed()
         composeTestRule.onNodeWithText("PAUSE").assertIsDisplayed()
         composeTestRule.onNodeWithText("END WORKOUT").assertIsDisplayed()
+    }
+
+    @Test
+    fun `active fixed preview explains that displayed targets are manual`() {
+        setContent(state = activeState())
+
+        composeTestRule
+            .onNodeWithText("Follow the displayed targets manually; FitOS control is not enabled.")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `active preview banner uses the matching mode disclosure`() {
+        val modes = ProgramPreviewMode.values()
+
+        modes.forEach { mode ->
+            setContent(
+                state = activeState().copy(
+                    workout = activeState().workout.copy(previewMode = mode),
+                ),
+            )
+
+            composeTestRule.onNodeWithText(mode.disclosureMessage()).assertIsDisplayed()
+        }
     }
 
     @Test
@@ -268,6 +293,7 @@ class LiveWorkoutScreenTest {
             targetIncline = InclineTenths(80),
             isPaused = false,
             programTitle = "FAT BURN",
+            previewMode = ProgramPreviewMode.FIXED_PROFILE_PREVIEW,
         ),
     )
 

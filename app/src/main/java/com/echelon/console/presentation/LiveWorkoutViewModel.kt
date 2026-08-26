@@ -11,6 +11,7 @@ import com.echelon.console.domain.WorkoutSessionProgress
 import com.echelon.console.domain.WorkoutSessionState
 import com.echelon.console.domain.WorkoutTimeline
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramPreviewMode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -124,6 +125,35 @@ class LiveWorkoutViewModel(
         )
     }
 
+    private fun readModel(
+        timeline: WorkoutTimeline,
+        progress: WorkoutSessionProgress,
+        isPaused: Boolean,
+    ): LiveWorkoutReadModel {
+        val presentation = presentationFor(timeline.programId)
+        return LiveWorkoutReadModel(
+            programId = timeline.programId,
+            elapsedSeconds = progress.elapsedSeconds,
+            remainingSeconds = progress.remainingSeconds,
+            currentSegment = LiveWorkoutSegment(
+                index = progress.currentSegmentIndex,
+                name = progress.currentSegment.name,
+            ),
+            nextSegment = progress.nextSegment?.let { segment ->
+                LiveWorkoutSegment(
+                    index = progress.currentSegmentIndex + 1,
+                    name = segment.name,
+                )
+            },
+            secondsUntilNextSegment = progress.secondsUntilNextSegment,
+            targetSpeed = progress.target.speed,
+            targetIncline = progress.target.incline,
+            isPaused = isPaused,
+            programTitle = presentation.title,
+            previewMode = presentation.previewMode,
+        )
+    }
+
     private fun summaryFor(
         timeline: WorkoutTimeline,
         elapsedSeconds: Int,
@@ -131,40 +161,21 @@ class LiveWorkoutViewModel(
         programId = timeline.programId,
         elapsedSeconds = elapsedSeconds,
         totalDurationSeconds = timeline.totalDurationSeconds,
-        programTitle = titleFor(timeline.programId),
+        programTitle = presentationFor(timeline.programId).title,
     )
 
-    private fun readModel(
-        timeline: WorkoutTimeline,
-        progress: WorkoutSessionProgress,
-        isPaused: Boolean,
-    ): LiveWorkoutReadModel = LiveWorkoutReadModel(
-        programId = timeline.programId,
-        elapsedSeconds = progress.elapsedSeconds,
-        remainingSeconds = progress.remainingSeconds,
-        currentSegment = LiveWorkoutSegment(
-            index = progress.currentSegmentIndex,
-            name = progress.currentSegment.name,
-        ),
-        nextSegment = progress.nextSegment?.let { segment ->
-            LiveWorkoutSegment(
-                index = progress.currentSegmentIndex + 1,
-                name = segment.name,
-            )
-        },
-        secondsUntilNextSegment = progress.secondsUntilNextSegment,
-        targetSpeed = progress.target.speed,
-        targetIncline = progress.target.incline,
-        isPaused = isPaused,
-        programTitle = titleFor(timeline.programId),
-    )
-
-    private fun titleFor(programId: ProgramId): String =
+    private fun presentationFor(programId: ProgramId): LiveWorkoutPresentation =
         when (val result = getProgramDetail(programId)) {
-            is ProgramDetailResult.Ready -> result.detail.title
-            is ProgramDetailResult.NotFound -> result.programId.value
-                .replace('_', ' ')
-                .uppercase(Locale.US)
+            is ProgramDetailResult.Ready -> LiveWorkoutPresentation(
+                title = result.detail.title,
+                previewMode = result.detail.previewMode,
+            )
+            is ProgramDetailResult.NotFound -> LiveWorkoutPresentation(
+                title = result.programId.value
+                    .replace('_', ' ')
+                    .uppercase(Locale.US),
+                previewMode = ProgramPreviewMode.FIXED_PROFILE_PREVIEW,
+            )
         }
 
     private fun ensureTicking() {
@@ -196,3 +207,8 @@ class LiveWorkoutViewModel(
         const val TICK_SOURCE_ERROR_MESSAGE = "Workout session updates are unavailable right now."
     }
 }
+
+private data class LiveWorkoutPresentation(
+    val title: String,
+    val previewMode: ProgramPreviewMode,
+)

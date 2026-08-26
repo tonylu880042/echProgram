@@ -121,6 +121,9 @@ private fun LiveWorkoutTitleBlock(
         workout.verticalContext?.let { context ->
             LiveVerticalContextPanel(context)
         }
+        workout.zone2Context?.let { context ->
+            LiveZone2HeartRatePanel(context)
+        }
     }
 }
 

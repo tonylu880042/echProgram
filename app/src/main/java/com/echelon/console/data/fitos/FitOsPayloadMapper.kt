@@ -74,6 +74,8 @@ internal object FitOsPayloadMapper {
         return if (speed == null && incline == null) null else EquipmentLimits(speed, incline)
     }
 
+    fun mapControlState(controlState: Int): EquipmentControlState = controlState.toControlState()
+
     private fun validSpeedRange(min: Double?, max: Double?): EquipmentSpeedRangeKmh? {
         if (min == null || max == null || !min.isFinite() || !max.isFinite() || min < 0.0 || min > max) {
             return null

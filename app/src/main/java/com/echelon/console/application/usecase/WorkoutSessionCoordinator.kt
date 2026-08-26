@@ -1,6 +1,8 @@
 package com.echelon.console.application.usecase
 
 import com.echelon.console.domain.FiveKReadySessionDraft
+import com.echelon.console.domain.AnnotatedWorkoutProfile
+import com.echelon.console.domain.AnnotatedWorkoutProfileSegment
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramSegmentSummary
@@ -15,6 +17,8 @@ import com.echelon.console.domain.WorkoutSessionStateMachine
 import com.echelon.console.domain.WorkoutTimelineCompileError
 import com.echelon.console.domain.WorkoutTimelineCompileResult
 import com.echelon.console.domain.WorkoutTimelineCompiler
+import com.echelon.console.domain.WorkoutTimelineAnnotation
+import com.echelon.console.domain.toWorkoutTimelineProfile
 
 sealed interface WorkoutSessionStarterResult {
     data class Started(
@@ -97,7 +101,7 @@ class InMemoryWorkoutSessionCoordinator(
         draftDurationMinutes = draft.metadata.durationMinutes,
         draftMaxSpeed = draft.effectiveSpeedCap,
         draftMaxIncline = draft.effectiveInclineCap,
-        profile = draft.profile,
+        profile = unannotatedProfile(draft.metadata.programId, draft.profile),
         plan = plan,
     )
 
@@ -109,7 +113,7 @@ class InMemoryWorkoutSessionCoordinator(
         draftDurationMinutes = draft.metadata.durationMinutes,
         draftMaxSpeed = draft.effectiveSpeedCap,
         draftMaxIncline = draft.effectiveInclineCap,
-        profile = draft.profile,
+        profile = draft.toWorkoutTimelineProfile(),
         plan = plan,
     )
 
@@ -118,7 +122,7 @@ class InMemoryWorkoutSessionCoordinator(
         draftDurationMinutes: Int,
         draftMaxSpeed: SpeedTenths,
         draftMaxIncline: InclineTenths,
-        profile: List<ProgramSegmentSummary>,
+        profile: AnnotatedWorkoutProfile,
         plan: ValidatedWorkoutPlan,
     ): WorkoutSessionStarterResult {
         activeSessionFailure()?.let { return it }
@@ -188,6 +192,19 @@ class InMemoryWorkoutSessionCoordinator(
         sessionState = running
         return WorkoutSessionStarterResult.Started(running)
     }
+
+    private fun unannotatedProfile(
+        programId: ProgramId,
+        profile: List<ProgramSegmentSummary>,
+    ): AnnotatedWorkoutProfile = AnnotatedWorkoutProfile(
+        programId = programId,
+        segments = profile.map { summary ->
+            AnnotatedWorkoutProfileSegment(
+                summary = summary,
+                annotation = WorkoutTimelineAnnotation.Unannotated,
+            )
+        },
+    )
 
     private fun activeSessionFailure(): WorkoutSessionStarterResult.Failed? = when (sessionState) {
         is WorkoutSessionState.NotStarted,

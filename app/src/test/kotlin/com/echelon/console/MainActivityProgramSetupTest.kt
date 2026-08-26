@@ -170,6 +170,10 @@ class MainActivityProgramSetupTest {
         waitForText("LIVE PREVIEW")
         composeTestRule.onNodeWithText("WORKOUT READY").assertDoesNotExist()
         composeTestRule.onNodeWithText("5K READY").assertIsDisplayed()
+        composeTestRule.onNodeWithText("WARM UP WALK").assertIsDisplayed()
+        composeTestRule.onNodeWithText("RUN 1 OF 3").assertIsDisplayed()
+        composeTestRule.onNodeWithText("PLANNED RUN").assertIsDisplayed()
+        composeTestRule.onNodeWithText("PLANNED WALK").assertIsDisplayed()
         assertTrue(
             composeTestRule.activity.workoutSessionCoordinator.currentState()
                 is WorkoutSessionState.Running,

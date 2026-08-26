@@ -196,6 +196,25 @@ private fun LiveWorkoutTerminalContent(
                 modifier = Modifier.weight(1f),
             )
         }
+        summary.runWalkSummary?.let { runWalkSummary ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                LiveWorkoutMetric(
+                    label = "PLANNED RUN",
+                    value = "${runWalkSummary.runMinutes} MIN",
+                    modifier = Modifier.weight(1f),
+                )
+                LiveWorkoutMetric(
+                    label = "PLANNED WALK",
+                    value = "${runWalkSummary.walkMinutes} MIN",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
         LiveWorkoutActionButton(
             label = "DONE",
             onClick = onDone,

@@ -10,6 +10,8 @@ import com.echelon.console.application.usecase.WorkoutSessionCommandResult
 import com.echelon.console.domain.WorkoutSessionProgress
 import com.echelon.console.domain.WorkoutSessionState
 import com.echelon.console.domain.WorkoutTimeline
+import com.echelon.console.domain.WorkoutTimelineAnnotation
+import com.echelon.console.domain.WorkoutTimelineSegment
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
 import kotlinx.coroutines.CancellationException
@@ -138,11 +140,15 @@ class LiveWorkoutViewModel(
             currentSegment = LiveWorkoutSegment(
                 index = progress.currentSegmentIndex,
                 name = progress.currentSegment.name,
+                annotation = progress.currentSegment.annotation,
+                displayLabel = displayLabel(progress.currentSegment),
             ),
             nextSegment = progress.nextSegment?.let { segment ->
                 LiveWorkoutSegment(
                     index = progress.currentSegmentIndex + 1,
                     name = segment.name,
+                    annotation = segment.annotation,
+                    displayLabel = displayLabel(segment),
                 )
             },
             secondsUntilNextSegment = progress.secondsUntilNextSegment,
@@ -151,6 +157,7 @@ class LiveWorkoutViewModel(
             isPaused = isPaused,
             programTitle = presentation.title,
             previewMode = presentation.previewMode,
+            runWalkSummary = runWalkSummaryFor(timeline),
         )
     }
 
@@ -165,6 +172,31 @@ class LiveWorkoutViewModel(
             totalDurationSeconds = timeline.totalDurationSeconds,
             programTitle = presentation.title,
             previewMode = presentation.previewMode,
+            runWalkSummary = runWalkSummaryFor(timeline),
+        )
+    }
+
+    private fun displayLabel(segment: WorkoutTimelineSegment): String = when (
+        val annotation = segment.annotation
+    ) {
+        WorkoutTimelineAnnotation.Unannotated -> segment.name
+        WorkoutTimelineAnnotation.WarmUpWalk -> "WARM UP WALK"
+        is WorkoutTimelineAnnotation.Run -> "RUN ${annotation.ordinal} OF ${annotation.total}"
+        WorkoutTimelineAnnotation.WalkRecovery -> "WALK RECOVERY"
+        WorkoutTimelineAnnotation.EasyWalk -> "EASY WALK"
+        WorkoutTimelineAnnotation.CoolDown -> "COOL DOWN"
+    }
+
+    private fun runWalkSummaryFor(timeline: WorkoutTimeline): LiveWorkoutRunWalkSummary? {
+        if (timeline.segments.none { it.annotation != WorkoutTimelineAnnotation.Unannotated }) {
+            return null
+        }
+        val runSeconds = timeline.segments
+            .filter { it.annotation is WorkoutTimelineAnnotation.Run }
+            .sumOf { it.durationSeconds }
+        return LiveWorkoutRunWalkSummary(
+            runMinutes = runSeconds / SECONDS_PER_MINUTE,
+            walkMinutes = (timeline.totalDurationSeconds - runSeconds) / SECONDS_PER_MINUTE,
         )
     }
 
@@ -207,6 +239,7 @@ class LiveWorkoutViewModel(
     }
 
     private companion object {
+        const val SECONDS_PER_MINUTE = 60
         const val COMMAND_ERROR_MESSAGE = "Workout controls are unavailable right now."
         const val TICK_SOURCE_ERROR_MESSAGE = "Workout session updates are unavailable right now."
     }

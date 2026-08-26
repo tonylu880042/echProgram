@@ -193,13 +193,13 @@ private fun LiveWorkoutSessionPanel(
         ) {
             LiveWorkoutMetric(
                 label = "CURRENT SEGMENT",
-                value = workout.currentSegment.name,
+                value = workout.currentSegment.displayLabel,
                 modifier = Modifier.weight(1f),
                 valueSize = 14.sp,
             )
             LiveWorkoutMetric(
                 label = "NEXT SEGMENT",
-                value = workout.nextSegment?.name ?: "FINISH",
+                value = workout.nextSegment?.displayLabel ?: "FINISH",
                 modifier = Modifier.weight(1f),
                 valueSize = 14.sp,
             )
@@ -228,6 +228,27 @@ private fun LiveWorkoutSessionPanel(
                 modifier = Modifier.weight(1f),
                 valueSize = 20.sp,
             )
+        }
+        workout.runWalkSummary?.let { summary ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                LiveWorkoutMetric(
+                    label = "PLANNED RUN",
+                    value = "${summary.runMinutes} MIN",
+                    modifier = Modifier.weight(1f),
+                    valueSize = 14.sp,
+                )
+                LiveWorkoutMetric(
+                    label = "PLANNED WALK",
+                    value = "${summary.walkMinutes} MIN",
+                    modifier = Modifier.weight(1f),
+                    valueSize = 14.sp,
+                )
+            }
         }
     }
 }

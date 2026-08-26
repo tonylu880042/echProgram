@@ -4,6 +4,7 @@ import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.SpeedTenths
+import com.echelon.console.domain.WorkoutTimelineAnnotation
 
 sealed interface LiveWorkoutUiState {
     data object NoSession : LiveWorkoutUiState
@@ -37,11 +38,19 @@ data class LiveWorkoutReadModel(
     val isPaused: Boolean,
     val programTitle: String,
     val previewMode: ProgramPreviewMode,
+    val runWalkSummary: LiveWorkoutRunWalkSummary? = null,
 )
 
 data class LiveWorkoutSegment(
     val index: Int,
     val name: String,
+    val annotation: WorkoutTimelineAnnotation = WorkoutTimelineAnnotation.Unannotated,
+    val displayLabel: String = name,
+)
+
+data class LiveWorkoutRunWalkSummary(
+    val runMinutes: Int,
+    val walkMinutes: Int,
 )
 
 data class LiveWorkoutSummary(
@@ -50,4 +59,5 @@ data class LiveWorkoutSummary(
     val totalDurationSeconds: Int,
     val programTitle: String,
     val previewMode: ProgramPreviewMode,
+    val runWalkSummary: LiveWorkoutRunWalkSummary? = null,
 )

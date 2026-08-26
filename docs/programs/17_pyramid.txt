@@ -1,0 +1,54 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：PYRAMID
+正式名稱：PYRAMID
+分類：SWEAT／漸升漸降
+Hero：否（一般 Program）
+來源：idea.txt 第 28 行（第二列 experiences）。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：用對稱的上升／下降 profile 讓使用者清楚感受 peak 前後的變化；不承諾任何生理或燃脂結果。
+適合對象：喜歡有明確 peak、且能在每段後照計畫降回來的使用者。
+不適合／前置條件：無法安全處理速度或坡度變化者，應選 Steady／Recovery；開始前確認 cap。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：20／30／45 分鐘。
+運動型態：Speed／incline pyramid。
+建議速度：2.8-8.0 mph（約 4.5-12.9 km/h）。
+建議坡度：0-6%。
+建議強度：中等上升至中高再下降；所有數值為提案值，需套用 user cap／machine limits clamp。
+
+三、30 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             3.0 mph/4.8 km/h  1%         START THE BASE
+05:00-08:00 RISE 1              4.0 mph/6.4 km/h  1%         BUILD
+08:00-11:00 RISE 2              5.0 mph/8.0 km/h  2%         KEEP CLIMBING
+11:00-14:00 RISE 3              6.0 mph/9.7 km/h  3%         FIND YOUR EDGE
+14:00-17:00 PEAK                7.0 mph/11.3 km/h 4%         REACH THE PEAK
+17:00-20:00 FALL 1              6.0 mph/9.7 km/h  3%         CONTROL THE DROP
+20:00-23:00 FALL 2              5.0 mph/8.0 km/h  2%         RESET
+23:00-26:00 FALL 3              4.0 mph/6.4 km/h  1%         COME HOME
+26:00-30:00 COOL DOWN            2.8 mph/4.5 km/h  1%         FINISH EASY
+總和：5+3+3+3+3+3+3+3+4 = 30 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：依個人 cap 等比例縮放 peak，不讓上升與下降失去對稱；無 baseline 使用上表保守值。
+EFFORT +/-（提案）：EFFORT + 只在下一個尚未開始的 rise block 生效；EFFORT - 可縮小下一 rise／peak。進入 fall 後不再追高。
+Manual override（提案）：手動值標示 MANUAL，當前段不再自動覆寫；下降段仍顯示安全建議。
+
+五、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 PYRAMID、`RISE 2 OF 3` 或 `FALL 1 OF 3`、speed／incline、NEXT／countdown、profile、EFFORT +/-、remaining、connection／stale／PREVIEW ONLY、end。完成顯示 peak 是否完成、時間、距離、速度／坡度摘要與 calories estimate caveat；不得宣稱 peak 等於生理最大值或 PR。
+無 host／stale／control 未啟用時只 preview；peak 超 cap 時開始前顯示 clamp。HR lost 不推斷。
+
+六、依賴能力與客戶待確認
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：speed／incline control。HR：非必要。History：非必要、未來支援 Adapt。Generator：不需要。
+[ ] peak 是否以 speed 為主、incline 為主，或兩者同時？
+[ ] 20／45 分鐘是否保留對稱結構？
+[ ] Peak coaching 是否需避免「maximum」措辭？

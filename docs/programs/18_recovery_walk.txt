@@ -1,0 +1,48 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：RECOVERY_WALK
+正式名稱：RECOVERY WALK
+分類：RECOVERY／輕鬆走
+Hero：否（一般 Program；goal-first 的 RECOVERY 對應）
+來源：idea.txt 第 28 行與第 239 行的 RECOVERY goal。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：提供低變化、易閱讀的輕鬆步行，讓使用者選擇 reset pace；不把 recovery 說成治療、復健或適合所有身體狀況。
+適合對象：想以低至中低強度完成輕鬆走、暖身或運動後收尾的使用者。
+不適合／前置條件：疼痛、暈眩或醫療復原期使用者須依專業建議；仍需確認可安全使用跑步機。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：20 分鐘。可選時長：10／20／30 分鐘。
+運動型態：Easy walk。
+建議速度：2.0-3.5 mph（約 3.2-5.6 km/h）。
+建議坡度：0-3%。
+建議強度：低至中低；數值為提案值，需套用 user cap／machine limits clamp。
+
+三、20 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 GENTLE START        2.0 mph/3.2 km/h  0%         EASY START
+05:00-15:00 EASY WALK           2.5 mph/4.0 km/h  1%         FIND YOUR BREATH
+15:00-20:00 COOL DOWN            2.0 mph/3.2 km/h  0%         RESET
+總和：5+10+5 = 20 分鐘，包含 warm-up 性質的 GENTLE START 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：預設不自動提高強度；若使用者主動 opt-in，只能在上限內微調 easy walk。
+EFFORT +/-（提案）：EFFORT + 只提高中段一小級；EFFORT - 立即降低速度／坡度。不得因按鍵或 Adapt 移除冷身。
+Manual override（提案）：手動值直接保留至本段結束，顯示 MANUAL；Recovery 預設不恢復自動升強度。
+
+五、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 RECOVERY WALK、speed／incline、elapsed／remaining、`EASY WALK`、NEXT／countdown、profile、EFFORT +/-、connection／stale／PREVIEW ONLY、end。完成顯示時間、距離與 calories estimate caveat；不得宣稱治療、復健、降低疼痛或醫療改善。
+無 host／stale／control 未啟用時只 preview；若任何值超 cap 需 clamp。HR lost 不推斷。
+
+六、依賴能力與客戶待確認
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：可選 speed／incline control。HR：非必要。History：非必要。Generator：不需要。
+[ ] `Recovery` 是否需要更醒目的非醫療免責文案？
+[ ] 10／30 分鐘是否保留同一低強度規則？
+[ ] 預設是否禁止 Adapt 自動升強度？

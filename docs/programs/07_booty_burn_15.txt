@@ -1,0 +1,62 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：BOOTY_BURN_15
+正式名稱：BOOTY BURN 15
+分類：GLUTES + LEGS／短時坡度
+Hero：否（一般 Program；與 GLUTE BLAST 分開）
+來源：idea.txt 第 24、97-111 行。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：`15 MINUTES. ALL HILLS.`，用短時間連續坡度走提供明確的臀腿導向體驗；不承諾塑形、特定肌群成效或「越痛越有效」。
+適合對象：時間有限、偏好快走而非跑步，且能安全使用中高坡度的使用者。
+不適合／前置條件：使用者需確認可承受坡度與平衡要求；不能安全使用高坡度時應降低 cap 或選 Recovery。機台支援與使用者上限未確認前不可執行 15%+。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：15 分鐘。可選時長：10／15／20 分鐘。
+運動型態：Steep walk／short aggressive incline blocks。
+建議速度：2.5-3.8 mph（約 4.0-6.1 km/h）。
+建議坡度：6-15%+。
+建議強度：中高到高但不要求跑步；數值都是提案值，需套用 cap／machine limits clamp。
+
+三、15 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-02:00 WARM UP             2.5 mph/4.0 km/h  6%         SET THE HILL
+02:00-05:00 ACTIVATE            2.8 mph/4.5 km/h  8%         ACTIVATE
+05:00-08:00 BURN                3.0 mph/4.8 km/h 11%         STAY TALL
+08:00-11:00 POWER               2.8 mph/4.5 km/h 14%         POWER CLIMB
+11:00-13:00 FINAL CLIMB          2.6 mph/4.2 km/h 15%         TWO MINUTES
+13:00-15:00 COOL DOWN            2.5 mph/4.0 km/h  6%         RESET
+總和：2+3+3+3+2+2 = 15 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：以坡度為主要調整，將 speed 保持在安全快走範圍；使用者 cap 優先於「FINAL CLIMB」。
+EFFORT +/-（提案）：EFFORT + 提高下一段坡度一級；EFFORT - 降低坡度一級並維持可行速度。冷身不增加強度。
+Manual override（提案）：手動改值後顯示 MANUAL，當前區塊不自動覆寫；下一區塊提示 `RESUME ADAPT?`。目前只允許 preview。
+
+五、Live screen 必要欄位
+------------------------------------------------------------
+顯示 BOOTY BURN 15、speed／incline、remaining time、`BURN BLOCK 1 OF 3`、NEXT／countdown、profile chart、EFFORT +/-、connection／stale／PREVIEW ONLY 與明顯的 end。例：`NEXT: 14% POWER CLIMB 0:42`。
+
+六、完成畫面與不得聲稱的內容
+------------------------------------------------------------
+顯示完成時長、最高坡度、距離、裝置 calories estimate 與區塊完成數。不得宣稱脂肪燃燒、臀部塑形、精準卡路里或未有比較資料的 PR。
+
+七、安全與降級
+------------------------------------------------------------
+無 FitOS host、permission／bind 失敗、stale 或 control 未核准時，顯示可閱讀 profile preview，絕不送 AIDL command。若坡度被 clamp，開始前明確告知。HR lost 不推斷心率，不自動升坡。
+
+八、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：坡度／速度控制與 safe stop。HR：非必要、尚未實作。History：非必要，未來可支援 Adapt。Generator：不需要。
+
+九、客戶待確認
+------------------------------------------------------------
+[ ] `15 MINUTES. ALL HILLS.` 是否可作為正式 marketing line？
+[ ] 15%+ 的上限與各機型 clamp 顯示方式？
+[ ] 10／20 分鐘是否仍稱 BOOTY BURN 15，或改為 BOOTY BURN？
+[ ] 是否需要在高坡度開始前增加二次確認？

@@ -1,0 +1,56 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；名稱格式與產品版本尚未核准。
+Program ID：TWELVE_3_30
+正式名稱：12-3-30
+分類：CLIMB／固定坡度走
+Hero：否（一般 Program）
+來源：idea.txt 第 28 行（第二列 experiences）；本文件補完 3 mph、12%、30 min 的產品規格以供確認。
+
+一、名稱與定位
+------------------------------------------------------------
+客戶承諾：保留 `12-3-30` 的辨識度，代表 3 mph、12% incline、30 minutes 的核心概念；不把名稱當作醫療或效果保證。
+產品版本 A／Strict：全程 30 分鐘維持 3.0 mph／12%，最忠於名稱，但沒有 warm-up／cool-down。
+產品版本 B／Safe product version（本文件預設提案）：仍顯示 3-12-30 core block，但加入 5 分鐘 warm-up 與 5 分鐘 cool-down；名稱是否仍可使用 `12-3-30` 必須由客戶確認。
+適合對象：能安全使用坡度快走、且已確認 12% 對個人適用的使用者。
+不適合／前置條件：不適合直接以 12% 起步者應選版本 B 或其他低坡度 Program；機台與使用者 max incline 必須先確認。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：僅 30 分鐘（Strict）或 20／30／40 分鐘（若客戶同意變體名稱）。
+運動型態：Incline walk。
+建議速度：2.5-3.0 mph（約 4.0-4.8 km/h）；核心段為 3.0 mph／4.8 km/h。
+建議坡度：1-12%；核心段為 12%。
+建議強度：中高；數值是提案值，需 clamp，不得因名稱強制超過 cap。
+
+三、30 分鐘 Product Version B Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             2.5 mph/4.0 km/h  1%         PREPARE THE HILL
+05:00-25:00 12-3-20 CORE        3.0 mph/4.8 km/h 12%         HOLD THE CORE
+25:00-30:00 COOL DOWN            2.5 mph/4.0 km/h  1%         BRING IT DOWN
+總和：5+20+5 = 30 分鐘，包含 warm-up 與 cool-down。
+Strict 版本 profile：00:00-30:00 全程 3.0 mph／12%，總和 30 分鐘；是否上線必須獨立確認安全流程。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：若 user cap 低於 12%，把 core incline clamp 到 cap 並在 setup 顯示 `12% TARGET CLAMPED TO X%`；不以自動調速補償未核准的負荷。
+EFFORT +/-（提案）：只在 Product Version B 的 core block 作用；EFFORT + 可提高速度小級但不越過 cap，EFFORT - 優先降低坡度。Strict 版本按鍵行為需客戶另行核准。
+Manual override（提案）：core block 顯示 MANUAL，後續不強行恢復 12%；cool-down 永不被 EFFORT + 增加。
+
+五、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 `12-3-30`、core／warm-up／cool-down 狀態、speed／incline、remaining、NEXT／countdown、profile、clamp notice、connection／stale／PREVIEW ONLY、end。完成顯示時間、距離、坡度與 calories estimate caveat；不得宣稱固定 12-3-30 能帶來特定體重／燃脂結果。
+無 host／stale／control 未核准時只 preview；12% 不可用或使用者 cap 較低時須提供安全版本，不可直接送 command。HR lost 不觸發推斜。
+
+六、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：速度／坡度控制與 ACK。HR：非必要。History：非必要。Generator：不需要。
+
+七、客戶待確認
+------------------------------------------------------------
+[ ] Product Version B 加 warm-up／cool-down 後，是否仍可使用 `12-3-30` 名稱？
+[ ] 是否同時上線 Strict 與 Safe product version？
+[ ] 20／40 分鐘變體是否允許，名稱是否要改成 `12-3-30 Core`？
+[ ] 核心 12% 不可用時，UI 顯示 clamp 還是禁止開始？
+[ ] 是否保留所有 EFFORT +/-，還是固定核心值？

@@ -1,0 +1,55 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：ROLLING_HILLS
+正式名稱：ROLLING HILLS
+分類：STAMINA／變化坡度
+Hero：否（一般 Program）
+來源：idea.txt 第 28 行（第二列 experiences）。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：以 hill／valley 交替提供可讀的 rolling profile，讓使用者在坡度變化中維持節奏；不承諾登山能力或固定熱量。
+適合對象：能持續走或慢跑、喜歡變化但不需要短 sprint 的使用者。
+不適合／前置條件：不能安全使用坡度或反覆變化者先選平路／Recovery；使用者需設定 cap。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：45 分鐘。可選時長：30／45／60 分鐘。
+運動型態：Walk／jog rolling hills。
+建議速度：2.8-5.5 mph（約 4.5-8.9 km/h）。
+建議坡度：0-8%。
+建議強度：中等、週期性上升與回落；數值皆為提案值，實作需 clamp。
+
+三、45 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             2.8 mph/4.5 km/h  1%         FIND YOUR BASE
+05:00-12:00 HILL 1              3.4 mph/5.5 km/h  4%         ROLL UP
+12:00-17:00 VALLEY 1            4.2 mph/6.8 km/h  1%         FIND YOUR FLOW
+17:00-24:00 HILL 2              3.6 mph/5.8 km/h  6%         KEEP CLIMBING
+24:00-29:00 VALLEY 2            4.2 mph/6.8 km/h  1%         RESET
+29:00-36:00 HILL 3              3.5 mph/5.6 km/h  8%         HOLD THE HILL
+36:00-41:00 VALLEY 3            4.0 mph/6.4 km/h  2%         BREATHE
+41:00-44:00 FINAL HILL          3.3 mph/5.3 km/h  6%         LAST ROLL
+44:00-45:00 COOL DOWN            2.8 mph/4.5 km/h  1%         EASY OUT
+總和：5+7+5+7+5+7+5+3+1 = 45 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：先維持 hill／valley 的節奏關係，再依 cap 縮放坡度；valley 不得被自動刪除。
+EFFORT +/-（提案）：EFFORT + 提高下一個 hill 一級，EFFORT - 降低下一個 hill；valley 僅在手動要求下調整。
+Manual override（提案）：當前 hill／valley 顯示 MANUAL，下一個 block 回到 profile 前詢問是否恢復 Adapt。
+
+五、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 ROLLING HILLS、`HILL 2 OF 4`、current speed／incline、NEXT／countdown、profile、remaining、EFFORT +/-、connection／stale／PREVIEW ONLY、end。完成顯示 hill completion、距離、最高坡度、calories estimate caveat；不得宣稱戶外登山模擬或健康效果。
+無 host／stale／control 未啟用時只 preview；坡度／速度 clamp 要在 start 前可見。
+
+六、依賴能力與客戶待確認
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：speed／incline control。HR：非必要。History：非必要。Generator：不需要。
+[ ] 45 分鐘是否為正式 default？
+[ ] 8% 最高坡度與速度是否符合 launch devices？
+[ ] Hill／valley 是否需由使用者選擇 WALK 或 JOG 版本？
+[ ] 30／60 分鐘縮放規則是否維持三個 hills？

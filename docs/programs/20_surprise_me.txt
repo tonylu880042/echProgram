@@ -1,0 +1,65 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；generator、seed 與控制流程尚未實作。
+Program ID：SURPRISE_ME
+正式名稱：SURPRISE ME
+分類：SURPRISE／生成式體驗
+Hero：是（第一屏 Hero tile 候選）
+來源：idea.txt 第 28、195-209、241、247-249 行。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：使用者只需選時間與想要的 effort，Echelon 產生一份可預覽、可接受、可重新生成的 treadmill session；不承諾每次都更有效或完全隨機安全。
+適合對象：不想理解 interval 名稱、願意在開始前檢視 profile 的使用者。
+不適合／前置條件：不接受未預覽計畫、不能安全使用變化速度／坡度或沒有足夠 machine limits 時，不應直接開始。Preview／Accept 必須先於任何控制。
+
+二、輸入與 generator 約束
+------------------------------------------------------------
+時間選項（idea.txt）：10／20／30／45 分鐘。
+Effort 選項（idea.txt）：EASY／SWEAT／BURN／HARD。
+建議全域範圍：2.5-8.0 mph（約 4.0-12.9 km/h）、0-10% incline；每個強度與機型上限可再縮窄，所有值必須 user cap／machine limits clamp。
+Deterministic seed（提案）：`seed = hash(programId + durationMinutes + effort + userProfileRevision + generatorVersion)`；若要「每次重新生成」則增加 `regenerationIndex`。同輸入、同版本、同 index 必須產生同一 profile，方便客服與測試重現；generator version 改變時不可保證舊 profile 相同。
+生成約束（提案）：至少一段 warm-up、一段 cool-down；EASY 不生成 sprint／高坡度；HARD 仍需 recovery；相鄰區塊變化不得超過核准 ramp；總分鐘數必須精確等於選擇值；任何值先 clamp 後再驗證。
+
+三、Preview／Accept／Regenerate 流程
+------------------------------------------------------------
+1. 使用者選時間與 effort，按 `SURPRISE ME`。
+2. Generator 產生 draft，先顯示完整 profile、速度／坡度範圍與 safety clamp。
+3. 使用者可按 `ACCEPT PLAN` 開始，或按 `REGENERATE` 產生下一個 deterministic index；不能在未 accept 前送 control。
+4. 若無 host／telemetry stale／control 未核准，仍可看 draft，但 `ACCEPT` 只建立 preview session，不代表機台會執行。
+
+四、20 分鐘 SWEAT 範例 Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-03:00 WARM UP             2.8 mph/4.5 km/h  1%         LET'S GO
+03:00-06:00 BUILD 1             4.0 mph/6.4 km/h  3%         FIND YOUR FLOW
+06:00-08:00 RECOVERY 1          3.0 mph/4.8 km/h  1%         RESET
+08:00-11:00 BUILD 2             5.0 mph/8.0 km/h  5%         BUILD THE SWEAT
+11:00-13:00 RECOVERY 2          3.0 mph/4.8 km/h  1%         BREATHE
+13:00-16:00 BUILD 3             5.5 mph/8.9 km/h  4%         KEEP MOVING
+16:00-18:00 FINAL PUSH           6.0 mph/9.7 km/h  6%         ONE LAST PUSH
+18:00-20:00 COOL DOWN            2.8 mph/4.5 km/h  1%         EASY OUT
+總和：3+3+2+3+2+3+2+2 = 20 分鐘，包含 warm-up 與 cool-down。
+
+五、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：以 user cap、已核准 profile 與歷史偏好調整 generator 參數；沒有資料時只使用 deterministic baseline。
+EFFORT +/-（提案）：不直接改當前區塊；改變下一個尚未開始區塊的生成／建議強度，並記錄到 draft。手動 override 後該區塊退出 generator auto-adjust。
+Manual override（提案）：顯示 MANUAL，接下來區塊仍遵守安全 constraints；是否重新生成剩餘 profile 需客戶選擇。
+
+六、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 SURPRISE ME、selected duration／effort、current block、NEXT／countdown、完整 profile、seed／generator version（可放 debug／客服資訊）、speed／incline、EFFORT +/-、connection／stale／PREVIEW ONLY、end。完成顯示實際 profile、時間、距離與 calories estimate caveat；不得聲稱 generator 自動最佳化、精準熱量或適合所有人。
+無 host／stale／control 未核准時只顯示 draft／preview；任何生成值越界、不可驗證或無法符合時長時，拒絕 draft 並回到可理解的錯誤，而不是靜默送出。
+
+七、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀 telemetry，可供 preview／實際回報。Gate3B：speed／incline control、ACK、ramp。HR：非必要；若日後加入需另訂 constraints。History／persistence：保存 seed、接受的 profile、偏好與結果，尚未實作。Generator：必要，尚未實作。
+
+八、客戶待確認
+------------------------------------------------------------
+[ ] 時間是否固定為 10／20／30／45 分鐘？
+[ ] EASY／SWEAT／BURN／HARD 的定義與速度／坡度 envelope 為何？
+[ ] seed 是否可被客服／QA 讀取與重現？
+[ ] `REGENERATE` 是否改變 index 但保留相同 user cap？
+[ ] Accept 後若設備不支援某段，是否重新生成還是 clamp 後再確認？

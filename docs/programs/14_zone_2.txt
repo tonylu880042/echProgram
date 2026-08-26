@@ -1,0 +1,65 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；HR 自動控制未核准，不是已完成的產品行為。
+Program ID：ZONE_2
+正式名稱：ZONE 2
+分類：HEART RATE／心率導向
+Hero：否（一般 Program；goal-first 的 HEART RATE 對應）
+來源：idea.txt 第 28、165-181、235 行。
+
+一、客戶承諾與安全邊界
+------------------------------------------------------------
+客戶承諾：在連接相容 HR monitor 後，讓使用者理解 TOO LOW／IN ZONE／TOO HIGH 的狀態，並以清晰的 pace／incline 建議維持目標區間；不提供醫療判定，不在不知道個人 target zone 時自行套用年齡公式。
+適合對象：有相容 HR monitor、知道或願意確認自己的 target zone 來源，且已能安全使用跑步機的使用者。
+不適合／前置條件：沒有 HR monitor、HR source 未提供可信 target zone、訊號不穩或使用者沒有核准的 target zone 時，只能進入 Preview／Manual mode；產品不得自行推導醫療區間。使用者需依其專業建議設定區間。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：20／30／45／60 分鐘。
+運動型態：HR-guided walk／jog。
+建議速度：2.5-5.0 mph（約 4.0-8.0 km/h）。
+建議坡度：0-8%。
+建議強度：以個人 target zone 為準，不給絕對強度；數值均為提案值並需 clamp。
+
+三、30 分鐘固定 Phase Profile（HR 使每段行為動態）
+------------------------------------------------------------
+時間       區塊                 初始速度／坡度（提案）       UI coaching
+00:00-05:00 WARM UP             2.5 mph/4.0 km/h／1%          CONNECT YOUR HR
+05:00-10:00 SETTLE              3.0 mph/4.8 km/h／2%          FIND YOUR ZONE
+10:00-20:00 MAINTAIN            3.2 mph/5.1 km/h／3%          HOLD THE LINE
+20:00-25:00 CHECK               3.2 mph/5.1 km/h／3%          STAY STEADY
+25:00-30:00 COOL DOWN            2.5 mph/4.0 km/h／1%          RECOVER
+總和：5+5+10+5+5 = 30 分鐘，包含 warm-up 與 cool-down；每一 phase 的實際建議由 HR state machine 決定。
+
+四、HR 狀態機與調整優先順序（提案）
+------------------------------------------------------------
+狀態：
+- TOO LOW：HR 低於使用者確認的 target zone。若 control 已核准，優先小幅提高 incline，再考慮 speed；沒有 control 時只顯示 `SUGGESTION: + INCLINE`。
+- IN ZONE：維持當前值，不自動追求更高強度。
+- TOO HIGH：HR 高於 target zone。若 control 已核准，優先降低 incline，再降低 speed；立即保留使用者可手動降低／停止的入口。
+- HR LOST：連續超過產品定義 timeout 沒有有效樣本。停止所有 HR-driven 調整，退回最近安全值或 manual preview，顯示 `HR SIGNAL LOST`。
+調整優先順序：1) 驗證 sample freshness／signal quality；2) 應用 user cap／machine limits；3) 先調坡度；4) 再調速度；5) 再評估下一次 sample。不能依單次異常 sample 大幅跳變。
+target zone 未知：不進入自動狀態機，不用年齡、最大心率或醫療公式自行補值。
+
+五、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：此 Program 的 Adapt 等同 HR policy，只有 target zone、HR sample freshness、控制 ACK 都存在時才能執行；Gate3A 僅供 preview。
+EFFORT +/-（提案）：在 IN ZONE 時改變使用者偏好的 zone 內位置或下一個初始建議；在 TOO HIGH 時 EFFORT + 不得升強度，在 TOO LOW 時 EFFORT - 不得降低到不安全的突變。
+Manual override（提案）：任何手動 speed／incline 後暫停自動調整一個可配置時間，顯示 `ADAPT PAUSED`；HR state 仍持續顯示但不強行控制。
+
+六、Live／完成／安全
+------------------------------------------------------------
+Live 必須顯示 HR current、target range（來源）、TOO LOW／IN ZONE／TOO HIGH／HR LOST、sample age、speed／incline、remaining、NEXT／countdown、EFFORT +/-、connection／stale／PREVIEW ONLY 與 end。完成顯示 zone time、HR data quality、距離與 calories estimate caveat；不得宣稱心臟健康效果、醫療安全或精準 zone time。
+無 HR／stale／無 target zone／FitOS host 不可用時，顯示 preview／manual mode；AIDL 控制尚未核准，不能自動改 speed／incline。遇到 TOO HIGH 或 signal lost，優先提醒使用者手動降低／停止。
+
+七、依賴能力
+------------------------------------------------------------
+Gate3A：跑步機唯讀 telemetry；HR monitor integration 尚未實作。Gate3B：控制、ACK、timeout、safe stop。HR：必要，未實作。History／persistence：可保存 zone 設定與 zone time，未實作。Generator：不需要。
+
+八、客戶待確認
+------------------------------------------------------------
+[ ] 支援哪些 HR monitor／Apple Watch 路徑？
+[ ] target zone 由使用者輸入、穿戴裝置提供，還是由專業服務設定？
+[ ] TOO LOW／TOO HIGH 的 hysteresis、sample timeout 與 adjustment step 為何？
+[ ] AIDL 控制核准前是否只提供 preview，UI 是否要明確稱為 Manual mode？
+[ ] HR LOST 後要維持最近值、退到安全基準，還是立即結束？

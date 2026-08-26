@@ -1,0 +1,62 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；沒有歷史基準時不能生成真正 Challenge。
+Program ID：ECHELON_CHALLENGE
+正式名稱：ECHELON CHALLENGE
+分類：CHALLENGE／歷史適應
+Hero：否（一般 Program；goal-first 的 CHALLENGE ME 對應）
+來源：idea.txt 第 27、237、247 行。
+
+一、客戶承諾與前置條件
+------------------------------------------------------------
+客戶承諾：在有真實歷史基準時，讓使用者挑戰自己的前次表現；不是與虛構對手競賽，也不在沒有資料時捏造 PR。
+適合對象：已有至少一筆符合條件、可驗證且由 persistence 保存的完成紀錄，並願意使用個人基準挑戰的使用者。
+不適合／前置條件：沒有 history、歷史紀錄不完整、設備／單位不一致或資料 stale 時，不應啟動正式 Challenge；可提供 `BASELINE WALK` fallback preview，但必須標示不是挑戰。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：20／30／45／60 分鐘。
+運動型態：Adaptive speed／incline，依歷史基準個人化。
+建議速度：由 baseline 推導；展示用提案範例 3.0-8.0 mph（約 4.8-12.9 km/h），不是所有人固定範圍。
+建議坡度：由 baseline 推導；展示用提案範例 0-10%。
+建議強度：略高於可比歷史區塊但需使用者確認；所有值為提案且受 cap／machine limits clamp。
+
+三、30 分鐘 Challenge Profile（以基準 B 的相對值表示）
+------------------------------------------------------------
+前置定義：B_speed 與 B_incline 必須從同單位、同類型、可驗證歷史 session 取得；下表是提案規則，不是虛構的使用者數值。
+時間       區塊                 速度／坡度規則                       UI coaching
+00:00-05:00 WARM UP             max(2.5 mph, B_speed - 1.0)／B_inc     CHECK THE BASELINE
+05:00-12:00 BASE MATCH          B_speed／B_inc                          MATCH YOUR LAST
+12:00-19:00 CHALLENGE BLOCK     min(B_speed + 0.3, cap)／B_inc + 1%     BEAT ONE BLOCK
+19:00-25:00 HOLD                B_speed + 0.1／B_inc + 0-1%             STAY CONSISTENT
+25:00-28:00 FINAL PUSH           min(B_speed + 0.5, cap)／B_inc + 1%     YOUR FINISH
+28:00-30:00 COOL DOWN            max(2.5, B_speed - 1.2)／1%             RECOVER
+總和：5+7+7+6+3+2 = 30 分鐘，包含 warm-up 與 cool-down。
+例：若歷史 baseline 為 5.0 mph／3%，畫面可預覽 4.0／3%、5.0／3%、5.3／4%、5.1／3-4%、5.5／4%、3.8／1%；這只是演算法示例，不能當作任何使用者真實 PR。
+
+四、無歷史資料的 Fallback
+------------------------------------------------------------
+顯示：`CHALLENGE UNAVAILABLE` 與原因；提供 `START BASELINE PREVIEW`，採 conservative 30 分鐘 profile，但不使用 `Beat your previous performance`、`PR` 或挑戰完成語言。完成後只有在 persistence 核准並保存資料時，才可成為未來 baseline。
+
+五、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：只在歷史基準可信且使用者 opt-in 時，把「可比區塊」小幅調整到 baseline 以上；遇到 stale／異常立即退回 baseline preview。
+EFFORT +/-（提案）：EFFORT + 只影響下一個 challenge block；EFFORT - 取消超越 baseline 的增量，回到 match／recovery。不得為了挑戰跳過冷身。
+Manual override（提案）：標示 MANUAL，該區塊不再比較自動目標；結果頁明確列出覆寫，避免把手動紀錄誤當成公平比較。
+
+六、Live screen、完成與安全
+------------------------------------------------------------
+Live 必要欄位：baseline date／type、current vs baseline、區塊、NEXT、countdown、speed／incline、EFFORT +/-、data quality、stale／PREVIEW ONLY、end。例：`NEXT: CHALLENGE BLOCK 0:42`。
+完成可顯示本次 vs baseline 的實際差異，但只在同單位、同規則、足夠資料時顯示。不得宣稱 PR、超越自己或準確比較；無裝置／stale／control 未核准時只 preview。
+
+七、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：控制與 ACK。HR：非必要、尚未實作。History／persistence：必要，尚未實作。Generator：相對 baseline 產生器需要，尚未實作。
+
+八、客戶待確認
+------------------------------------------------------------
+[ ] 最少需要幾筆 history 才能啟用正式 Challenge？
+[ ] 哪些 session 可互相比較：時長、機台、單位、坡度、速度是否必須一致？
+[ ] baseline 增量是 +0.3 mph／+1% 這種固定規則，還是由客戶／教練設定？
+[ ] 沒有 history 時是否顯示 fallback，或完全隱藏此 Program？
+[ ] PR 與比較文案的法務／產品核准條件為何？

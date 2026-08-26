@@ -1,0 +1,51 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：POWER_WALK
+正式名稱：POWER WALK
+分類：WALK／快走
+Hero：否（一般 Program）
+來源：idea.txt 第 28 行（第二列 experiences）及第 225 行的 GLUTES + LEGS／goal-first 導航概念。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：用可持續的快走速度與小幅坡度變化，提供不必跑步的積極步行體驗；不承諾固定熱量、減重或任何醫療效果。
+適合對象：想以快走完成中等強度運動、暫不想跑步或需要較低衝擊選擇的使用者。
+不適合／前置條件：使用者仍需確認可安全快走與使用坡度；若平衡或疼痛不適，應降低強度／結束。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：15／30／45／60 分鐘。
+運動型態：Power walk。
+建議速度：2.8-4.5 mph（約 4.5-7.2 km/h）。
+建議坡度：0-6%。
+建議強度：中等；所有數值為提案值，需套用 user cap／machine limits clamp。
+
+三、30 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             2.8 mph/4.5 km/h  1%         FIND YOUR WALK
+05:00-10:00 BASE WALK           3.5 mph/5.6 km/h  2%         SET THE RHYTHM
+10:00-15:00 BUILD               3.8 mph/6.1 km/h  3%         BUILD POWER
+15:00-20:00 POWER BLOCK         4.2 mph/6.8 km/h  4%         DRIVE FORWARD
+20:00-25:00 FINISH PUSH          4.5 mph/7.2 km/h  5%         STRONG WALK
+25:00-30:00 COOL DOWN            2.8 mph/4.5 km/h  1%         EASY WALK
+總和：5+5+5+5+5+5 = 30 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：以 speed 為主要個人化參數、incline 為次要參數；不得為了追求「power」把快走自動轉跑步。
+EFFORT +/-（提案）：EFFORT + 提高下一個 power block 的速度或坡度一級；EFFORT - 降低下一段，保留冷身。
+Manual override（提案）：標記 MANUAL 並暫停該 block 自動調整；下一段提示 RESUME ADAPT。
+
+五、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 POWER WALK、speed／incline、目前 block、NEXT／countdown、profile、EFFORT +/-、remaining、connection／stale／PREVIEW ONLY、end。完成顯示時間、距離、速度／坡度摘要與 calories estimate caveat；不得宣稱「低衝擊」適用所有人或任何健康結果。
+無 host、stale、control 未啟用時只預覽；user cap 低於 profile 時提前顯示 clamp。HR lost 不推斷。
+
+六、依賴能力與客戶待確認
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：speed／incline control。HR：非必要。History：非必要、未來可支援 Adapt。Generator：不需要。
+[ ] 4.5 mph／6% 是否適合所有 launch 機型？
+[ ] Power Walk 是否需要完全禁止 run transition？
+[ ] 15／45／60 分鐘變體是否保留相同五段結構？

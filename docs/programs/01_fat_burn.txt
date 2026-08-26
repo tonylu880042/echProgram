@@ -1,0 +1,68 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：FAT_BURN
+正式名稱：FAT BURN
+分類：BURN／持續輸出
+Hero：是（第一屏 Hero tile 候選）
+來源：idea.txt 第 18、32-53、247-249 行；30 MIN 範例來自第 35-51 行。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：提供不必持續高速奔跑的坡度走與輕鬆跑交替體驗，協助使用者完成持續的運動與熱量消耗工作。名稱 FAT BURN 是目標導向的產品語言，不是醫療、代謝或「一定燃脂」保證。
+適合對象：想以步行、慢跑與坡度變化完成中等強度訓練，且已能安全使用跑步機的成人使用者。
+不適合／前置條件：不應用於未經醫療專業人員允許的高強度運動情境；使用者需先確認可安全使用目前跑步機的速度與坡度，並設定個人最大速度／坡度上限。若機台不支援自動控制，本 Program 只能預覽並由使用者手動調整。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：20／30／45 分鐘；縮放時需保留 warm-up、主要區塊與 cool-down 的順序，不得直接刪除安全收尾。
+運動型態：Incline walk + light jog（坡度走與輕鬆跑交替）。
+建議速度：2.8-5.5 mph（約 4.5-8.9 km/h）。
+建議坡度：1-12%。
+建議強度：中等，短暫進入較高努力後回復；所有數值均為 Echelon 提案值，實作時必須同時套用使用者 cap 與機台 limits clamp，不能把上限當成所有人適用值。
+
+三、30 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             3.0 mph/4.8 km/h  1%         FIND YOUR RHYTHM
+05:00-08:00 CLIMB               3.3 mph/5.3 km/h  5%         BUILD THE ENGINE
+08:00-11:00 CLIMB               3.5 mph/5.6 km/h  8%         STAY TALL
+11:00-14:00 PUSH                4.5 mph/7.2 km/h  3%         CONTROLLED PUSH
+14:00-17:00 CLIMB               3.2 mph/5.1 km/h 10%         DRIVE THROUGH THE HILL
+17:00-20:00 PUSH                5.0 mph/8.0 km/h  2%         HOLD YOUR FORM
+20:00-23:00 BIG CLIMB            3.3 mph/5.3 km/h 12%         LAST BIG CLIMB
+23:00-26:00 FINISH              5.2 mph/8.4 km/h  2%         FINISH STRONG
+26:00-30:00 COOL DOWN            2.8 mph/4.5 km/h  1%         BRING IT HOME
+總和：5+3+3+3+3+3+3+3+4 = 30 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：依使用者設定的 max speed／max incline、已核准的個人資料與實際 telemetry，等比例降低或在安全範圍內調整每個區塊；不得自動突破 cap。沒有足夠歷史資料時，使用基準 profile 並標示 Preview。
+EFFORT +/-（提案）：EFFORT + 只提高下一個可調整區塊的速度或坡度一小級；EFFORT - 只降低下一個可調整區塊一小級。WARM UP／COOL DOWN 不因單次點按而跳過。
+Manual override（提案）：使用者手動改變速度／坡度後，該區塊顯示 MANUAL，暫停該區塊的自動改值；下一個區塊重新詢問或沿用 Adapt policy。真實控制尚未核准，Gate3A 只可產生建議事件。
+
+五、Live screen 必要欄位
+------------------------------------------------------------
+必須顯示：FAT BURN、elapsed／time remaining、current speed、current incline、EFFORT +/-、目前區塊與 `BLOCK 2 OF 6` 類似進度、profile chart、裝置連線狀態、資料新鮮度、停止／結束入口。
+例：`CLIMB 2 OF 4`、`NEXT: 5.0 MPH PUSH`、`0:42` countdown。若資料 stale 或 control 未啟用，改顯示 `PREVIEW ONLY`，不暗示機台已跟隨。
+
+六、完成畫面與不得聲稱的內容
+------------------------------------------------------------
+可顯示：elapsed time、distance（若機台提供）、平均／最高速度、平均／最高坡度、裝置回報的 calories（若有）並標示 estimate、各區塊完成情形、手動覆寫紀錄。
+不得聲稱：一定燃燒脂肪、醫療效果、精準卡路里、未有歷史比較支援的 PR 或「比上次更好」。
+
+七、安全與降級
+------------------------------------------------------------
+無 FitOS host、permission 不足、bind 失敗或 telemetry stale：保留可閱讀的 plan preview，停止所有自動控制，顯示原因與手動安全操作提示。HR lost 時不自行推導心率，維持速度／坡度建議不變或退回安全基準。AIDL 控制尚未啟用；任何 command 必須等 Gate3B 的 ACK、timeout、pause／safety 語意核准後才可接通。
+
+八、依賴能力
+------------------------------------------------------------
+Gate3A 唯讀 telemetry：速度、坡度、elapsed、連線與 stale。Gate3B 未核准：speed／incline control、EFFORT 自動執行。HR：非必要，尚未實作。History／persistence：Adapt 學習與 PR 比較需要，尚未實作。Generator：不需要，profile 為固定提案。
+
+九、客戶待確認
+------------------------------------------------------------
+[ ] 預設是否採用 idea.txt 的 30 分鐘，而非目前 App 的 45 分鐘？
+[ ] 2.8-5.5 mph、1-12% 是否符合每個目標機台的安全範圍？
+[ ] 20／30／45 分鐘縮放是否保留相同 9 段結構？
+[ ] `FAT BURN` 是否接受「持續運動／熱量消耗」文案，並禁止燃脂保證？
+[ ] Adapt、EFFORT +/-、manual override 的控制時機與提示是否核准？

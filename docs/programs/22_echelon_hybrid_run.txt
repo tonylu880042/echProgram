@@ -1,0 +1,54 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；treadmill-only 版本，不是已完成的產品行為。
+Program ID：ECHELON_HYBRID_RUN
+正式名稱：ECHELON HYBRID RUN
+分類：HYBRID／速度與坡度切換
+Hero：否（一般 Program）
+來源：idea.txt 第 12、28、183-193 行；產品名稱與限制以第 186-192 行為準。
+
+一、定位與明確限制
+------------------------------------------------------------
+客戶承諾：以同一台跑步機上的 RUN、CLIMB、POWER WALK、SPRINT 需求切換，提供 treadmill-only 的 functional-race inspired 節奏；不使用 HYROX 作為產品名稱、不冒用商標、不加入 sled mode 或未驗證的阻力模式。
+適合對象：已熟悉跑步、快走與坡度切換，想嘗試多需求交替的使用者。
+不適合／前置條件：不能安全處理 speed／incline 變化、或機台沒有經驗證的坡度控制者不應使用；開始前確認 cap、emergency stop 與控制能力。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：20／30／45 分鐘。
+運動型態：Treadmill speed／incline demand switching。
+建議速度：3.0-9.0 mph（約 4.8-14.5 km/h）。
+建議坡度：0-8%。
+建議強度：中高到高，區塊間有需求切換；數值均為提案值，需套用 user cap／machine limits clamp。
+
+三、30 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             3.5 mph/5.6 km/h  1%         SET THE BASE
+05:00-10:00 RUN                 5.5 mph/8.9 km/h  1%         RUN THE FLAT
+10:00-15:00 CLIMB               4.5 mph/7.2 km/h  6%         CLIMB WITH CONTROL
+15:00-20:00 RUN                 6.0 mph/9.7 km/h  2%         RETURN TO SPEED
+20:00-25:00 POWER WALK          4.0 mph/6.4 km/h  8%         DRIVE THE HILL
+25:00-28:00 SPRINT              8.0 mph/12.9 km/h 3%         FINAL PUSH
+28:00-30:00 COOL DOWN            3.0 mph/4.8 km/h  1%         RESET
+總和：5+5+5+5+5+3+2 = 30 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：依個人 run baseline 與 user cap 縮放每個需求，但保留 RUN→CLIMB→RUN→POWER WALK→RUN／SPRINT 的序列；不得生成 sled／外部器材 block。
+EFFORT +/-（提案）：EFFORT + 只提高下一個尚未開始的 RUN／CLIMB／SPRINT 一級；EFFORT - 優先降低 speed，再降低 incline。冷身固定。
+Manual override（提案）：當前需求標記 MANUAL；下一個 demand 需重新提示是否 resume Adapt，不可把手動值當作 baseline。
+
+五、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 ECHELON HYBRID RUN、`CLIMB 1 OF 1`／current demand、speed／incline、NEXT／countdown、profile、EFFORT +/-、remaining、connection／stale／PREVIEW ONLY、end。完成顯示各 demand 完成、時間、距離、最高 speed／incline 與 calories estimate caveat；不得聲稱 HYROX 完成、比賽成績或 functional performance 提升。
+無 host／stale／control 未啟用時只 preview；若機台不支援某段，顯示 clamp／unavailable，不靜默改成 sled 或其他硬體行為。HR lost 不推斷。
+
+六、依賴能力與客戶待確認
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：speed／incline control、ramp／ACK／safe stop。HR：非必要。History：Adapt／比較需要。Generator：不需要（固定 profile）。
+[ ] `ECHELON HYBRID RUN` 名稱與所有對外文案是否明確避開 HYROX 商標？
+[ ] 9.0 mph／8% 是否符合 launch machine envelope？
+[ ] 20／45 分鐘縮放是否保留所有 demand 類型？
+[ ] 是否完全禁止 sled、resistance 或非 treadmill equipment 文案？
+[ ] 各需求切換的最小 ramp／安全等待時間由誰核准？

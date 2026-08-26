@@ -1,0 +1,62 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：SWEAT_30
+正式名稱：SWEAT 30
+分類：SWEAT／Mixed
+Hero：否（一般 Program）
+來源：idea.txt 第 22 行與第 28、222-245 行的 goal-first 分類概念。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：30 分鐘內以走、慢跑與坡度混合，提供「Get sweaty. Get it done.」的清楚完成感；不承諾固定流汗量、熱量或身體結果。
+適合對象：想完成一個中等到中高強度的全程混合訓練，且能在走與跑之間轉換者。
+不適合／前置條件：若使用者不適合跑步，需把 run blocks 改為 walk，並重新確認 cap；使用前確認機台與 emergency stop。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：20／30／45 分鐘。
+運動型態：Mixed walk／jog／incline。
+建議速度：3.0-7.0 mph（約 4.8-11.3 km/h）。
+建議坡度：1-10%。
+建議強度：中等到中高；數值皆為提案值，需套用 user cap 與 machine limits clamp。
+
+三、30 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             3.0 mph/4.8 km/h  1%         START EASY
+05:00-10:00 STEADY              4.0 mph/6.4 km/h  3%         FIND YOUR FLOW
+10:00-15:00 BUILD               5.0 mph/8.0 km/h  5%         BUILD THE SWEAT
+15:00-20:00 PUSH                6.0 mph/9.7 km/h  4%         KEEP MOVING
+20:00-25:00 CLIMB               4.5 mph/7.2 km/h  8%         CLIMB WITH CONTROL
+25:00-30:00 COOL DOWN            3.0 mph/4.8 km/h  1%         GET IT DONE
+總和：5+5+5+5+5+5 = 30 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：依個人 cap 縮放速度與坡度；若 run 不合適，將 PUSH 改為快走但保留時間與 coaching。
+EFFORT +/-（提案）：EFFORT + 提高下一個 BUILD／PUSH 的速度或坡度一級；EFFORT - 降低下一個主要區塊，不動 cool-down。
+Manual override（提案）：當前區塊標示 MANUAL，下一 block 提示 `ADAPT PAUSED`；使用者恢復後才回到計畫值。AIDL control 未啟用前只更新 preview。
+
+五、Live screen 必要欄位
+------------------------------------------------------------
+顯示 SWEAT 30、current speed／incline、elapsed／remaining、`BUILD`、NEXT、countdown、profile chart、EFFORT +/-、連線／stale／PREVIEW ONLY 與 end。例：`NEXT: 6.0 MPH PUSH`、`0:42`。
+
+六、完成畫面與不得聲稱的內容
+------------------------------------------------------------
+顯示完成時長、距離、平均／最高速度、坡度、裝置 calories estimate 與各 block 完成率。不得聲稱一定流汗、精準熱量、減重或未經歷史比較的 PR。
+
+七、 安全與降級
+------------------------------------------------------------
+telemetry stale、無 FitOS host 或 control 不可用時僅預覽。若任何 block 超出 cap，先在 setup 顯示 clamp 後 profile；HR lost 不改用未核准的心率推算。
+
+八、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：速度／坡度控制。HR：可選、尚未實作。History：Adapt／結果比較需要。Generator：不需要。
+
+九、客戶待確認
+------------------------------------------------------------
+[ ] `SWEAT 30` 是否允許 20／45 分鐘選項仍使用同一名稱？
+[ ] 主要 Push 速度 6.0 mph 是否符合 launch 機型？
+[ ] 無法跑步時是否由系統自動改為快走，或要求使用者重新選擇？
+[ ] `Get it done.` 是否為核准的英文承諾？

@@ -1,0 +1,51 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：ENDURANCE
+正式名稱：ENDURANCE
+分類：STAMINA／持續輸出
+Hero：否（一般 Program）
+來源：idea.txt 第 28 行（第二列 experiences）。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：以穩定、較少變化的連續運動，讓使用者練習完成較長時間；不宣稱提升耐力已被證明，也不保證特定距離。
+適合對象：已能以舒適速度持續走／跑，想延長 on-treadmill 時間者。
+不適合／前置條件：長時間運動前確認個人狀況、水分與機台安全；不適合者可縮短時長或選 Recovery。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：45 分鐘。可選時長：30／45／60／90 分鐘。
+運動型態：Steady walk／jog endurance。
+建議速度：3.0-6.0 mph（約 4.8-9.7 km/h）。
+建議坡度：0-6%。
+建議強度：中等且穩定；數值是提案值，需套用 user cap／machine limits clamp。
+
+三、45 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             3.0 mph/4.8 km/h  1%         SETTLE IN
+05:00-15:00 SETTLE              4.0 mph/6.4 km/h  2%         FIND YOUR RHYTHM
+15:00-25:00 STEADY 1            4.5 mph/7.2 km/h  3%         HOLD STEADY
+25:00-35:00 STEADY 2            5.0 mph/8.0 km/h  3%         STAY CONSISTENT
+35:00-40:00 FINISH              5.5 mph/8.9 km/h  4%         ONE LAST BUILD
+40:00-45:00 COOL DOWN            3.0 mph/4.8 km/h  1%         EASY OUT
+總和：5+10+10+10+5+5 = 45 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：依使用者可持續 pace 與完成率，調整 steady blocks 的 speed；先穩定完成，再增加速度或坡度，不能在中段突然跳變。
+EFFORT +/-（提案）：EFFORT + 影響下一個 steady／finish block；EFFORT - 降低下一個 block，維持至少一個可恢復段。冷身不受影響。
+Manual override（提案）：標示 MANUAL，當前 block 以使用者值為主；下一 block 提示是否回復計畫。
+
+五、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 ENDURANCE、elapsed／remaining、current speed／incline、`STEADY 2 OF 2`、NEXT／countdown、profile、EFFORT +/-、connection／stale／PREVIEW ONLY 與 end。完成顯示總時間、距離、穩定區塊完成率與 calories estimate caveat；不得宣稱 endurance improvement 或 PR。
+無 host／stale／control 未核准時只顯示 preview；到達 user cap 時清楚告知。HR lost 不推斷。
+
+六、依賴能力與客戶待確認
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：speed／incline control。HR：非必要。History：Adapt／比較需要。Generator：不需要。
+[ ] default 是否 45 分鐘，90 分鐘是否列入 launch？
+[ ] steady run 是否需另設 walk variant？
+[ ] 「endurance」是否需要較中性的對外說明？

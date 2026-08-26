@@ -1,0 +1,111 @@
+Echelon Program 客戶審閱索引
+============================================================
+文件狀態：Echelon 提案總覽／待客戶逐項確認；本索引與各 Program txt 是規格討論材料，不代表功能已完成。
+來源：idea.txt 第 16-30、32-249 行；各 Program 文件列出更細的來源行號。
+文件數：22 個 Program spec + 本索引。
+
+一、22 項 Program 清單
+------------------------------------------------------------
+編號  Program ID             正式名稱              分類               Hero  預設 duration／target       主要依賴／Gate3A 可否先做
+01    FAT_BURN               FAT BURN               BURN               是    30 min（20/30/45）        telemetry；可先做 preview
+02    GLUTE_BLAST             GLUTE BLAST             GLUTES + LEGS      是    30 min（15/20/30/45）     telemetry；可先做 preview
+03    SUMMIT                  SUMMIT                  CLIMB              否    30 min（20/30/45/60）    telemetry；可先做 preview
+04    HIIT_20                 HIIT 20                 SWEAT              否    20 min（10/20/30）        telemetry；可先做 preview
+05    SWEAT_30                SWEAT 30                SWEAT              否    30 min（20/30/45）        telemetry；可先做 preview
+06    SPEED_LAB               SPEED LAB               GET FASTER         否    30 min（20/30/40）        telemetry；可先做 preview
+07    BOOTY_BURN_15           BOOTY BURN 15           GLUTES + LEGS      否    15 min（10/15/20）        telemetry；可先做 preview
+08    5K_READY                5K READY                RUN                否    30 min session（20/30/40/60） telemetry；單次 preview 可先做
+09    VERTICAL                 VERTICAL                 CLIMB              是    500/1,000/2,000/5,280 FT telemetry；需 elevation contract，先 preview
+10    ECHELON_CHALLENGE       ECHELON CHALLENGE       CHALLENGE          否    30 min（20/30/45/60）     history+telemetry；無 history 只能 fallback preview
+11    TWELVE_3_30             12-3-30                 CLIMB              否    30 min／core target        telemetry；Safe version 可先 preview
+12    POWER_WALK              POWER WALK              WALK               否    30 min（15/30/45/60）     telemetry；可先做 preview
+13    ROLLING_HILLS           ROLLING HILLS            STAMINA            否    45 min（30/45/60）        telemetry；可先做 preview
+14    ZONE_2                  ZONE 2                  HEART RATE         否    30 min（20/30/45/60）     HR+telemetry；無 HR 只能 preview
+15    WALK_RUN                WALK + RUN              RUN                否    30 min（20/30/45/60）     telemetry；可先做 preview
+16    ENDURANCE               ENDURANCE               STAMINA            否    45 min（30/45/60/90）    telemetry；可先做 preview
+17    PYRAMID                 PYRAMID                 SWEAT              否    30 min（20/30/45）        telemetry；可先做 preview
+18    RECOVERY_WALK           RECOVERY WALK           RECOVERY           否    20 min（10/20/30）        telemetry；可先做 preview
+19    QUICK_10                QUICK 10                QUICK              否    10 min（10/15/20）        telemetry；可先做 preview
+20    SURPRISE_ME             SURPRISE ME             SURPRISE            是    10/20/30/45 min + effort generator；preview only until generator
+21    CALORIE_TARGET          CALORIE TARGET           BURN               否    100/200/300/500 est. kcal planner+telemetry；preview only
+22    ECHELON_HYBRID_RUN      ECHELON HYBRID RUN       HYBRID             否    30 min（20/30/45）        telemetry；可先做 preview
+
+說明：
+- 「可先做 preview」表示可用 Gate3A 唯讀 telemetry／static profile 先完成資料與畫面驗證；不代表 AIDL 控制可用。
+- 所有固定時間 profile 的 warm-up／cool-down 與 segment 總和，詳見各檔；目標型 Program（VERTICAL、CALORIE TARGET、ZONE 2、SURPRISE ME、ECHELON CHALLENGE）不可被誤解為固定時間或已具備自動控制。
+- 所有 mph／km/h、speed、incline 是 Echelon 提案值；正式實作需同時通過 user cap、machine limits、單位設定與 stale guard。
+
+二、每個 Program 文件
+------------------------------------------------------------
+01 [01_fat_burn.txt] FAT BURN
+02 [02_glute_blast.txt] GLUTE BLAST
+03 [03_summit.txt] SUMMIT
+04 [04_hiit_20.txt] HIIT 20
+05 [05_sweat_30.txt] SWEAT 30
+06 [06_speed_lab.txt] SPEED LAB
+07 [07_booty_burn_15.txt] BOOTY BURN 15
+08 [08_5k_ready.txt] 5K READY
+09 [09_vertical.txt] VERTICAL
+10 [10_echelon_challenge.txt] ECHELON CHALLENGE
+11 [11_12_3_30.txt] 12-3-30
+12 [12_power_walk.txt] POWER WALK
+13 [13_rolling_hills.txt] ROLLING HILLS
+14 [14_zone_2.txt] ZONE 2
+15 [15_walk_run.txt] WALK + RUN
+16 [16_endurance.txt] ENDURANCE
+17 [17_pyramid.txt] PYRAMID
+18 [18_recovery_walk.txt] RECOVERY WALK
+19 [19_quick_10.txt] QUICK 10
+20 [20_surprise_me.txt] SURPRISE ME
+21 [21_calorie_target.txt] CALORIE TARGET
+22 [22_echelon_hybrid_run.txt] ECHELON HYBRID RUN
+
+三、idea.txt 與目前 App 的差異（只記錄，不修改程式）
+------------------------------------------------------------
+idea.txt 提出 22 個 Program／體驗；目前 App library 實作上只有 8 個項目：
+- Hero：FAT_BURN、GLUTE_BLAST、VERTICAL、SURPRISE_ME。
+- Supporting：EASY_STROLL、SPEED_DEMON、ROLLING_HILLS、HEART_HEALTH。
+目前 detail catalog 只提供 FAT_BURN；其餘可見項目會進入 unavailable。`MainActivity` 仍以 `NoOpWorkoutSessionStarter` 接線，因此 Start 只證明 setup／validated boundary，沒有真正 workout session。
+Gate3A 已具備 FitOS 唯讀 telemetry boundary，但尚未具備 Gate3B 的 speed／incline control、command ACK、pause／resume、安全 stop 與真實 session reconciliation。HR、history／persistence、generator 亦尚未實作。
+本次 txt 不會假裝上述差異已被程式修正；下一個程式增量應先以這些規格建立單一 ProgramDefinition source 與 completeness tests。
+
+四、跨 Program 共同客戶決策
+------------------------------------------------------------
+1. 單位：UI 預設 MPH 還是 KM/H？速度／距離／history 比較是否固定保存 canonical unit？
+2. 機台能力：每個 launch model 的最大 speed／incline、step、ramp rate、是否支援 0% 與 15%+。
+3. 命名：FAT BURN、BOOTY BURN、12-3-30、VERTICAL MILE、RECOVERY 等名稱與對外文案的法務／行銷核准。
+4. AIDL 控制：start／stop／speed／incline 的 ACK、timeout、拒絕原因、pause／resume、Binder death、host restart、safety key 與 app crash 行為。
+5. HR：支援 Apple Watch／哪些 HR monitor、target zone 的權威來源、HR LOST timeout、hysteresis 與控制權限。
+6. 估算 calories／elevation：資料來源、公式、confidence、rounding、`ESTIMATED` caveat、是否可由 FitOS authority 回報。
+7. 資料持久化：profile、user cap、manual override、Adapt preference、history、PR、generator seed／version 與隱私／刪除政策。
+8. Safety／UX：無裝置、stale、clamp、控制失敗、使用者按 stop 的共同 UI 文案與 default safe behavior。
+
+五、建議確認順序與 MVP 分組
+------------------------------------------------------------
+第一批：先確認單位、機台 caps／limits、共用 safety／preview 文案。以唯讀／static profile 完成 FAT BURN、GLUTE BLAST、POWER WALK、ROLLING HILLS、RECOVERY WALK、QUICK 10、SWEAT 30、PYRAMID、SUMMIT、BOOTY BURN 15、HIIT 20、SPEED LAB、WALK + RUN、ENDURANCE、ECHELON HYBRID RUN 的 detail／profile preview。
+第二批：在 control contract 核准後，接入固定 profile 的 session engine；先做 countdown、NEXT、manual override、stale／clamp，不直接啟用未驗證的 automatic control。
+第三批：確認 HR contract 後做 ZONE 2；確認 elevation authority／formula 後做 VERTICAL；確認 calories estimator／time limit 後做 CALORIE TARGET。
+第四批：有足夠 history 後做 ECHELON CHALLENGE；有 baseline／週期決策後做 5K READY progression；有 deterministic generator contract 後做 SURPRISE ME。
+第五批：完成 persistence、結果頁、比較／PR 的證據規則與客戶／法務文字，再決定哪些 Program 可開放真實 device control。
+
+六、目前仍未解的客戶決策總表
+------------------------------------------------------------
+[ ] 22 個 Program 的正式名稱、分類、Hero 順序與 launch scope。
+[ ] 所有預設時長、可選時長、profile segment 分鐘與可變長度規則。
+[ ] 每個目標機型的 speed／incline caps、clamp、ramp／step 與 units。
+[ ] Gate3B AIDL 控制的 command ACK／timeout／pause／resume／safety semantics。
+[ ] HR monitor、target zone、signal lost 與自動控制授權。
+[ ] elevation／calorie 的權威來源、估算與顯示 caveat。
+[ ] history／persistence／PR／Adapt 的資料與隱私政策。
+[ ] SURPRISE ME seed／generator version／preview／accept／regenerate contract。
+[ ] 5K READY progression 的週期、頻率、baseline 與非醫療定位。
+[ ] VERTICAL 的 elevation formula、最大時限與未達標流程。
+[ ] 12-3-30 Safe version 是否仍能使用原名稱。
+[ ] ECHELON HYBRID RUN 的商標／對外文案審查與禁止 sled mode 的明確規則。
+
+七、非功能與實作提醒
+------------------------------------------------------------
+- 本次文件不是測試替代品；程式實作仍須遵守 AGENTS.md 的 RED -> GREEN -> REFACTOR。
+- Gate3A 只證明可讀 telemetry／stale／connection boundary；不能宣稱真實 device control。
+- 任何 `EFFORT +/-`、Adapt、目標 generator、HR 自動調整都必須先有 application port、fake／boundary test 與 safe fallback。
+- 不新增 emoji 作為 UI icon；UI 可保留正式英文 Program 名稱與 coaching 文案，但圖示需使用核准 icon set。

@@ -1,0 +1,49 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：QUICK_10
+正式名稱：QUICK 10
+分類：QUICK／短時完成
+Hero：否（一般 Program）
+來源：idea.txt 第 28 行（第二列 experiences）。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：用 10 分鐘清楚完成一個短 session，讓使用者不用理解複雜 interval；不承諾 10 分鐘必然帶來特定熱量或 fitness 結果。
+適合對象：時間有限、已熟悉跑步機操作，想完成短暫 walk／jog 的使用者。
+不適合／前置條件：高強度選項需確認速度 cap；不熟悉操作或需要低強度者選 Recovery。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：10 分鐘。可選時長：10／15／20 分鐘；若更長，需確認是否仍稱 QUICK 10。
+運動型態：Short mixed walk／jog。
+建議速度：2.5-6.0 mph（約 4.0-9.7 km/h）。
+建議坡度：0-5%。
+建議強度：低中等到中高；數值為提案值，需 clamp。
+
+三、10 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-02:00 WARM UP             2.5 mph/4.0 km/h  1%         START NOW
+02:00-04:00 BUILD 1             4.0 mph/6.4 km/h  2%         FIND YOUR PACE
+04:00-06:00 BUILD 2             5.0 mph/8.0 km/h  3%         KEEP MOVING
+06:00-08:00 FINISH              6.0 mph/9.7 km/h  2%         TWO MINUTES
+08:00-10:00 COOL DOWN            2.5 mph/4.0 km/h  1%         DONE WELL
+總和：2+2+2+2+2 = 10 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：短 session 只允許在下一 block 小幅縮放，不為了時間短而跳過暖身。
+EFFORT +/-（提案）：EFFORT + 作用於下一個 BUILD／FINISH；EFFORT - 立即把下一段降至安全值。
+Manual override（提案）：標示 MANUAL，冷身仍固定保留。
+
+五、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 QUICK 10、speed／incline、remaining、`BUILD 1 OF 2`、NEXT／countdown、profile、EFFORT +/-、connection／stale／PREVIEW ONLY、end。完成顯示時間、距離、速度摘要、calories estimate caveat；不得聲稱「短時間等於完整訓練」。無 host／stale／control 未啟用時只 preview。
+
+六、依賴能力與客戶待確認
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：speed／incline control。HR：非必要。History：非必要。Generator：不需要。
+[ ] QUICK 10 是否固定只能 10 分鐘？
+[ ] 6.0 mph 是否過高，是否需拆成 walk／run 兩個強度版本？
+[ ] 15／20 分鐘變體要否改名？

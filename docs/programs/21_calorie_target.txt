@@ -1,0 +1,66 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；卡路里為估算，目標產生器尚未實作。
+Program ID：CALORIE_TARGET
+正式名稱：CALORIE TARGET
+分類：BURN／目標導向估算
+Hero：否（一般 Program；idea.txt 以概念 hero 描述）
+來源：idea.txt 第 28、141-163、223-224、247 行。
+
+一、客戶承諾與估算 caveat
+------------------------------------------------------------
+客戶承諾：使用者先選 estimated calorie target，系統建立一份有安全時限的 treadmill session；`calories` 是估算值，不是精準測量，也不保證減重、燃脂或達成特定生理結果。
+目標選項（idea.txt）：100／200／300／500 estimated kcal。
+醒目 caveat（提案 UI）：`CALORIES ARE ESTIMATES. ACTUAL ENERGY USE VARIES BY PERSON, DEVICE, AND DATA QUALITY.` 必須靠近進度與完成結果。
+適合對象：想用簡單數字作為運動目標、且理解估算限制的使用者。
+不適合／前置條件：不能把此 Program 當作醫療、營養或減重處方；需要有效的使用者 profile／設備輸入才能改善估算，否則必須標示低信心。
+
+二、時長與運動型態
+------------------------------------------------------------
+這不是固定時間 Program。Echelon 提案最大時限：100／200／300 kcal 各 60 分鐘；500 kcal 90 分鐘。實際 target reached 時先進入安全 cool-down，不為湊目標強行延長或越過 cap；時限值需客戶確認。
+Echelon 提案初始 profile 以 300 kcal 為例，其他 target 由同一 planner 依 target／user cap／資料信心縮放。
+運動型態：Mixed walk／jog／incline。
+建議速度：2.5-6.0 mph（約 4.0-9.7 km/h）。
+建議坡度：0-10%。
+建議強度：低中等到中高；皆為提案值，必須套用 cap／machine limits clamp。
+
+三、300 estimated kcal 的典型 40 分鐘 Profile（提案值，不保證到達目標）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             2.8 mph/4.5 km/h  1%         START EASY
+05:00-15:00 BASE                3.5 mph/5.6 km/h  2%         BUILD THE BASE
+15:00-25:00 BUILD               4.5 mph/7.2 km/h  4%         BUILD OUTPUT
+25:00-35:00 PUSH                5.5 mph/8.9 km/h  6%         STAY CONTROLLED
+35:00-40:00 COOL DOWN            2.8 mph/4.5 km/h  1%         RECOVER
+總和：5+10+10+10+5 = 40 分鐘，包含 warm-up 與 cool-down。
+Planner 必須在每個 telemetry tick 更新 `estimatedKcal`；不可把上表 40 分鐘直接宣稱等於 300 kcal。實際達標時顯示 target reached，進入安全 cool-down；未達標時到 max time 顯示 partial completion。
+
+四、目標狀態與 safe completion（提案）
+------------------------------------------------------------
+狀態：TARGET SET／IN PROGRESS／TARGET REACHED／TIME LIMIT／DATA LOW CONFIDENCE／STOPPED。
+達到估算 target：停止增加強度，進入至少 3-5 分鐘的安全 cool-down（時間需核准），完成頁標示 estimate。
+到達最大時限仍未達標：停止自動加強，顯示實際 estimated kcal、未達原因與 safe cool-down／結束選項；不得把未達標改寫成達標。
+資料缺少或 stale：暫停估算更新，顯示 `CALORIE ESTIMATE PAUSED`；不得用靜態數字填補。
+
+五、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：依實際 estimatedKcal rate、user cap 與資料信心調整下一個 block；不可為追 target 超過安全上限，也不可把估算誤差視為使用者表現。
+EFFORT +/-（提案）：EFFORT + 提高下一個可調 block 一小級；EFFORT - 降低下一段並延長預估完成時間。達 target 或 data low confidence 後不再升強度。
+Manual override（提案）：顯示 MANUAL，估算仍依真實資料；控制尚未核准時只更新 preview。
+
+六、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 `183 / 300 CAL EST.`、`117 TO GO`、estimate confidence／data age、speed／incline、elapsed／max time、目前 block、NEXT／countdown、EFFORT +/-、connection／stale／PREVIEW ONLY、end 與 caveat。完成顯示 estimated kcal、target reached／partial、時間、距離與資料來源；不得聲稱精準卡路里、燃脂或減重。
+無 host／stale／未核准 control 時只 preview；無 profile 時必須降低 confidence／顯示 caveat。HR lost 不可被當成 calories 的替代輸入。
+
+七、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀速度、坡度、elapsed，供估算／preview；AIDL host 是否提供 calories 需明確區分。Gate3B：speed／incline control、ACK、safe stop。HR：可提高估算但尚未實作。History／persistence：保存 profile、target、結果，尚未實作。Generator／planner：必要，尚未實作。
+
+八、客戶待確認
+------------------------------------------------------------
+[ ] 100／200／300／500 target 與最大時限是否核准？
+[ ] calories 估算公式、輸入資料、confidence 與 rounding 由誰定義？
+[ ] target reached 後 cool-down 應為幾分鐘？
+[ ] 到時限未達標要否允許「延長」？若允許，安全上限為何？
+[ ] UI 是否固定使用 `CAL EST.` 與上述 caveat？

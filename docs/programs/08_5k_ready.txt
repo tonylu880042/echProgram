@@ -1,0 +1,68 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：5K_READY
+正式名稱：5K READY
+分類：RUN／跑步進階
+Hero：否（一般 Program）
+來源：idea.txt 第 25 行及第 233 行的 RUN goal。
+
+一、產品定位：單次 Session 與多週 Progression 必須分開
+------------------------------------------------------------
+客戶承諾：提供一次可執行的 run／walk session，並預留「朝向 5K」的多週 progression 產品方向；不保證任何人可在特定日期完成 5K，也不提供醫療訓練建議。
+單次 session：使用者選定一次 20／30／40／60 分鐘運動，完成當次 warm-up、run／walk blocks 與 cool-down。這是本文件有明確 profile 的部分。
+多週 progression：需依使用者 baseline、每週頻率、恢復日與完成紀錄生成 4／6／8 週（皆為提案選項）的課表；週期長度、每週次數、是否允許重排與是否需要 coach content 尚未核准，不能把單次 session 說成完整訓練計畫。
+
+二、適用範圍、時長與運動型態
+------------------------------------------------------------
+適合對象：想從走跑交替或已有跑步基礎逐步增加跑步時間的使用者。
+不適合／前置條件：使用者需能安全跑步、設定個人 max speed／incline；疼痛、暈眩或無法控制速度時應停止並依需要尋求專業意見。未收集 baseline 時只能採保守 Preview。
+Echelon 提案預設單次：30 分鐘。可選時長：20／30／40／60 分鐘。
+運動型態：Personalized progressive run／walk-run。
+建議速度：以個人化 baseline 為主；Echelon UI 提案示例 3.0-6.0 mph（約 4.8-9.7 km/h），不能當成所有人固定處方。
+建議坡度：0-6%。
+建議強度：easy 到 moderate，逐步增加 running time；數值均為提案值，必須套用 user cap 與 machine limits clamp。
+
+三、30 分鐘單次 Session Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP WALK        3.0 mph/4.8 km/h  1%         START EASY
+05:00-10:00 EASY RUN            B (example 4.0 mph/6.4 km/h)       1%         FIND YOUR RHYTHM
+10:00-13:00 WALK RECOVERY       3.5 mph/5.6 km/h  1%         RESET
+13:00-18:00 STEADY RUN          B+0.3 mph (example 4.3/6.9 km/h)   2%         BUILD TIME ON FEET
+18:00-20:00 WALK RECOVERY       3.5 mph/5.6 km/h  1%         BREATHE
+20:00-25:00 STEADY RUN          B+0.3 mph (example 4.3/6.9 km/h)   2%         HOLD YOUR FORM
+25:00-27:00 EASY WALK            3.2 mph/5.1 km/h  1%         BRING IT DOWN
+27:00-30:00 COOL DOWN            2.8 mph/4.5 km/h  0%         FINISH EASY
+總和：5+5+3+5+2+5+2+3 = 30 分鐘，包含 warm-up 與 cool-down。
+`B`（baseline pace）必須由使用者輸入、歷史紀錄或核准的測試流程取得；上表 4.0 mph／6.4 km/h 與 4.3 mph／6.9 km/h 只是示例，未取得 B 時不可假裝有精準個人速度。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：依完成率、使用者主動回報 effort 與已核准歷史 baseline，調整下一個 run block 的時間或速度；先維持可完成性，再增加 running time。沒有 history 時僅使用保守 baseline。
+EFFORT +/-（提案）：EFFORT + 優先將下一次 walk recovery 的一小段轉為 run 或提高下一段 pace；EFFORT - 優先增加 recovery 時間或降低 pace。不得跳過 warm-up／cool-down。
+Manual override（提案）：手動改值後，當前 block 顯示 MANUAL，停止該 block 的自動調整；progression 的下一次 session 只在明確同意且 persistence 核准後學習。
+
+五、Live screen 必要欄位
+------------------------------------------------------------
+顯示 5K READY、current speed／incline、elapsed／remaining、目前 `RUN 2 OF 3` 或 `WALK RECOVERY`、下一段與 countdown、run／walk time summary、EFFORT +/-、連線／stale／PREVIEW ONLY。例：`NEXT: 2 MIN WALK RECOVERY`、`0:30`。
+
+六、完成畫面與不得聲稱的內容
+------------------------------------------------------------
+單次可顯示跑步時間、步行時間、距離、平均／最高速度、calories estimate 與是否完成本次 session。多週畫面只能在 persistence 真實記錄存在時顯示 progression；不得聲稱已達 5K、一定進步或取代教練／醫療建議。
+
+七、安全與降級
+------------------------------------------------------------
+沒有 FitOS host、telemetry stale 或 control 未核准時，顯示 session preview，不自動變速。無 baseline 時使用 placeholder／user-entered value，明確標 `SET YOUR RUN PACE`。HR 不必要；若接到 HR 但 lost，不用未核准公式推導。
+
+八、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：speed／incline control 與 safe stop。HR：非必要、尚未實作。History／persistence：多週 progression、Adapt、PR 所需，尚未實作。Generator：多週課表可能需要，尚未實作。
+
+九、客戶待確認
+------------------------------------------------------------
+[ ] 本 Program 是否只先交付單次 session，還是 launch 就要有 4／6／8 週 progression？
+[ ] 若要 progression，週期長度、每週 session 次數與恢復日如何定義？
+[ ] baseline 要由使用者輸入、測試 session，還是歷史資料推導？
+[ ] `5K READY` 是否需要避免任何「保證完成 5K」的文字？
+[ ] run／walk block 的個人化是改速度、改時間，或兩者皆可？

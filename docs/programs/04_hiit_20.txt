@@ -1,0 +1,65 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：HIIT_20
+正式名稱：HIIT 20
+分類：SWEAT／高低交替
+Hero：否（一般 Program）
+來源：idea.txt 第 21 行。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：以 20 分鐘內清楚的 sprint／recover 交替，提供短而聚焦的高低強度體驗；不保證最大努力、減重或醫療效益。
+適合對象：已熟悉跑步機操作、能辨識自己安全努力程度，且可在短段跑步與恢復間切換的使用者。
+不適合／前置條件：不熟悉跑步或無法安全減速者先選 WALK／RECOVERY；開始前確認 emergency stop 與個人 max speed。高強度只在使用者主動確認後進入。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：20 分鐘。可選時長：10／20／30 分鐘；縮短版仍須包含 warm-up／cool-down。
+運動型態：Sprint／recover intervals。
+建議速度：3.0-9.0+ mph（約 4.8-14.5+ km/h）。
+建議坡度：1-5%。
+建議強度：短時間高強度與主動恢復；數值為提案值，實作必須依 user cap／machine limits clamp，`9+` 絕非保證值。
+
+三、20 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-04:00 WARM UP             3.0 mph/4.8 km/h  1%         READY YOUR FORM
+04:00-06:00 SPRINT 1            7.0 mph/11.3 km/h 2%         FAST AND CONTROLLED
+06:00-08:00 RECOVER 1           3.5 mph/5.6 km/h  1%         RECOVER
+08:00-10:00 SPRINT 2            8.0 mph/12.9 km/h 3%         FIND YOUR EDGE
+10:00-12:00 RECOVER 2           3.5 mph/5.6 km/h  1%         RESET
+12:00-14:00 SPRINT 3            8.5 mph/13.7 km/h 4%         HOLD THE LINE
+14:00-16:00 RECOVER 3           3.5 mph/5.6 km/h  1%         CONTROLLED RECOVERY
+16:00-18:00 FINAL SPRINT        9.0 mph/14.5 km/h 5%         LAST PUSH
+18:00-20:00 COOL DOWN            3.0 mph/4.8 km/h  1%         BRING IT DOWN
+總和：4+2+2+2+2+2+2+2+2 = 20 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：只在使用者明確允許並有能力資料時調整 sprint 上限；recover 不得被縮短到沒有恢復。無歷史時固定使用保守基準。
+EFFORT +/-（提案）：EFFORT + 只提高下一個 sprint 一級，EFFORT - 優先降低 sprint 速度；若使用者在 sprint 中按下，下一秒不急加減，等下一個 block 生效。
+Manual override（提案）：使用者自訂當前 sprint 後標示 MANUAL，停用本段自動調速；恢復段仍提供安全建議。控制未核准時僅顯示 preview。
+
+五、Live screen 必要欄位
+------------------------------------------------------------
+顯示 HIIT 20、speed／incline、elapsed／remaining、`SPRINT 2 OF 4`、NEXT、countdown、profile chart、EFFORT +/-、stop／end 與 telemetry freshness。例：`NEXT: 3.5 MPH RECOVER`、`0:30`。
+
+六、完成畫面與不得聲稱的內容
+------------------------------------------------------------
+可顯示實際完成時間、各 sprint 完成數、速度摘要、距離與 calories estimate caveat。不得聲稱「最大努力」、燃脂或心肺改善已發生，也不得在無 history 時宣稱 PR。
+
+七、安全與降級
+------------------------------------------------------------
+無裝置／stale／控制未啟用時，將 sprint profile 轉為預覽，禁止自動調速；若 user cap 低於 sprint，開始前清楚顯示 clamp 後版本。HR lost 不推斷狀態；任何不適應提供立即降低／停止。
+
+八、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：speed command、ramp／ACK／stop safety。HR：非必要、尚未實作。History：Adapt／比較需要。Generator：不需要。
+
+九、客戶待確認
+------------------------------------------------------------
+[ ] 是否保留 `HIIT 20` 名稱並允許 10／30 分鐘變體？
+[ ] 最高 speed 是否由機型能力決定，還是產品需設更低 launch cap？
+[ ] EFFORT + 是否可在 sprint 間改變速度，或只調下一段？
+[ ] 是否需要在開始前加入明確的高強度安全確認？

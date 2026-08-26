@@ -1,0 +1,65 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；目標演算法未核准，不是已完成的產品行為。
+Program ID：VERTICAL
+正式名稱：VERTICAL
+分類：CLIMB／Elevation challenge
+Hero：是（第一屏 Hero tile 候選）
+來源：idea.txt 第 26、113-139、247-249 行。
+
+一、目標模型（不是固定時間 Program）
+------------------------------------------------------------
+客戶承諾：使用者選擇要爬多高，畫面以 feet 進度與剩餘高度呈現「How high can you go?」；不把目標宣稱為真實登山、醫療訓練或精準 elevation。
+可選目標（idea.txt）：500 FT／1,000 FT／2,000 FT／VERTICAL MILE（5,280 FT）。
+Echelon 提案最大時限：500 FT 45 分鐘、1,000 FT 60 分鐘、2,000 FT 120 分鐘、5,280 FT 240 分鐘。目標時限必須由客戶核准，實際可依機型與使用者 cap 縮短。
+運動型態：Elevation challenge／incline walk or jog。
+建議速度：2.5-4.0 mph（約 4.0-6.4 km/h）。
+建議坡度：整體 2%-機台／使用者允許的最大值；目標 climbing blocks 提案為 8%-Max。`Max` 不代表所有設備都支援，warm-up／cool-down 不應硬套 8%。
+建議強度：中高到高、以坡度為主要變數；所有數值為提案值，必須 clamp。
+
+二、1000 FT 樣例演算法與區塊（提案值，非已核准 elevation 公式）
+------------------------------------------------------------
+目標：1,000 FT；最大時限提案：60 分鐘。
+樣例區塊（僅供 preview）：
+00:00-05:00 WARM UP       2.5 mph/4.0 km/h  4%   FIND YOUR BASE
+05:00-15:00 BASE CLIMB    2.8 mph/4.5 km/h  8%   START CLIMBING
+15:00-25:00 BUILD         3.0 mph/4.8 km/h 10%   KEEP GOING
+25:00-35:00 STEEP BLOCK   2.8 mph/4.5 km/h 12%   HOLD FORM
+35:00-45:00 FINISH PUSH   2.6 mph/4.2 km/h 15%   CLOSE THE GAP
+45:00-50:00 COOL DOWN     2.5 mph/4.0 km/h  2%   RECOVER
+演算法提案：
+1. 以設備提供的 elevation／vertical metric 為優先；若 API 沒有權威 elevation，先把進度標示 `ESTIMATED`，不得暗示精準。
+2. 每個 telemetry tick 計算本次已確認或估算的 vertical delta，累加至 `completedFt`，顯示 `completedFt / targetFt` 與 `targetFt - completedFt`。
+3. 只有在剩餘高度與時間仍可安全完成時，才產生下一個坡度建議；速度／坡度先套用 user cap、machine limits 與 stale guard。
+4. 達到目標時進入 safe cool-down，不立即再升坡；超過最大時限仍未達標時顯示 `TIME LIMIT REACHED`，由使用者選擇 cool-down／結束。
+5. elevation 來源、坡度到 elevation 的公式、每秒更新頻率、誤差與 rounding 尚未核准；不能直接把速度×時間×sin(incline) 當成產品公式。
+
+三、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：依目前每分鐘 vertical progress 與剩餘時間調整下一區塊坡度，先遵守安全 cap；不要為了追目標而突然跳坡。
+EFFORT +/-（提案）：EFFORT + 提高下一個可調坡度一級；EFFORT - 降低坡度並延長預估到達時間。若剩餘高度資料不可靠，EFFORT 只改 preview。
+Manual override（提案）：使用者手動改坡度後顯示 MANUAL，暫停自動調整；進度仍依 telemetry／estimated 標示來源。
+
+四、Live screen 必要欄位
+------------------------------------------------------------
+顯示 `742 FT / 1,000 FT`、progress bar、`258 FT TO GO`、target、elapsed／time limit、speed／incline、目前 block、NEXT／countdown、`ESTIMATED` 或 `DEVICE REPORTED` 來源標記、connection／stale 與 end。不得只顯示無來源的 feet 數字。
+
+五、完成畫面與不得聲稱的內容
+------------------------------------------------------------
+可顯示目標是否達成、完成時間、設備回報／估算的 elevation、距離、最高坡度與 calories estimate。若為 estimated，必須在標題與說明保留 caveat。不得聲稱精確爬升、登山能力提升或 PR，除非 history 與 measurement contract 已核准。
+
+六、安全與降級
+------------------------------------------------------------
+無 elevation source、telemetry stale、bind／permission 失敗或控制未啟用時，改為 `VERTICAL PREVIEW`，不得自動升坡。到達 time limit、機台 max incline 或使用者 cap 時，進入 cool-down／結束選項，不為達標而越界。HR lost 不推導心率。
+
+七、依賴能力
+------------------------------------------------------------
+Gate3A：速度、坡度、elapsed、連線／stale；若 host 未提供 elevation，只能做估算或 preview。Gate3B：坡度／速度控制、ACK、time limit／safe stop。HR：非必要。History：未來可比較目標。Generator：目標演算法需要，尚未實作。
+
+八、客戶待確認
+------------------------------------------------------------
+[ ] 500／1,000／2,000／5,280 FT 目標與各自最大時限是否核准？
+[ ] 哪個設備欄位是權威 elevation？沒有時是否允許 estimated？
+[ ] 是否允許顯示 `VERTICAL MILE` 名稱，及其法律／文案限制？
+[ ] 到達 time limit 未完成時，要顯示 partial completion 還是直接視為未完成？
+[ ] 坡度演算法、更新頻率、rounding 與錯誤容許值由誰核准？

@@ -1,0 +1,54 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：WALK_RUN
+正式名稱：WALK + RUN
+分類：RUN／走跑交替
+Hero：否（一般 Program）
+來源：idea.txt 第 28 行（第二列 experiences）與第 233 行 RUN goal。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：用明確的 walk／run 交替降低選擇負擔，讓使用者知道何時跑、何時恢復；不承諾適合所有人的配速或跑步結果。
+適合對象：能安全在跑步機上走與短時間跑步、希望用交替方式完成運動的使用者。
+不適合／前置條件：無法安全減速、尚未熟悉跑步機或不適合跑步者應選 POWER WALK／RECOVERY WALK；開始前設定 user cap。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：20／30／45／60 分鐘。
+運動型態：Walk／run intervals。
+建議速度：3.0-7.0 mph（約 4.8-11.3 km/h）。
+建議坡度：0-5%。
+建議強度：中等到中高；數值為提案值，需被 user cap／machine limits clamp。
+
+三、30 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP WALK        3.0 mph/4.8 km/h  1%         START EASY
+05:00-10:00 POWER WALK          3.5 mph/5.6 km/h  2%         BUILD THE BASE
+10:00-13:00 RUN 1               5.5 mph/8.9 km/h  1%         FIND YOUR RUN
+13:00-15:00 WALK RECOVERY 1     3.5 mph/5.6 km/h  2%         RESET
+15:00-18:00 RUN 2               6.0 mph/9.7 km/h  2%         HOLD YOUR FORM
+18:00-20:00 WALK RECOVERY 2     3.5 mph/5.6 km/h  2%         BREATHE
+20:00-23:00 RUN 3               6.5 mph/10.5 km/h 3%         LAST RUN BLOCK
+23:00-25:00 WALK RECOVERY 3     3.5 mph/5.6 km/h  1%         CONTROL THE PACE
+25:00-30:00 COOL DOWN            3.0 mph/4.8 km/h  1%         WALK IT OUT
+總和：5+5+3+2+3+2+3+2+5 = 30 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：依使用者跑步 baseline 調整 run speed，優先保留 walk recovery 長度；無 baseline 時不自行提高到 6.5 mph。
+EFFORT +/-（提案）：EFFORT + 提高下一個 run block 一小級；EFFORT - 優先降低 run speed 或延長 recovery。冷身不可跳過。
+Manual override（提案）：當前 block 標示 MANUAL 並暫停自動調整；下一 block 由使用者選擇 resume。
+
+五、Live／完成／安全
+------------------------------------------------------------
+Live 顯示 WALK + RUN、speed／incline、`RUN 2 OF 3`、NEXT／countdown、run／walk time、profile、EFFORT +/-、connection／stale／PREVIEW ONLY、end。例：`NEXT: 2 MIN WALK RECOVERY`、`0:30`。
+完成顯示 run／walk 時間、距離、速度摘要與 calories estimate caveat；不得聲稱跑步能力提升或 PR。無 host／stale／control 未啟用時只 preview；HR lost 不推斷。
+
+六、依賴能力與客戶待確認
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：speed／incline control。HR：非必要。History：Adapt／比較需要。Generator：不需要。
+[ ] 20／45／60 分鐘縮放是否保持三個 run blocks？
+[ ] 不適合跑步者是否可把 run blocks 轉為快走？
+[ ] Run pace 的個人化基準如何取得？

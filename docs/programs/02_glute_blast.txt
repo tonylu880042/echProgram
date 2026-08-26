@@ -1,0 +1,65 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：GLUTE_BLAST
+正式名稱：GLUTE BLAST
+分類：GLUTES + LEGS／坡度走
+Hero：是（第一屏 Hero tile 候選）
+來源：idea.txt 第 19、55-95、247-249 行。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：以分段變化的坡度快走，形成臀腿導向的 hill workout；產品呈現「glutes + legs」目標，不宣稱特定肌群必然被啟動或帶來醫療效果。
+適合對象：偏好走路、不想以跑步完成坡度訓練，且能安全處理中高坡度的使用者。
+不適合／前置條件：使用者需確認膝、髖、踝與平衡狀況適合坡度走；不能安全使用高坡度者應降低 cap 或選擇較低強度。機台最大坡度未確認前，不得使用 `15%+` 作為硬指令。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：15／20／30／45 分鐘；15 分鐘版本可採 Booty Burn 的快速變體，但名稱與內容要分開確認。
+運動型態：Power walk／steep hill blocks。
+建議速度：2.5-4.0 mph（約 4.0-6.4 km/h）。
+建議坡度：4-15%+；`+` 代表依機台最大值與使用者 cap clamp，不是保證支援值。
+建議強度：中高到高，主要以坡度變化造成負荷；所有數值均為 Echelon 提案值，必須被 cap 與 machine limits clamp。
+
+三、30 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-05:00 WARM UP             2.7 mph/4.3 km/h  4%         SET YOUR BASE
+05:00-10:00 ROUND 1 ACTIVATE    3.0 mph/4.8 km/h  5%         ACTIVATE
+10:00-16:00 ROUND 2 BUILD       3.1 mph/5.0 km/h  8%         BUILD THE HILL
+16:00-22:00 ROUND 3 BURN        3.0 mph/4.8 km/h 11%         BURN BLOCK
+22:00-27:00 ROUND 4 POWER       2.8 mph/4.5 km/h 14%         POWER CLIMB
+27:00-29:00 FINAL CLIMB          2.6 mph/4.2 km/h 15%         FINAL CLIMB
+29:00-30:00 COOL DOWN            2.5 mph/4.0 km/h  4%         RESET YOUR BREATH
+總和：5+5+6+6+5+2+1 = 30 分鐘，包含 warm-up 與 cool-down。
+預覽文案例：`12%`、`3.1 MPH`、`BURN BLOCK 2 OF 4`、`NEXT: 14% POWER CLIMB`、`0:42`。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：先套用使用者坡度 cap，再對各 round 的坡度與速度做比例縮放；不得因「FINAL CLIMB」自動超過 cap。若使用者不適合跑步，維持快走速度並只調坡度。
+EFFORT +/-（提案）：EFFORT + 優先提高下一段坡度一級；若已達 cap，再提高速度一小級。EFFORT - 反向處理；最後 1 分鐘不強制增加。
+Manual override（提案）：使用者改值後標示 MANUAL，當前 block 保持該值並暫停自動調整；下一 block 顯示 `RESUME ADAPT?` 或沿用安全 cap。控制尚未核准時只更新 preview。
+
+五、Live screen 必要欄位
+------------------------------------------------------------
+顯示 GLUTE BLAST、current speed／incline、時間、目前 round、`BURN BLOCK 2 OF 4`、下一個坡度與 countdown、profile chart、EFFORT +/-、連線／stale／PREVIEW ONLY 狀態與停止入口。例：`NEXT: 14% POWER CLIMB 0:42`。
+
+六、完成畫面與不得聲稱的內容
+------------------------------------------------------------
+可顯示完成時間、距離、速度／坡度摘要、裝置 calories estimate、各 round 完成率與手動變更。不得聲稱臀部塑形、特定肌群成效、精準 calories 或未比較過的 PR。
+
+七、安​​全與降級
+------------------------------------------------------------
+無裝置、bind／permission 失敗或 telemetry stale 時只顯示 profile preview，不送 control。若裝置不支援 15% 或使用者 cap 較低，整張 profile 需 clamp 並在開始前讓使用者確認。HR lost 不觸發推測性升降坡。AIDL 控制仍屬 Gate3B 未核准。
+
+八、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀速度、坡度、elapsed、連線／stale。Gate3B：speed／incline command、ACK、ramp rate。HR：可選但尚未實作。History：Adapt 學習需要。Generator：不需要。
+
+九、客戶待確認
+------------------------------------------------------------
+[ ] `GLUTE BLAST` 是否核准以坡度快走為主、而非跑步？
+[ ] 4-15%+ 的「+」是否允許依機型變動，UI 要如何呈現？
+[ ] 30 分鐘各 round 的時間與 15 分鐘短版是否核准？
+[ ] `BURN BLOCK`、`POWER CLIMB` 等英文 coaching 是否核准？
+[ ] Adapt 是否可在 round 之間自動調坡，或僅做建議？

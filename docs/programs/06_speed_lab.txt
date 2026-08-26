@@ -1,0 +1,66 @@
+Echelon Program 客戶審閱規格
+============================================================
+文件狀態：Echelon 提案值／待客戶確認；不是已完成的產品行為。
+Program ID：SPEED_LAB
+正式名稱：SPEED LAB
+分類：GET FASTER／速度間歇
+Hero：否（一般 Program）
+來源：idea.txt 第 23 行與第 231 行的 GET FASTER goal。
+
+一、客戶承諾與適用範圍
+------------------------------------------------------------
+客戶承諾：用漸進的短間歇讓使用者練習速度變化與跑姿控制；不保證提升速度、比賽成績或任何醫療效果。
+適合對象：已能安全跑步，想在可讀的 recovery window 中嘗試較快 pace 的使用者。
+不適合／前置條件：不熟悉高速跑步、無法快速減速或個人 cap 不允許者不應選用；開始前確認 emergency stop 與最高速度。
+
+二、時長與運動型態
+------------------------------------------------------------
+Echelon 提案預設：30 分鐘。可選時長：20／30／40 分鐘。
+運動型態：Progressive speed intervals。
+建議速度：4.0-10.0+ mph（約 6.4-16.1+ km/h）。
+建議坡度：0-4%。
+建議強度：中高到高，間歇間保留 recovery；所有數值為提案值，需由 user cap／machine limits clamp。
+
+三、30 分鐘完整 Segment Profile（提案值）
+------------------------------------------------------------
+時間       區塊                 速度             坡度       UI coaching
+00:00-04:00 WARM UP             4.0 mph/6.4 km/h  0%         FIND YOUR STRIDE
+04:00-08:00 FORM DRILL          5.0 mph/8.0 km/h  1%         CONTROL THE PACE
+08:00-11:00 INTERVAL 1          7.0 mph/11.3 km/h 1%         FIRST FAST BLOCK
+11:00-14:00 RECOVERY 1          4.5 mph/7.2 km/h  0%         RESET
+14:00-17:00 INTERVAL 2          8.0 mph/12.9 km/h 2%         BUILD SPEED
+17:00-20:00 RECOVERY 2          4.5 mph/7.2 km/h  0%         BREATHE
+20:00-23:00 INTERVAL 3          9.0 mph/14.5 km/h 3%         HOLD FORM
+23:00-26:00 RECOVERY 3          4.5 mph/7.2 km/h  0%         CONTROLLED RECOVERY
+26:00-28:00 FINAL INTERVAL       10.0 mph/16.1 km/h 4%        LAST FAST BLOCK
+28:00-30:00 COOL DOWN            4.0 mph/6.4 km/h  0%         EASY STRIDE
+總和：4+4+3+3+3+3+3+3+2+2 = 30 分鐘，包含 warm-up 與 cool-down。
+
+四、Echelon Adapt、EFFORT 與手動覆寫
+------------------------------------------------------------
+Echelon Adapt（提案）：以可完成的既有速度 baseline 為起點，僅提升下一個 interval，並保留 recovery 速度上限；無 baseline 時使用保守 7.0 mph 起始示例。
+EFFORT +/-（提案）：EFFORT + 只改下一個尚未開始的 fast block；EFFORT - 優先降低速度，坡度維持 0-1%。不得在區塊中突然跳變。
+Manual override（提案）：手動調整後停用當前 interval 的自動調整並顯示 MANUAL。下一 interval 重新提示是否回到 Adapt。
+
+五、Live screen 必要欄位
+------------------------------------------------------------
+顯示 SPEED LAB、speed／incline、`INTERVAL 2 OF 4`、elapsed／remaining、NEXT／countdown、profile chart、EFFORT +/-、data freshness 與 stop。例：`NEXT: 4.5 MPH RECOVERY 0:20`。
+
+六、完成畫面與不得聲稱的內容
+------------------------------------------------------------
+可顯示 fast block 完成數、速度摘要、距離、裝置 calories estimate。不得宣稱使用者變快、創下速度 PR 或改善心肺，除非有歷史資料與核准比較規則。
+
+七、安全與降級
+------------------------------------------------------------
+無 host、stale 或未核准 control 時，所有數值只作 preview；高速值超出 cap 時必須在 setup 顯示 clamp。控制 command 的 ramp rate、ACK、stop 行為尚未核准，不能直接接 AIDL。
+
+八、依賴能力
+------------------------------------------------------------
+Gate3A：唯讀 telemetry。Gate3B：速度控制、ramp／ACK／safe stop。HR：非必要、尚未實作。History：baseline／PR 需要。Generator：不需要。
+
+九、客戶待確認
+------------------------------------------------------------
+[ ] `10.0+ mph` 是否要改成固定 launch 上限？
+[ ] 20／30／40 分鐘縮放時 recovery 是否固定保留？
+[ ] SPEED LAB 是否只給已完成 onboarding 的跑步者？
+[ ] 可比較的「變快」指標要用最高速度、interval 平均，還是另行定義？

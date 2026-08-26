@@ -47,10 +47,7 @@ object WorkoutPlanValidator {
         val durationLimits = capabilities.duration
         if (duration !in durationLimits.min.value..durationLimits.max.value) {
             add(PlanValidationError.DurationOutOfRange(plan.settings.duration, durationLimits))
-        } else if (
-            durationLimits.step.value > 0 &&
-            (duration - durationLimits.min.value) % durationLimits.step.value != 0
-        ) {
+        } else if ((duration - durationLimits.min.value) % durationLimits.step.value != 0) {
             add(PlanValidationError.DurationStepMismatch(plan.settings.duration, durationLimits))
         }
 

@@ -19,7 +19,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class ConfigureWorkoutPlanTest {
+class StartWorkoutTest {
     private val capabilities = DeviceCapabilities(
         duration = DurationLimits(
             min = DurationMinutes(10),
@@ -33,7 +33,7 @@ class ConfigureWorkoutPlanTest {
     @Test
     fun `invalid max speed is rejected at capability boundary and is not forwarded`() {
         val starter = RecordingStarter()
-        val result = ConfigureWorkoutPlan(starter).invoke(
+        val result = StartWorkout(starter).invoke(
             plan = WorkoutPlan(
                 programId = ProgramId("FAT_BURN"),
                 settings = PlanSettings(
@@ -48,7 +48,7 @@ class ConfigureWorkoutPlanTest {
             capabilities = capabilities,
         )
 
-        assertTrue(result is ConfigureWorkoutPlanResult.Invalid)
+        assertTrue(result is StartWorkoutResult.Invalid)
         assertNull(starter.received)
     }
 
@@ -59,9 +59,9 @@ class ConfigureWorkoutPlanTest {
                 val plan = plan(maxSpeed = speed, maxIncline = incline)
                 val starter = RecordingStarter()
 
-                val result = ConfigureWorkoutPlan(starter).invoke(plan, capabilities)
+                val result = StartWorkout(starter).invoke(plan, capabilities)
 
-                assertTrue(result is ConfigureWorkoutPlanResult.Valid)
+                assertTrue(result is StartWorkoutResult.Valid)
                 assertEquals(plan, starter.received?.plan)
             }
         }
@@ -92,9 +92,9 @@ class ConfigureWorkoutPlanTest {
         )
         val starter = RecordingStarter()
 
-        val result = ConfigureWorkoutPlan(starter).invoke(plan, capabilities)
+        val result = StartWorkout(starter).invoke(plan, capabilities)
 
-        assertTrue(result is ConfigureWorkoutPlanResult.Valid)
+        assertTrue(result is StartWorkoutResult.Valid)
         assertEquals(PlanIntensity.HIGH, starter.received?.plan?.settings?.intensity)
         assertEquals(PlanFocus.MORE_INCLINE, starter.received?.plan?.settings?.focus)
         assertEquals(true, starter.received?.plan?.settings?.adaptToYou)
@@ -102,10 +102,10 @@ class ConfigureWorkoutPlanTest {
 
     private fun assertInvalid(plan: WorkoutPlan, expectedField: PlanField) {
         val starter = RecordingStarter()
-        val result = ConfigureWorkoutPlan(starter).invoke(plan, capabilities)
+        val result = StartWorkout(starter).invoke(plan, capabilities)
 
-        assertTrue(result is ConfigureWorkoutPlanResult.Invalid)
-        assertEquals(expectedField, (result as ConfigureWorkoutPlanResult.Invalid).errors.single().field)
+        assertTrue(result is StartWorkoutResult.Invalid)
+        assertEquals(expectedField, (result as StartWorkoutResult.Invalid).errors.single().field)
         assertNull(starter.received)
     }
 

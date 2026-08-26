@@ -13,17 +13,30 @@ data class DurationLimits(
     val min: DurationMinutes,
     val max: DurationMinutes,
     val step: DurationMinutes,
-)
+) {
+    init {
+        require(step.value > 0) { "Duration step must be positive" }
+        require(min.value <= max.value) { "Duration minimum must not exceed maximum" }
+    }
+}
 
 data class SpeedRange(
     val min: SpeedTenths,
     val max: SpeedTenths,
-)
+) {
+    init {
+        require(min.value <= max.value) { "Speed minimum must not exceed maximum" }
+    }
+}
 
 data class InclineRange(
     val min: InclineTenths,
     val max: InclineTenths,
-)
+) {
+    init {
+        require(min.value <= max.value) { "Incline minimum must not exceed maximum" }
+    }
+}
 
 data class DeviceCapabilities(
     val duration: DurationLimits,
@@ -56,6 +69,3 @@ data class WorkoutPlan(
     val programId: ProgramId,
     val settings: PlanSettings,
 )
-
-@JvmInline
-value class ValidatedWorkoutPlan internal constructor(val plan: WorkoutPlan)

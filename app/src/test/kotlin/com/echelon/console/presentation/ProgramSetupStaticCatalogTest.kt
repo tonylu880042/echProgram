@@ -1,5 +1,6 @@
 package com.echelon.console.presentation
 
+import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
@@ -14,7 +15,6 @@ import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
-import com.echelon.console.domain.SurpriseWorkoutGenerator
 import com.echelon.console.domain.WorkoutSessionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,7 +45,7 @@ class ProgramSetupStaticCatalogTest {
                     getProgramDetail = GetProgramDetail(catalog),
                     startWorkout = StartWorkout(coordinator),
                     startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
-                    surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+                    generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                     capabilities = compositionCapabilities,
                     dispatcher = dispatcher,
                 )

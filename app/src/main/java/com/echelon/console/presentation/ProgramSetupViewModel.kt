@@ -2,6 +2,8 @@ package com.echelon.console.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
+import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraftRequest
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailResult
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
@@ -10,7 +12,6 @@ import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.StartWorkoutResult
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationMinutes
-import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.PlanSettings
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
@@ -18,9 +19,6 @@ import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.SurpriseWorkoutEffort
 import com.echelon.console.domain.SurpriseWorkoutGenerationResult
-import com.echelon.console.domain.SurpriseWorkoutGenerator
-import com.echelon.console.domain.SurpriseWorkoutGeneratorInput
-import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.WorkoutPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -34,7 +32,7 @@ class ProgramSetupViewModel(
     private val getProgramDetail: GetProgramDetail,
     private val startWorkout: StartWorkout,
     private val startSurpriseWorkoutDraft: StartSurpriseWorkoutDraft,
-    private val surpriseWorkoutGenerator: SurpriseWorkoutGenerator,
+    private val generateSurpriseWorkoutDraft: GenerateSurpriseWorkoutDraft,
     private val capabilities: DeviceCapabilities?,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
 ) : ViewModel() {
@@ -157,13 +155,20 @@ class ProgramSetupViewModel(
         }
         val configuring = ProgramSetupUiState.Configuring(
             detail = detail,
-            duration = SURPRISE_DEFAULT_DURATION,
+            duration = detail.defaultSettings.duration.takeIf {
+                it in SurpriseWorkoutDurationOptions
+            } ?: SURPRISE_DEFAULT_DURATION,
             effort = SURPRISE_DEFAULT_EFFORT,
             regenerationIndex = 0,
-            userMaxSpeed = SURPRISE_USER_MAX_SPEED,
+            userMaxSpeed = detail.defaultSettings.maxSpeed,
             machineMaxSpeed = deviceCapabilities.speed.max,
-            userMaxIncline = SURPRISE_USER_MAX_INCLINE,
+            userMaxIncline = detail.defaultSettings.maxIncline,
             machineMaxIncline = deviceCapabilities.incline.max,
+            errorMessage = if (detail.defaultSettings.duration in SurpriseWorkoutDurationOptions) {
+                null
+            } else {
+                SURPRISE_UNSUPPORTED_DURATION_ERROR
+            },
         )
         _state.value = configuring
         return configuring
@@ -264,13 +269,12 @@ class ProgramSetupViewModel(
     }
 
     private fun generateDraft(configuring: ProgramSetupUiState.Configuring): SurpriseWorkoutDraft? {
-        val result = surpriseWorkoutGenerator.generate(
-            SurpriseWorkoutGeneratorInput(
+        val result = generateSurpriseWorkoutDraft(
+            GenerateSurpriseWorkoutDraftRequest(
                 durationMinutes = configuring.duration.value,
                 effort = configuring.effort,
                 userProfileRevision = SURPRISE_PROFILE_REVISION,
                 regenerationIndex = configuring.regenerationIndex,
-                generatorVersion = SURPRISE_GENERATOR_VERSION,
                 userMaxSpeed = configuring.userMaxSpeed,
                 machineMaxSpeed = configuring.machineMaxSpeed,
                 userMaxIncline = configuring.userMaxIncline,
@@ -323,13 +327,12 @@ class ProgramSetupViewModel(
     private companion object {
         const val SURPRISE_PROGRAM_ID = "SURPRISE_ME"
         const val SURPRISE_PROFILE_REVISION = "anonymous-baseline-r1"
-        const val SURPRISE_GENERATOR_VERSION = "v1"
         const val SURPRISE_GENERATION_ERROR = "Unable to generate workout preview"
         const val SURPRISE_ACCEPT_ERROR = "Unable to accept workout preview"
+        const val SURPRISE_UNSUPPORTED_DURATION_ERROR =
+            "Default duration unavailable; using 20 minutes"
 
         val SURPRISE_DEFAULT_DURATION = DurationMinutes(20)
         val SURPRISE_DEFAULT_EFFORT = SurpriseWorkoutEffort.SWEAT
-        val SURPRISE_USER_MAX_SPEED = SpeedTenths(80)
-        val SURPRISE_USER_MAX_INCLINE = InclineTenths(100)
     }
 }

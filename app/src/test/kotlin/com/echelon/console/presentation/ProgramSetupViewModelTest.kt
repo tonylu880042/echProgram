@@ -1,5 +1,6 @@
 package com.echelon.console.presentation
 
+import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
@@ -25,7 +26,6 @@ import com.echelon.console.domain.ProgramSegmentSummary
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.SurpriseWorkoutEffort
-import com.echelon.console.domain.SurpriseWorkoutGenerator
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.WorkoutPlan
 import com.echelon.console.domain.WorkoutSessionState
@@ -232,7 +232,7 @@ class ProgramSetupViewModelTest {
                 getProgramDetail = GetProgramDetail(catalog),
                 startWorkout = StartWorkout(coordinator),
                 startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
-                surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+                generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -244,6 +244,93 @@ class ProgramSetupViewModelTest {
 
             assertTrue(viewModel.state.value !is ProgramSetupUiState.Started)
             assertNull(coordinator.currentState())
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `surprise configuration uses detail baseline duration and caps for generation`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val customDetail = detail.copy(
+                programId = ProgramId("SURPRISE_ME"),
+                title = "SURPRISE ME",
+                defaultSettings = detail.defaultSettings.copy(
+                    duration = DurationMinutes(30),
+                    maxSpeed = SpeedTenths(60),
+                    maxIncline = InclineTenths(70),
+                ),
+                previewMode = ProgramPreviewMode.GENERATED_PREVIEW,
+            )
+            val catalog = ProgramDetailCatalog { programId ->
+                customDetail.takeIf { programId == customDetail.programId }
+            }
+            val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
+            val viewModel = ProgramSetupViewModel(
+                getProgramDetail = GetProgramDetail(catalog),
+                startWorkout = StartWorkout(coordinator),
+                startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
+                generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
+                capabilities = capabilities,
+                dispatcher = dispatcher,
+            )
+
+            viewModel.onAction(ProgramSetupAction.OpenProgram(customDetail.programId))
+            advanceUntilIdle()
+            viewModel.onAction(ProgramSetupAction.MakeItYours)
+
+            val configuring = viewModel.state.value as ProgramSetupUiState.Configuring
+            assertEquals(DurationMinutes(30), configuring.duration)
+            assertEquals(SpeedTenths(60), configuring.userMaxSpeed)
+            assertEquals(InclineTenths(70), configuring.userMaxIncline)
+
+            viewModel.onAction(ProgramSetupAction.GenerateSurprisePreview)
+
+            val preview = viewModel.state.value as ProgramSetupUiState.DraftPreview
+            assertEquals(30, preview.draft.metadata.durationMinutes)
+            assertEquals(SpeedTenths(60), preview.draft.effectiveSpeedCap)
+            assertEquals(InclineTenths(70), preview.draft.effectiveInclineCap)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `unsupported surprise detail duration falls back with explicit copy`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val customDetail = detail.copy(
+                programId = ProgramId("SURPRISE_ME"),
+                title = "SURPRISE ME",
+                defaultSettings = detail.defaultSettings.copy(duration = DurationMinutes(1)),
+                previewMode = ProgramPreviewMode.GENERATED_PREVIEW,
+            )
+            val catalog = ProgramDetailCatalog { programId ->
+                customDetail.takeIf { programId == customDetail.programId }
+            }
+            val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
+            val viewModel = ProgramSetupViewModel(
+                getProgramDetail = GetProgramDetail(catalog),
+                startWorkout = StartWorkout(coordinator),
+                startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
+                generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
+                capabilities = capabilities,
+                dispatcher = dispatcher,
+            )
+
+            viewModel.onAction(ProgramSetupAction.OpenProgram(customDetail.programId))
+            advanceUntilIdle()
+            viewModel.onAction(ProgramSetupAction.MakeItYours)
+
+            val configuring = viewModel.state.value as ProgramSetupUiState.Configuring
+            assertEquals(DurationMinutes(20), configuring.duration)
+            assertEquals(
+                "Default duration unavailable; using 20 minutes",
+                configuring.errorMessage,
+            )
         } finally {
             Dispatchers.resetMain()
         }
@@ -343,7 +430,7 @@ class ProgramSetupViewModelTest {
                 getProgramDetail = GetProgramDetail(missingCapabilitiesCatalog),
                 startWorkout = StartWorkout(missingCapabilitiesCoordinator),
                 startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(missingCapabilitiesCoordinator),
-                surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+                generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 capabilities = null,
                 dispatcher = dispatcher,
             )
@@ -362,7 +449,7 @@ class ProgramSetupViewModelTest {
                 getProgramDetail = GetProgramDetail(unsafeCatalog),
                 startWorkout = StartWorkout(unsafeCoordinator),
                 startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(unsafeCoordinator),
-                surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+                generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 capabilities = unsafeCapabilities,
                 dispatcher = dispatcher,
             )
@@ -635,7 +722,7 @@ class ProgramSetupViewModelTest {
         getProgramDetail = GetProgramDetail(catalog),
         startWorkout = StartWorkout(starter),
         startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(InMemoryWorkoutSessionCoordinator(catalog)),
-        surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+        generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )
@@ -648,7 +735,7 @@ class ProgramSetupViewModelTest {
         getProgramDetail = GetProgramDetail(catalog),
         startWorkout = StartWorkout(coordinator),
         startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
-        surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+        generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )

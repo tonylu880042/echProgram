@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.echelon.console.application.usecase.EquipmentTelemetrySource
+import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.ListProgramLibrary
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
@@ -22,7 +23,6 @@ import com.echelon.console.domain.InclineRange
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
-import com.echelon.console.domain.SurpriseWorkoutGenerator
 import com.echelon.console.presentation.ProgramLibraryDestination
 import com.echelon.console.presentation.ProgramLibraryRoute
 import com.echelon.console.presentation.ProgramLibraryViewModel
@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
             getProgramDetail = GetProgramDetail(programCatalog),
             startWorkout = StartWorkout(workoutSessionCoordinator),
             startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(workoutSessionCoordinator),
-            surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+            generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
             capabilities = DeviceCapabilities(
                 duration = DurationLimits(
                     min = DurationMinutes(10),

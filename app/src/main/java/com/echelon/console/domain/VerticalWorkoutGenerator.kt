@@ -1,6 +1,6 @@
 package com.echelon.console.domain
 
-/** A target time limit proposal that has not been approved as a session duration. */
+/** A target time limit proposal that is not a session duration. */
 data class VerticalTimeLimitProposal(
     val minutes: Int,
     val status: VerticalTimeLimitStatus,
@@ -110,7 +110,7 @@ data class VerticalWorkoutProfileSegment(
 /**
  * A deterministic VERTICAL representative preview.
  *
- * This is not an elevation calculation, target-completion claim, approved time
+ * This is not an elevation calculation, target-completion claim, customer-confirmed time
  * limit, device-control command, or workout session duration. Every target uses
  * the same 50-minute proposal profile while target and proposed-limit metadata
  * remain explicit for customer review.

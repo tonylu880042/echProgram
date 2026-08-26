@@ -9,7 +9,7 @@ class VerticalWorkoutGeneratorTest {
     private val generator = VerticalWorkoutGenerator()
 
     @Test
-    fun `each approved target carries its proposed time limit without changing the profile`() {
+    fun `each reviewed target carries its proposed time limit without changing the profile`() {
         val expectedLimits = mapOf(
             VerticalTarget.FIVE_HUNDRED_FEET to 45,
             VerticalTarget.ONE_THOUSAND_FEET to 60,
@@ -50,7 +50,7 @@ class VerticalWorkoutGeneratorTest {
     }
 
     @Test
-    fun `representative profile matches the sole approved five block proposal`() {
+    fun `representative profile matches the documented six block proposal`() {
         val draft = generate(input())
 
         assertEquals(

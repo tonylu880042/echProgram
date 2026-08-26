@@ -2,6 +2,7 @@ package com.echelon.console.presentation
 
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
+import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
@@ -13,6 +14,7 @@ import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
+import com.echelon.console.domain.SurpriseWorkoutGenerator
 import com.echelon.console.domain.WorkoutSessionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,6 +24,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -41,6 +44,8 @@ class ProgramSetupStaticCatalogTest {
                 val viewModel = ProgramSetupViewModel(
                     getProgramDetail = GetProgramDetail(catalog),
                     startWorkout = StartWorkout(coordinator),
+                    startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
+                    surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
                     capabilities = compositionCapabilities,
                     dispatcher = dispatcher,
                 )
@@ -49,6 +54,14 @@ class ProgramSetupStaticCatalogTest {
                 advanceUntilIdle()
                 viewModel.onAction(ProgramSetupAction.StartDefault)
                 advanceUntilIdle()
+
+                if (programId == ProgramId("SURPRISE_ME")) {
+                    val draftPreview = viewModel.state.value as ProgramSetupUiState.DraftPreview
+                    assertEquals(programId, draftPreview.draft.metadata.programId)
+                    assertNull(coordinator.currentState())
+
+                    viewModel.onAction(ProgramSetupAction.AcceptSurprisePlan)
+                }
 
                 val started = viewModel.state.value as ProgramSetupUiState.Started
                 assertEquals(programId, started.plan.plan.programId)

@@ -106,6 +106,20 @@ fun ProgramSetupScreen(
             onNavigate = onNavigate,
         )
 
+        is ProgramSetupUiState.Configuring -> SurpriseWorkoutConfiguringScreen(
+            state = state,
+            onAction = onAction,
+            onBack = { onAction(ProgramSetupAction.Back) },
+            onNavigate = onNavigate,
+        )
+
+        is ProgramSetupUiState.DraftPreview -> SurpriseWorkoutDraftPreviewScreen(
+            state = state,
+            onAction = onAction,
+            onBack = { onAction(ProgramSetupAction.Back) },
+            onNavigate = onNavigate,
+        )
+
         is ProgramSetupUiState.Unavailable -> ProgramSetupStatus(
             title = "PROGRAM UNAVAILABLE",
             message = "Program ${state.programId.value} is not available on this console.",

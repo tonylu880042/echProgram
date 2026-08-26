@@ -57,7 +57,10 @@ class StartSurpriseWorkoutDraft(
                 val result = sessionStarter.start(draft, validation.plan)
             ) {
                 is WorkoutSessionStarterResult.Started ->
-                    StartSurpriseWorkoutDraftResult.Started(result.state)
+                    StartSurpriseWorkoutDraftResult.Started(
+                        state = result.state,
+                        plan = validation.plan,
+                    )
 
                 is WorkoutSessionStarterResult.Failed ->
                     StartSurpriseWorkoutDraftResult.StarterFailed(result.failure)
@@ -161,6 +164,7 @@ class StartSurpriseWorkoutDraft(
 sealed interface StartSurpriseWorkoutDraftResult {
     data class Started(
         val state: WorkoutSessionState.Running,
+        val plan: ValidatedWorkoutPlan,
     ) : StartSurpriseWorkoutDraftResult
 
     data class InvalidDraft(

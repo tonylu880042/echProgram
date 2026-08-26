@@ -6,6 +6,7 @@ import com.echelon.console.domain.PlanFocus
 import com.echelon.console.domain.PlanIntensity
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.SpeedTenths
+import com.echelon.console.domain.SurpriseWorkoutEffort
 
 sealed interface ProgramSetupAction {
     data class OpenProgram(val programId: ProgramId) : ProgramSetupAction
@@ -29,4 +30,14 @@ sealed interface ProgramSetupAction {
     data class SetAdaptToYou(val adaptToYou: Boolean) : ProgramSetupAction
 
     data object StartCustomized : ProgramSetupAction
+
+    data class SetSurpriseDuration(val duration: DurationMinutes) : ProgramSetupAction
+
+    data class SetSurpriseEffort(val effort: SurpriseWorkoutEffort) : ProgramSetupAction
+
+    data object GenerateSurprisePreview : ProgramSetupAction
+
+    data object RegenerateSurprisePreview : ProgramSetupAction
+
+    data object AcceptSurprisePlan : ProgramSetupAction
 }

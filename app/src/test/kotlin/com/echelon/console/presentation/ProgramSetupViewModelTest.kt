@@ -2,11 +2,14 @@ package com.echelon.console.presentation
 
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailCatalog
+import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
+import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.testStartedWorkoutResult
 import com.echelon.console.application.usecase.WorkoutSessionStarter
 import com.echelon.console.application.usecase.WorkoutSessionStarterResult
 import com.echelon.console.application.usecase.WorkoutSessionStartFailure
+import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
 import com.echelon.console.domain.DurationMinutes
@@ -17,10 +20,15 @@ import com.echelon.console.domain.PlanIntensity
 import com.echelon.console.domain.PlanSettings
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.ProgramSegmentSummary
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
+import com.echelon.console.domain.SurpriseWorkoutEffort
+import com.echelon.console.domain.SurpriseWorkoutGenerator
 import com.echelon.console.domain.ValidatedWorkoutPlan
+import com.echelon.console.domain.WorkoutPlan
+import com.echelon.console.domain.WorkoutSessionState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +39,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -207,6 +216,194 @@ class ProgramSetupViewModelTest {
             }
             assertEquals(expected, starter.received?.plan)
             assertEquals(ProgramSetupUiState.Started(starter.received!!), viewModel.state.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `surprise default start does not start the static profile before a draft is accepted`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val catalog = StaticProgramCatalog()
+            val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
+            val viewModel = ProgramSetupViewModel(
+                getProgramDetail = GetProgramDetail(catalog),
+                startWorkout = StartWorkout(coordinator),
+                startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
+                surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+                capabilities = capabilities,
+                dispatcher = dispatcher,
+            )
+
+            viewModel.onAction(ProgramSetupAction.OpenProgram(ProgramId("SURPRISE_ME")))
+            advanceUntilIdle()
+            viewModel.onAction(ProgramSetupAction.StartDefault)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value !is ProgramSetupUiState.Started)
+            assertNull(coordinator.currentState())
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `surprise configuring generates draft regenerates and accepts the exact profile`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val catalog = StaticProgramCatalog()
+            val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
+            val viewModel = surpriseViewModel(dispatcher, catalog, coordinator)
+
+            viewModel.onAction(ProgramSetupAction.OpenProgram(ProgramId("SURPRISE_ME")))
+            advanceUntilIdle()
+            viewModel.onAction(ProgramSetupAction.MakeItYours)
+            viewModel.onAction(ProgramSetupAction.SetSurpriseDuration(DurationMinutes(45)))
+            viewModel.onAction(ProgramSetupAction.SetSurpriseEffort(SurpriseWorkoutEffort.HARD))
+            viewModel.onAction(ProgramSetupAction.GenerateSurprisePreview)
+
+            val firstPreview = viewModel.state.value as ProgramSetupUiState.DraftPreview
+            assertEquals(45, firstPreview.draft.metadata.durationMinutes)
+            assertEquals(SurpriseWorkoutEffort.HARD, firstPreview.draft.metadata.effort)
+            assertEquals(0, firstPreview.draft.metadata.regenerationIndex)
+            assertEquals("anonymous-baseline-r1", firstPreview.draft.metadata.userProfileRevision)
+            assertNull(coordinator.currentState())
+
+            viewModel.onAction(ProgramSetupAction.RegenerateSurprisePreview)
+            val regenerated = viewModel.state.value as ProgramSetupUiState.DraftPreview
+            assertEquals(1, regenerated.draft.metadata.regenerationIndex)
+            assertNotEquals(firstPreview.draft.profile, regenerated.draft.profile)
+            assertNull(coordinator.currentState())
+
+            viewModel.onAction(ProgramSetupAction.AcceptSurprisePlan)
+
+            val started = viewModel.state.value as ProgramSetupUiState.Started
+            assertEquals(ProgramPreviewMode.GENERATED_PREVIEW, started.previewMode)
+            val running = coordinator.currentState() as WorkoutSessionState.Running
+            assertEquals(
+                regenerated.draft.profile.map { it.name },
+                running.timeline.segments.map { it.name },
+            )
+            assertEquals(
+                regenerated.draft.profile.map { it.duration.value * 60 },
+                running.timeline.segments.map { it.durationSeconds },
+            )
+            assertEquals(
+                regenerated.draft.profile.map { it.speed.value },
+                running.timeline.segments.map { it.targetSpeed.value },
+            )
+            assertEquals(
+                regenerated.draft.profile.map { it.incline.value },
+                running.timeline.segments.map { it.targetIncline.value },
+            )
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `surprise back preserves preview selection and regeneration index`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val catalog = StaticProgramCatalog()
+            val viewModel = surpriseViewModel(dispatcher, catalog)
+            viewModel.onAction(ProgramSetupAction.OpenProgram(ProgramId("SURPRISE_ME")))
+            advanceUntilIdle()
+            viewModel.onAction(ProgramSetupAction.MakeItYours)
+            viewModel.onAction(ProgramSetupAction.SetSurpriseDuration(DurationMinutes(30)))
+            viewModel.onAction(ProgramSetupAction.SetSurpriseEffort(SurpriseWorkoutEffort.BURN))
+            viewModel.onAction(ProgramSetupAction.GenerateSurprisePreview)
+            viewModel.onAction(ProgramSetupAction.RegenerateSurprisePreview)
+
+            viewModel.onAction(ProgramSetupAction.Back)
+            val configuring = viewModel.state.value as ProgramSetupUiState.Configuring
+            assertEquals(DurationMinutes(30), configuring.duration)
+            assertEquals(SurpriseWorkoutEffort.BURN, configuring.effort)
+            assertEquals(1, configuring.regenerationIndex)
+
+            viewModel.onAction(ProgramSetupAction.Back)
+            assertTrue(viewModel.state.value is ProgramSetupUiState.Ready)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `surprise generation rejects missing capabilities and unsafe machine caps`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val missingCapabilitiesCatalog = StaticProgramCatalog()
+            val missingCapabilitiesCoordinator = InMemoryWorkoutSessionCoordinator(missingCapabilitiesCatalog)
+            val missingCapabilitiesViewModel = ProgramSetupViewModel(
+                getProgramDetail = GetProgramDetail(missingCapabilitiesCatalog),
+                startWorkout = StartWorkout(missingCapabilitiesCoordinator),
+                startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(missingCapabilitiesCoordinator),
+                surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+                capabilities = null,
+                dispatcher = dispatcher,
+            )
+            missingCapabilitiesViewModel.onAction(ProgramSetupAction.OpenProgram(ProgramId("SURPRISE_ME")))
+            advanceUntilIdle()
+            missingCapabilitiesViewModel.onAction(ProgramSetupAction.MakeItYours)
+            assertEquals(ProgramSetupUiState.DeviceUnavailable, missingCapabilitiesViewModel.state.value)
+            assertNull(missingCapabilitiesCoordinator.currentState())
+
+            val unsafeCapabilities = capabilities.copy(
+                speed = SpeedRange(SpeedTenths(20), SpeedTenths(20)),
+            )
+            val unsafeCatalog = StaticProgramCatalog()
+            val unsafeCoordinator = InMemoryWorkoutSessionCoordinator(unsafeCatalog)
+            val unsafeViewModel = ProgramSetupViewModel(
+                getProgramDetail = GetProgramDetail(unsafeCatalog),
+                startWorkout = StartWorkout(unsafeCoordinator),
+                startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(unsafeCoordinator),
+                surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+                capabilities = unsafeCapabilities,
+                dispatcher = dispatcher,
+            )
+            unsafeViewModel.onAction(ProgramSetupAction.OpenProgram(ProgramId("SURPRISE_ME")))
+            advanceUntilIdle()
+            unsafeViewModel.onAction(ProgramSetupAction.StartDefault)
+            val configuring = unsafeViewModel.state.value as ProgramSetupUiState.Configuring
+            assertEquals("Unable to generate workout preview", configuring.errorMessage)
+            assertNull(unsafeCoordinator.currentState())
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `surprise accept failure is safe when another workout is active`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val catalog = StaticProgramCatalog()
+            val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
+            val startResult = StartWorkout(coordinator)(
+                WorkoutPlan(
+                    ProgramId("FAT_BURN"),
+                    requireNotNull(catalog.findProgramDetail(ProgramId("FAT_BURN"))).defaultSettings,
+                ),
+                capabilities,
+            )
+            assertTrue(startResult is com.echelon.console.application.usecase.StartWorkoutResult.Valid)
+
+            val viewModel = surpriseViewModel(dispatcher, catalog, coordinator)
+            viewModel.onAction(ProgramSetupAction.OpenProgram(ProgramId("SURPRISE_ME")))
+            advanceUntilIdle()
+            viewModel.onAction(ProgramSetupAction.StartDefault)
+            viewModel.onAction(ProgramSetupAction.AcceptSurprisePlan)
+
+            assertEquals(
+                ProgramSetupUiState.Error("Unable to accept workout preview"),
+                viewModel.state.value,
+            )
+            assertTrue(coordinator.currentState() is WorkoutSessionState.Running)
         } finally {
             Dispatchers.resetMain()
         }
@@ -437,6 +634,21 @@ class ProgramSetupViewModelTest {
     ): ProgramSetupViewModel = ProgramSetupViewModel(
         getProgramDetail = GetProgramDetail(catalog),
         startWorkout = StartWorkout(starter),
+        startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(InMemoryWorkoutSessionCoordinator(catalog)),
+        surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
+        capabilities = capabilities,
+        dispatcher = dispatcher,
+    )
+
+    private fun surpriseViewModel(
+        dispatcher: CoroutineDispatcher,
+        catalog: ProgramDetailCatalog,
+        coordinator: InMemoryWorkoutSessionCoordinator = InMemoryWorkoutSessionCoordinator(catalog),
+    ): ProgramSetupViewModel = ProgramSetupViewModel(
+        getProgramDetail = GetProgramDetail(catalog),
+        startWorkout = StartWorkout(coordinator),
+        startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
+        surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )

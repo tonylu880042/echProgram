@@ -74,7 +74,7 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             ),
             programDefinition(
                 id = "SURPRISE_ME", title = "SURPRISE ME", category = ProgramCategory.SURPRISE,
-                durationLabel = "10–45 MIN", promise = "A deterministic sample profile to preview before a generator exists.",
+                durationLabel = "10–45 MIN", promise = "A deterministic generated profile to preview before you accept a plan.",
                 duration = 20, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
                 maxSpeed = 80, maxIncline = 100, speedRange = 25..80, inclineRange = 0..100,
                 previewMode = ProgramPreviewMode.GENERATED_PREVIEW, hero = true,

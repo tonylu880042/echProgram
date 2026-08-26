@@ -10,6 +10,7 @@ import com.echelon.console.application.usecase.EquipmentTelemetrySource
 import com.echelon.console.application.usecase.ListProgramLibrary
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
+import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.data.fitos.AndroidFitOsClientFactory
@@ -21,6 +22,7 @@ import com.echelon.console.domain.InclineRange
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
+import com.echelon.console.domain.SurpriseWorkoutGenerator
 import com.echelon.console.presentation.ProgramLibraryDestination
 import com.echelon.console.presentation.ProgramLibraryRoute
 import com.echelon.console.presentation.ProgramLibraryViewModel
@@ -68,6 +70,8 @@ class MainActivity : ComponentActivity() {
         ProgramSetupViewModelFactory(
             getProgramDetail = GetProgramDetail(programCatalog),
             startWorkout = StartWorkout(workoutSessionCoordinator),
+            startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(workoutSessionCoordinator),
+            surpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
             capabilities = DeviceCapabilities(
                 duration = DurationLimits(
                     min = DurationMinutes(10),

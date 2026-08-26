@@ -23,9 +23,14 @@ import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.ProgramSegmentSummary
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
+import com.echelon.console.domain.SurpriseWorkoutEffort
+import com.echelon.console.domain.SurpriseWorkoutGenerationResult
+import com.echelon.console.domain.SurpriseWorkoutGenerator
+import com.echelon.console.domain.SurpriseWorkoutGeneratorInput
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.ValidatedWorkoutPlanResult
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -151,6 +156,71 @@ class ProgramSetupScreenTest {
         assertEquals(1, showLibraryCount)
     }
 
+    @Test
+    fun `surprise configuring and draft preview expose disclosure full profile and typed actions`() {
+        val actions = mutableListOf<ProgramSetupAction>()
+        val surpriseDetail = requireNotNull(
+            StaticProgramCatalog().findProgramDetail(ProgramId("SURPRISE_ME")),
+        )
+        setContent(
+            state = ProgramSetupUiState.Configuring(
+                detail = surpriseDetail,
+                duration = DurationMinutes(20),
+                effort = SurpriseWorkoutEffort.SWEAT,
+                regenerationIndex = 0,
+                userMaxSpeed = SpeedTenths(80),
+                machineMaxSpeed = SpeedTenths(120),
+                userMaxIncline = InclineTenths(100),
+                machineMaxIncline = InclineTenths(150),
+            ),
+            onAction = actions::add,
+        )
+
+        composeTestRule.onNodeWithText("CONFIGURE SURPRISE ME").assertIsDisplayed()
+        composeTestRule.onNodeWithText("NO HISTORY / PERSONAL PROFILE APPLIED").assertIsDisplayed()
+        composeTestRule.onNodeWithText("EFFECTIVE INTERSECTION").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Select duration 45 minutes").performClick()
+        composeTestRule.onNodeWithContentDescription("Select effort HARD").performClick()
+        composeTestRule.onNodeWithContentDescription("GENERATE PREVIEW").performScrollTo().performClick()
+
+        assertEquals(
+            listOf(
+                ProgramSetupAction.SetSurpriseDuration(DurationMinutes(45)),
+                ProgramSetupAction.SetSurpriseEffort(SurpriseWorkoutEffort.HARD),
+                ProgramSetupAction.GenerateSurprisePreview,
+            ),
+            actions,
+        )
+
+        setContent(
+            state = ProgramSetupUiState.DraftPreview(
+                detail = surpriseDetail,
+                draft = surpriseDraft(),
+                userMaxSpeed = SpeedTenths(80),
+                machineMaxSpeed = SpeedTenths(120),
+                userMaxIncline = InclineTenths(100),
+                machineMaxIncline = InclineTenths(150),
+            ),
+            onAction = actions::add,
+        )
+
+        composeTestRule.onNodeWithText("DRAFT PREVIEW").assertIsDisplayed()
+        composeTestRule.onNodeWithText("PREVIEW ONLY").assertIsDisplayed()
+        composeTestRule.onNodeWithText("WARM UP").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("BASELINE RAMP PROPOSAL").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("REGENERATION INDEX").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("REGENERATE").performScrollTo().performClick()
+        composeTestRule.onNodeWithContentDescription("ACCEPT PLAN").performScrollTo().performClick()
+
+        assertEquals(ProgramSetupAction.AcceptSurprisePlan, actions.last())
+        assertTrue(
+            composeTestRule.onNodeWithContentDescription("ACCEPT PLAN")
+                .fetchSemanticsNode()
+                .boundsInRoot
+                .height >= 48f,
+        )
+    }
+
     private fun setContent(
         state: ProgramSetupUiState,
         onAction: (ProgramSetupAction) -> Unit,
@@ -184,4 +254,23 @@ class ProgramSetupScreenTest {
             ProgramSegmentSummary("Warm Up", DurationMinutes(5), SpeedTenths(28), InclineTenths(10)),
         ),
     )
+
+    private fun surpriseDraft() = when (
+        val result = SurpriseWorkoutGenerator().generate(
+            SurpriseWorkoutGeneratorInput(
+                durationMinutes = 20,
+                effort = SurpriseWorkoutEffort.SWEAT,
+                userProfileRevision = "anonymous-baseline-r1",
+                regenerationIndex = 0,
+                generatorVersion = "v1",
+                userMaxSpeed = SpeedTenths(80),
+                machineMaxSpeed = SpeedTenths(120),
+                userMaxIncline = InclineTenths(100),
+                machineMaxIncline = InclineTenths(150),
+            ),
+        )
+    ) {
+        is SurpriseWorkoutGenerationResult.Generated -> result.draft
+        is SurpriseWorkoutGenerationResult.Rejected -> error("Expected generated draft")
+    }
 }

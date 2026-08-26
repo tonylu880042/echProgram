@@ -46,7 +46,9 @@ class StartSurpriseWorkoutDraftTest {
 
         val result = StartSurpriseWorkoutDraft(coordinator)(draft, capabilities)
 
-        val running = assertStarted(result).state
+        val started = assertStarted(result)
+        assertEquals(draftPlan(draft), started.plan)
+        val running = started.state
         assertEquals(ProgramId("SURPRISE_ME"), running.timeline.programId)
         assertEquals(1_200, running.timeline.totalDurationSeconds)
         assertEquals(draft.profile.map { it.name }, running.timeline.segments.map { it.name })
@@ -321,6 +323,13 @@ class StartSurpriseWorkoutDraftTest {
         draft: SurpriseWorkoutDraft,
         programId: ProgramId = draft.metadata.programId,
         durationMinutes: Int = draft.metadata.durationMinutes,
+        intensity: PlanIntensity = when (draft.metadata.effort) {
+            SurpriseWorkoutEffort.EASY -> PlanIntensity.LOW
+            SurpriseWorkoutEffort.SWEAT -> PlanIntensity.MEDIUM
+            SurpriseWorkoutEffort.BURN,
+            SurpriseWorkoutEffort.HARD,
+            -> PlanIntensity.HIGH
+        },
         maxSpeed: SpeedTenths = draft.effectiveSpeedCap,
         maxIncline: InclineTenths = draft.effectiveInclineCap,
     ): ValidatedWorkoutPlan = when (
@@ -329,7 +338,7 @@ class StartSurpriseWorkoutDraftTest {
                 programId = programId,
                 settings = PlanSettings(
                     duration = DurationMinutes(durationMinutes),
-                    intensity = PlanIntensity.MEDIUM,
+                    intensity = intensity,
                     focus = PlanFocus.BALANCED,
                     maxSpeed = maxSpeed,
                     maxIncline = maxIncline,

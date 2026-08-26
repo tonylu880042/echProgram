@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.echelon.console.domain.InclineTenths
+import com.echelon.console.domain.EquipmentReadState
 import com.echelon.console.domain.PlanFocus
 import com.echelon.console.domain.PlanIntensity
 import com.echelon.console.domain.ProgramId
@@ -47,6 +48,7 @@ fun ProgramSetupRoute(
     viewModel: ProgramSetupViewModel,
     onNavigate: (ProgramLibraryDestination) -> Unit,
     onShowLibrary: () -> Unit,
+    equipmentState: EquipmentReadState = EquipmentReadState(),
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -55,6 +57,7 @@ fun ProgramSetupRoute(
         onAction = viewModel::onAction,
         onNavigate = onNavigate,
         onShowLibrary = onShowLibrary,
+        equipmentState = equipmentState,
         modifier = modifier,
     )
 }
@@ -65,6 +68,7 @@ fun ProgramSetupScreen(
     onAction: (ProgramSetupAction) -> Unit,
     onNavigate: (ProgramLibraryDestination) -> Unit,
     onShowLibrary: () -> Unit,
+    equipmentState: EquipmentReadState = EquipmentReadState(),
     modifier: Modifier = Modifier,
 ) {
     when (state) {
@@ -128,6 +132,7 @@ fun ProgramSetupScreen(
 
         is ProgramSetupUiState.Started -> StartedWorkoutScreen(
             plan = state.plan,
+            equipmentState = equipmentState,
             onBack = { onAction(ProgramSetupAction.Back) },
             onNavigate = onNavigate,
             modifier = modifier,
@@ -180,6 +185,7 @@ private fun ProgramSetupStatus(
 @Composable
 private fun StartedWorkoutScreen(
     plan: ValidatedWorkoutPlan,
+    equipmentState: EquipmentReadState,
     onBack: () -> Unit,
     onNavigate: (ProgramLibraryDestination) -> Unit,
     modifier: Modifier,
@@ -224,6 +230,7 @@ private fun StartedWorkoutScreen(
                     StartedPlanRow("ADAPT TO YOU", if (settings.adaptToYou) "ON" else "OFF")
                 }
             }
+            EquipmentTelemetryPanel(state = equipmentState)
         }
     }
 }

@@ -6,12 +6,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.echelon.console.application.usecase.EquipmentTelemetrySource
 import com.echelon.console.application.usecase.ListProgramLibrary
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.WorkoutSessionStarter
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.data.StaticProgramDetailCatalog
+import com.echelon.console.data.fitos.AndroidFitOsClientFactory
+import com.echelon.console.data.fitos.FitOsEquipmentAdapter
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
 import com.echelon.console.domain.DurationMinutes
@@ -29,8 +32,25 @@ import com.echelon.console.presentation.ProgramSetupRoute
 import com.echelon.console.presentation.ProgramSetupUiState
 import com.echelon.console.presentation.ProgramSetupViewModel
 import com.echelon.console.presentation.ProgramSetupViewModelFactory
+import com.echelon.console.presentation.EquipmentTelemetryViewModel
+import com.echelon.console.presentation.EquipmentTelemetryViewModelFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class MainActivity : ComponentActivity() {
+    private val equipmentTelemetrySource: EquipmentTelemetrySource by lazy {
+        FitOsEquipmentAdapter(
+            clientFactory = AndroidFitOsClientFactory(applicationContext),
+            queryDispatcher = Dispatchers.IO,
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+        )
+    }
+
+    private val equipmentTelemetryViewModel: EquipmentTelemetryViewModel by viewModels {
+        EquipmentTelemetryViewModelFactory(equipmentTelemetrySource)
+    }
+
     private val programLibraryViewModel: ProgramLibraryViewModel by viewModels {
         ProgramLibraryViewModelFactory(
             listProgramLibrary = ListProgramLibrary(StaticProgramCatalog()),
@@ -59,6 +79,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 val setupState = programSetupViewModel.state.collectAsStateWithLifecycle().value
+                val equipmentState = equipmentTelemetryViewModel.state.collectAsStateWithLifecycle().value
                 if (setupState == ProgramSetupUiState.Library) {
                     ProgramLibraryRoute(
                         viewModel = programLibraryViewModel,
@@ -78,10 +99,21 @@ class MainActivity : ComponentActivity() {
                         onShowLibrary = {
                             programSetupViewModel.onAction(ProgramSetupAction.Back)
                         },
+                        equipmentState = equipmentState,
                     )
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        equipmentTelemetryViewModel.onStart()
+    }
+
+    override fun onStop() {
+        equipmentTelemetryViewModel.onStop()
+        super.onStop()
     }
 }
 

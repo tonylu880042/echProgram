@@ -301,12 +301,8 @@ private class FakeFitOsClient(
     override fun getApiVersion(): Int {
         apiVersionCalls += 1
         queryStarted?.countDown()
-        try {
-            queryRelease?.await()
-            return apiVersion
-        } finally {
-            queryFinished?.countDown()
-        }
+        queryRelease?.await()
+        return apiVersion
     }
 
     override fun getConnectionState(): FitOsStatePayload? {
@@ -316,7 +312,7 @@ private class FakeFitOsClient(
 
     override fun getSnapshot(): FitOsSnapshotPayload? {
         snapshotCalls += 1
-        return snapshot
+        return snapshot.also { queryFinished?.countDown() }
     }
 
     override fun getLimits(): FitOsLimitsPayload? {

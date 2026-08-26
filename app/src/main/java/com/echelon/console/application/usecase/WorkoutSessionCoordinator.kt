@@ -3,6 +3,7 @@ package com.echelon.console.application.usecase
 import com.echelon.console.domain.FiveKReadySessionDraft
 import com.echelon.console.domain.AnnotatedWorkoutProfile
 import com.echelon.console.domain.AnnotatedWorkoutProfileSegment
+import com.echelon.console.domain.DurationMinutes
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramSegmentSummary
@@ -33,6 +34,12 @@ sealed interface WorkoutSessionStarterResult {
 sealed interface WorkoutSessionStartFailure {
     data class ProgramNotFound(
         val programId: ProgramId,
+    ) : WorkoutSessionStartFailure
+
+    data class UnsupportedDuration(
+        val programId: ProgramId,
+        val duration: DurationMinutes,
+        val supportedDurations: List<DurationMinutes>,
     ) : WorkoutSessionStartFailure
 
     data class TimelineCompileFailed(
@@ -90,6 +97,15 @@ class InMemoryWorkoutSessionCoordinator(
             ?: return WorkoutSessionStarterResult.Failed(
                 WorkoutSessionStartFailure.ProgramNotFound(plan.plan.programId),
             )
+        if (plan.plan.settings.duration !in detail.supportedDurations) {
+            return WorkoutSessionStarterResult.Failed(
+                WorkoutSessionStartFailure.UnsupportedDuration(
+                    programId = detail.programId,
+                    duration = plan.plan.settings.duration,
+                    supportedDurations = detail.supportedDurations,
+                ),
+            )
+        }
         return startTimeline(WorkoutTimelineCompiler.compile(detail, plan.plan.settings))
     }
 

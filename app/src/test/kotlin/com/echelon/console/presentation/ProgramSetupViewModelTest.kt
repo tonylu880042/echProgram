@@ -60,6 +60,7 @@ class ProgramSetupViewModelTest {
             maxIncline = InclineTenths(80),
             adaptToYou = false,
         ),
+        supportedDurations = listOf(12, 30, 45, 50).map(::DurationMinutes),
         speedRange = SpeedRange(SpeedTenths(20), SpeedTenths(120)),
         inclineRange = InclineRange(InclineTenths(0), InclineTenths(120)),
         profile = listOf(
@@ -232,7 +233,7 @@ class ProgramSetupViewModelTest {
             val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
             val viewModel = ProgramSetupViewModel(
                 getProgramDetail = GetProgramDetail(catalog),
-                startWorkout = StartWorkout(coordinator),
+                startWorkout = StartWorkout(coordinator, catalog),
                 startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
@@ -274,7 +275,7 @@ class ProgramSetupViewModelTest {
             val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
             val viewModel = ProgramSetupViewModel(
                 getProgramDetail = GetProgramDetail(catalog),
-                startWorkout = StartWorkout(coordinator),
+                startWorkout = StartWorkout(coordinator, catalog),
                 startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
@@ -312,6 +313,7 @@ class ProgramSetupViewModelTest {
                 programId = ProgramId("SURPRISE_ME"),
                 title = "SURPRISE ME",
                 defaultSettings = detail.defaultSettings.copy(duration = DurationMinutes(1)),
+                supportedDurations = listOf(DurationMinutes(1)),
                 previewMode = ProgramPreviewMode.GENERATED_PREVIEW,
             )
             val catalog = ProgramDetailCatalog { programId ->
@@ -320,7 +322,7 @@ class ProgramSetupViewModelTest {
             val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
             val viewModel = ProgramSetupViewModel(
                 getProgramDetail = GetProgramDetail(catalog),
-                startWorkout = StartWorkout(coordinator),
+                startWorkout = StartWorkout(coordinator, catalog),
                 startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
@@ -436,7 +438,7 @@ class ProgramSetupViewModelTest {
             val missingCapabilitiesCoordinator = InMemoryWorkoutSessionCoordinator(missingCapabilitiesCatalog)
             val missingCapabilitiesViewModel = ProgramSetupViewModel(
                 getProgramDetail = GetProgramDetail(missingCapabilitiesCatalog),
-                startWorkout = StartWorkout(missingCapabilitiesCoordinator),
+                startWorkout = StartWorkout(missingCapabilitiesCoordinator, missingCapabilitiesCatalog),
                 startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(missingCapabilitiesCoordinator),
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(missingCapabilitiesCoordinator),
@@ -457,7 +459,7 @@ class ProgramSetupViewModelTest {
             val unsafeCoordinator = InMemoryWorkoutSessionCoordinator(unsafeCatalog)
             val unsafeViewModel = ProgramSetupViewModel(
                 getProgramDetail = GetProgramDetail(unsafeCatalog),
-                startWorkout = StartWorkout(unsafeCoordinator),
+                startWorkout = StartWorkout(unsafeCoordinator, unsafeCatalog),
                 startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(unsafeCoordinator),
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(unsafeCoordinator),
@@ -483,7 +485,7 @@ class ProgramSetupViewModelTest {
         try {
             val catalog = StaticProgramCatalog()
             val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
-            val startResult = StartWorkout(coordinator)(
+            val startResult = StartWorkout(coordinator, catalog)(
                 WorkoutPlan(
                     ProgramId("FAT_BURN"),
                     requireNotNull(catalog.findProgramDetail(ProgramId("FAT_BURN"))).defaultSettings,
@@ -732,7 +734,7 @@ class ProgramSetupViewModelTest {
         capabilities: DeviceCapabilities? = this.capabilities,
     ): ProgramSetupViewModel = ProgramSetupViewModel(
         getProgramDetail = GetProgramDetail(catalog),
-        startWorkout = StartWorkout(starter),
+        startWorkout = StartWorkout(starter, catalog),
         startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(InMemoryWorkoutSessionCoordinator(catalog)),
         generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
         startFiveKReadySessionDraft = StartFiveKReadySessionDraft(InMemoryWorkoutSessionCoordinator(catalog)),
@@ -747,7 +749,7 @@ class ProgramSetupViewModelTest {
         coordinator: InMemoryWorkoutSessionCoordinator = InMemoryWorkoutSessionCoordinator(catalog),
     ): ProgramSetupViewModel = ProgramSetupViewModel(
         getProgramDetail = GetProgramDetail(catalog),
-        startWorkout = StartWorkout(coordinator),
+        startWorkout = StartWorkout(coordinator, catalog),
         startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
         generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
         startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),

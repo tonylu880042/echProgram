@@ -1,5 +1,6 @@
 package com.echelon.console.application.usecase
 
+import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
 import com.echelon.console.domain.DurationMinutes
@@ -20,6 +21,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StartWorkoutTest {
+    private val staticCatalog = StaticProgramCatalog()
+    private val testCatalog = ProgramDetailCatalog { programId ->
+        staticCatalog.findProgramDetail(programId)?.copy(
+            supportedDurations = listOf(9, 12, 30, 45, 47, 61).map(::DurationMinutes),
+        )
+    }
+
     private val capabilities = DeviceCapabilities(
         duration = DurationLimits(
             min = DurationMinutes(10),
@@ -33,7 +41,7 @@ class StartWorkoutTest {
     @Test
     fun `invalid max speed is rejected at capability boundary and is not forwarded`() {
         val starter = RecordingStarter()
-        val result = StartWorkout(starter).invoke(
+        val result = StartWorkout(starter, testCatalog).invoke(
             plan = WorkoutPlan(
                 programId = ProgramId("FAT_BURN"),
                 settings = PlanSettings(
@@ -59,7 +67,7 @@ class StartWorkoutTest {
                 val plan = plan(maxSpeed = speed, maxIncline = incline)
                 val starter = RecordingStarter()
 
-                val result = StartWorkout(starter).invoke(plan, capabilities)
+                val result = StartWorkout(starter, testCatalog).invoke(plan, capabilities)
 
                 assertTrue(result is StartWorkoutResult.Valid)
                 assertEquals(plan, starter.received?.plan)
@@ -92,7 +100,7 @@ class StartWorkoutTest {
         )
         val starter = RecordingStarter()
 
-        val result = StartWorkout(starter).invoke(plan, capabilities)
+        val result = StartWorkout(starter, testCatalog).invoke(plan, capabilities)
 
         assertTrue(result is StartWorkoutResult.Valid)
         assertEquals(PlanIntensity.HIGH, starter.received?.plan?.settings?.intensity)
@@ -106,6 +114,7 @@ class StartWorkoutTest {
 
         val result = StartWorkout(
             ResultStarter(WorkoutSessionStarterResult.Failed(failure)),
+            testCatalog,
         ).invoke(plan(), capabilities)
 
         assertEquals(StartWorkoutResult.StarterFailure(failure), result)
@@ -115,6 +124,7 @@ class StartWorkoutTest {
     fun `a started session is reported as valid`() {
         val result = StartWorkout(
             ResultStarter(testStartedWorkoutResult()),
+            testCatalog,
         ).invoke(plan(), capabilities)
 
         assertTrue(result is StartWorkoutResult.Valid)
@@ -128,6 +138,7 @@ class StartWorkoutTest {
 
         val result = StartWorkout(
             starter,
+            testCatalog,
         ).invoke(plan(maxSpeed = SpeedTenths(121)), capabilities)
 
         assertTrue(result is StartWorkoutResult.Invalid)
@@ -136,7 +147,7 @@ class StartWorkoutTest {
 
     private fun assertInvalid(plan: WorkoutPlan, expectedField: PlanField) {
         val starter = RecordingStarter()
-        val result = StartWorkout(starter).invoke(plan, capabilities)
+        val result = StartWorkout(starter, testCatalog).invoke(plan, capabilities)
 
         assertTrue(result is StartWorkoutResult.Invalid)
         assertEquals(expectedField, (result as StartWorkoutResult.Invalid).errors.single().field)

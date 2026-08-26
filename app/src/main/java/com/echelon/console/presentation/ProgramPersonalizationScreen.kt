@@ -40,7 +40,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.echelon.console.domain.DurationMinutes
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.PlanField
 import com.echelon.console.domain.PlanFocus
@@ -193,17 +192,10 @@ private fun PersonalizationControls(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        StepperCard(
-            label = "DURATION (MIN)",
-            value = state.settings.duration.value.toString(),
-            decrementDescription = "Decrease duration",
-            incrementDescription = "Increase duration",
-            onDecrement = {
-                onAction(ProgramSetupAction.SetDuration(DurationMinutes(state.settings.duration.value - 5)))
-            },
-            onIncrement = {
-                onAction(ProgramSetupAction.SetDuration(DurationMinutes(state.settings.duration.value + 5)))
-            },
+        DurationOptionsCard(
+            detail = state.detail,
+            settings = state.settings,
+            onAction = onAction,
             error = state.fieldErrors.firstOrNull { it.field == PlanField.DURATION },
         )
         IntensityCard(settings = state.settings, onAction = onAction)
@@ -234,6 +226,31 @@ private fun PersonalizationControls(
             error = state.fieldErrors.firstOrNull { it.field == PlanField.MAX_INCLINE },
         )
         FocusCard(settings = state.settings, onAction = onAction)
+    }
+}
+
+@Composable
+private fun DurationOptionsCard(
+    detail: ProgramDetail,
+    settings: PlanSettings,
+    onAction: (ProgramSetupAction) -> Unit,
+    error: PlanValidationError?,
+) {
+    SettingCard(label = "DURATION (MIN)", error = error) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            detail.supportedDurations.forEach { duration ->
+                OptionButton(
+                    label = "${duration.value} MIN",
+                    selected = settings.duration == duration,
+                    description = "Select duration ${duration.value} minutes",
+                    modifier = Modifier.weight(1f),
+                    onClick = { onAction(ProgramSetupAction.SetDuration(duration)) },
+                )
+            }
+        }
     }
 }
 
@@ -513,6 +530,8 @@ private fun PlanValidationError.asMessage(): String = when (this) {
         "Duration must be between ${limits.min.value} and ${limits.max.value} min."
     is PlanValidationError.DurationStepMismatch ->
         "Duration must use ${limits.step.value} min steps."
+    is PlanValidationError.DurationNotSupported ->
+        "Select one of: ${supportedDurations.joinToString { "${it.value} min" }}."
     is PlanValidationError.MaxSpeedOutOfRange ->
         "Speed must be between ${limits.min.asDecimal()} and ${limits.max.asDecimal()} MPH."
     is PlanValidationError.MaxInclineOutOfRange ->

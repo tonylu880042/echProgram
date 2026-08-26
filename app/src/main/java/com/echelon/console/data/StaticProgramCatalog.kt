@@ -40,7 +40,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "FAT_BURN", title = "FAT BURN", category = ProgramCategory.BURN,
                 durationLabel = "30 MIN", promise = "Sustained incline walking and light jogging for a controlled burn.",
-                duration = 30, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
+                duration = 30, supportedDurations = listOf(20, 30, 45),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
                 maxSpeed = 55, maxIncline = 120, speedRange = 28..55, inclineRange = 10..120, hero = true,
                 profile = listOf(
                     segment("Warm Up", 5, 30, 10), segment("Climb", 3, 33, 50), segment("Climb", 3, 35, 80),
@@ -51,7 +52,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "GLUTE_BLAST", title = "GLUTE BLAST", category = ProgramCategory.GLUTES_LEGS,
                 durationLabel = "30 MIN", promise = "Hill-focused power walking for a glutes-and-legs challenge.",
-                duration = 30, intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
+                duration = 30, supportedDurations = listOf(15, 20, 30, 45),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
                 maxSpeed = 40, maxIncline = 150, speedRange = 25..40, inclineRange = 40..150, hero = true,
                 profile = listOf(
                     segment("Warm Up", 5, 27, 40), segment("Round 1 Activate", 5, 30, 50),
@@ -63,7 +65,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "VERTICAL", title = "VERTICAL", category = ProgramCategory.CLIMB,
                 durationLabel = "1,000 FT", promise = "A representative elevation profile for a clear climbing milestone.",
-                duration = 50, intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
+                duration = 50, supportedDurations = listOf(50),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
                 maxSpeed = 40, maxIncline = 150, speedRange = 25..40, inclineRange = 20..150,
                 previewMode = ProgramPreviewMode.ELEVATION_TARGET_PREVIEW, hero = true,
                 profile = listOf(
@@ -75,7 +78,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "SURPRISE_ME", title = "SURPRISE ME", category = ProgramCategory.SURPRISE,
                 durationLabel = "10–45 MIN", promise = "A deterministic generated profile to preview before you accept a plan.",
-                duration = 20, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
+                duration = 20, supportedDurations = listOf(10, 20, 30, 45),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
                 maxSpeed = 80, maxIncline = 100, speedRange = 25..80, inclineRange = 0..100,
                 previewMode = ProgramPreviewMode.GENERATED_PREVIEW, hero = true,
                 profile = listOf(
@@ -87,7 +91,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "SUMMIT", title = "SUMMIT", category = ProgramCategory.CLIMB,
                 durationLabel = "30 MIN", promise = "A progressive climb with visible milestones toward a representative summit.",
-                duration = 30, intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
+                duration = 30, supportedDurations = listOf(20, 30, 45, 60),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
                 maxSpeed = 45, maxIncline = 150, speedRange = 25..45, inclineRange = 10..150,
                 profile = listOf(
                     segment("Base Camp", 5, 26, 10), segment("Lower Slope", 5, 28, 40), segment("Mid Climb", 5, 30, 70),
@@ -98,7 +103,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "HIIT_20", title = "HIIT 20", category = ProgramCategory.SWEAT,
                 durationLabel = "20 MIN", promise = "Short sprint and recovery intervals with a clear finish line.",
-                duration = 20, intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_SPEED,
+                duration = 20, supportedDurations = listOf(10, 20, 30),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_SPEED,
                 maxSpeed = 90, maxIncline = 50, speedRange = 30..90, inclineRange = 10..50,
                 profile = listOf(
                     segment("Warm Up", 4, 30, 10), segment("Sprint 1", 2, 70, 20), segment("Recover 1", 2, 35, 10),
@@ -109,7 +115,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "SWEAT_30", title = "SWEAT 30", category = ProgramCategory.SWEAT,
                 durationLabel = "30 MIN", promise = "A mixed steady, build, push, and climb profile for a focused sweat.",
-                duration = 30, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
+                duration = 30, supportedDurations = listOf(20, 30, 45),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
                 maxSpeed = 70, maxIncline = 100, speedRange = 30..70, inclineRange = 10..100,
                 profile = listOf(
                     segment("Warm Up", 5, 30, 10), segment("Steady", 5, 40, 30), segment("Build", 5, 50, 50),
@@ -119,7 +126,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "SPEED_LAB", title = "SPEED LAB", category = ProgramCategory.GET_FASTER,
                 durationLabel = "30 MIN", promise = "Speed intervals with form-first recoveries between fast blocks.",
-                duration = 30, intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_SPEED,
+                duration = 30, supportedDurations = listOf(20, 30, 40),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_SPEED,
                 maxSpeed = 100, maxIncline = 40, speedRange = 40..100, inclineRange = 0..40,
                 profile = listOf(
                     segment("Warm Up", 4, 40, 0), segment("Form Drill", 4, 50, 10), segment("Interval 1", 3, 70, 10),
@@ -131,7 +139,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "BOOTY_BURN_15", title = "BOOTY BURN 15", category = ProgramCategory.GLUTES_LEGS,
                 durationLabel = "15 MIN", promise = "A short, steep hill profile for a concentrated glutes-and-legs preview.",
-                duration = 15, intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
+                duration = 15, supportedDurations = listOf(10, 15, 20),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
                 maxSpeed = 38, maxIncline = 150, speedRange = 25..38, inclineRange = 60..150,
                 profile = listOf(
                     segment("Warm Up", 2, 25, 60), segment("Activate", 3, 28, 80), segment("Burn", 3, 30, 110),
@@ -141,7 +150,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "5K_READY", title = "5K READY", category = ProgramCategory.RUN,
                 durationLabel = "30 MIN", promise = "A baseline run-walk sample for previewing time on feet.",
-                duration = 30, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.MORE_SPEED,
+                duration = 30, supportedDurations = listOf(20, 30, 40, 60),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.MORE_SPEED,
                 maxSpeed = 60, maxIncline = 60, speedRange = 28..60, inclineRange = 0..60,
                 previewMode = ProgramPreviewMode.BASELINE_PREVIEW,
                 profile = listOf(
@@ -153,7 +163,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "ECHELON_CHALLENGE", title = "ECHELON CHALLENGE", category = ProgramCategory.CHALLENGE,
                 durationLabel = "30 MIN", promise = "A representative baseline-match profile with one controlled challenge block.",
-                duration = 30, intensity = PlanIntensity.HIGH, focus = PlanFocus.BALANCED,
+                duration = 30, supportedDurations = listOf(20, 30, 45, 60),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.BALANCED,
                 maxSpeed = 53, maxIncline = 40, speedRange = 30..80, inclineRange = 0..100,
                 previewMode = ProgramPreviewMode.HISTORY_ADAPTIVE_PREVIEW,
                 profile = listOf(
@@ -164,7 +175,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "TWELVE_3_30", title = "12-3-30", category = ProgramCategory.CLIMB,
                 durationLabel = "30 MIN", promise = "A safe representative preview of the fixed 12% incline walking concept.",
-                duration = 30, intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
+                duration = 30, supportedDurations = listOf(30),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_INCLINE,
                 maxSpeed = 30, maxIncline = 120, speedRange = 25..30, inclineRange = 10..120,
                 profile = listOf(
                     segment("Warm Up", 5, 25, 10), segment("12-3-20 Core", 20, 30, 120), segment("Cool Down", 5, 25, 10),
@@ -173,7 +185,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "POWER_WALK", title = "POWER WALK", category = ProgramCategory.WALK,
                 durationLabel = "30 MIN", promise = "A progressive fast-walk profile that builds power without a run block.",
-                duration = 30, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
+                duration = 30, supportedDurations = listOf(15, 30, 45, 60),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
                 maxSpeed = 45, maxIncline = 60, speedRange = 28..45, inclineRange = 0..60,
                 profile = listOf(
                     segment("Warm Up", 5, 28, 10), segment("Base Walk", 5, 35, 20), segment("Build", 5, 38, 30),
@@ -183,7 +196,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "ROLLING_HILLS", title = "ROLLING HILLS", category = ProgramCategory.STAMINA,
                 durationLabel = "45 MIN", promise = "Changing hill and valley blocks for a steady rolling-stamina preview.",
-                duration = 45, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.MORE_INCLINE,
+                duration = 45, supportedDurations = listOf(30, 45, 60),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.MORE_INCLINE,
                 maxSpeed = 55, maxIncline = 80, speedRange = 28..55, inclineRange = 0..80,
                 profile = listOf(
                     segment("Warm Up", 5, 28, 10), segment("Hill 1", 7, 34, 40), segment("Valley 1", 5, 42, 10),
@@ -194,7 +208,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "ZONE_2", title = "ZONE 2", category = ProgramCategory.HEART_RATE,
                 durationLabel = "30 MIN", promise = "A representative phase profile that stays preview-only until HR is connected.",
-                duration = 30, intensity = PlanIntensity.LOW, focus = PlanFocus.BALANCED,
+                duration = 30, supportedDurations = listOf(20, 30, 45, 60),
+                intensity = PlanIntensity.LOW, focus = PlanFocus.BALANCED,
                 maxSpeed = 50, maxIncline = 80, speedRange = 25..50, inclineRange = 0..80,
                 previewMode = ProgramPreviewMode.HEART_RATE_PREVIEW,
                 profile = listOf(
@@ -205,7 +220,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "WALK_RUN", title = "WALK + RUN", category = ProgramCategory.RUN,
                 durationLabel = "30 MIN", promise = "Clearly timed walk and run blocks with deliberate recovery windows.",
-                duration = 30, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.MORE_SPEED,
+                duration = 30, supportedDurations = listOf(20, 30, 45, 60),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.MORE_SPEED,
                 maxSpeed = 70, maxIncline = 50, speedRange = 30..70, inclineRange = 0..50,
                 profile = listOf(
                     segment("Warm Up Walk", 5, 30, 10), segment("Power Walk", 5, 35, 20), segment("Run 1", 3, 55, 10),
@@ -216,7 +232,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "ENDURANCE", title = "ENDURANCE", category = ProgramCategory.STAMINA,
                 durationLabel = "45 MIN", promise = "A steady, lower-variation profile for building time on the treadmill.",
-                duration = 45, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
+                duration = 45, supportedDurations = listOf(30, 45, 60, 90),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
                 maxSpeed = 60, maxIncline = 60, speedRange = 30..60, inclineRange = 0..60,
                 profile = listOf(
                     segment("Warm Up", 5, 30, 10), segment("Settle", 10, 40, 20), segment("Steady 1", 10, 45, 30),
@@ -226,7 +243,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "PYRAMID", title = "PYRAMID", category = ProgramCategory.SWEAT,
                 durationLabel = "30 MIN", promise = "A clear rise to a peak followed by controlled recovery blocks.",
-                duration = 30, intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_SPEED,
+                duration = 30, supportedDurations = listOf(20, 30, 45),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.MORE_SPEED,
                 maxSpeed = 80, maxIncline = 60, speedRange = 28..80, inclineRange = 0..60,
                 profile = listOf(
                     segment("Warm Up", 5, 30, 10), segment("Rise 1", 3, 40, 10), segment("Rise 2", 3, 50, 20),
@@ -237,7 +255,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "RECOVERY_WALK", title = "RECOVERY WALK", category = ProgramCategory.RECOVERY,
                 durationLabel = "20 MIN", promise = "A low-variation easy walk for a calm reset pace.",
-                duration = 20, intensity = PlanIntensity.LOW, focus = PlanFocus.BALANCED,
+                duration = 20, supportedDurations = listOf(10, 20, 30),
+                intensity = PlanIntensity.LOW, focus = PlanFocus.BALANCED,
                 maxSpeed = 35, maxIncline = 30, speedRange = 20..35, inclineRange = 0..30,
                 profile = listOf(
                     segment("Gentle Start", 5, 20, 0), segment("Easy Walk", 10, 25, 10), segment("Cool Down", 5, 20, 0),
@@ -246,7 +265,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "QUICK_10", title = "QUICK 10", category = ProgramCategory.QUICK,
                 durationLabel = "10 MIN", promise = "A complete short profile with a fast start and safe finish.",
-                duration = 10, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.MORE_SPEED,
+                duration = 10, supportedDurations = listOf(10, 15, 20),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.MORE_SPEED,
                 maxSpeed = 60, maxIncline = 50, speedRange = 25..60, inclineRange = 0..50,
                 profile = listOf(
                     segment("Warm Up", 2, 25, 10), segment("Build 1", 2, 40, 20), segment("Build 2", 2, 50, 30),
@@ -256,7 +276,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "CALORIE_TARGET", title = "CALORIE TARGET", category = ProgramCategory.BURN,
                 durationLabel = "100–500 CAL", promise = "A representative estimated-calorie profile with an explicit target caveat.",
-                duration = 40, intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
+                duration = 40, supportedDurations = listOf(40),
+                intensity = PlanIntensity.MEDIUM, focus = PlanFocus.BALANCED,
                 maxSpeed = 60, maxIncline = 100, speedRange = 25..60, inclineRange = 0..100,
                 previewMode = ProgramPreviewMode.CALORIE_TARGET_PREVIEW,
                 profile = listOf(
@@ -267,7 +288,8 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
             programDefinition(
                 id = "ECHELON_HYBRID_RUN", title = "ECHELON HYBRID RUN", category = ProgramCategory.HYBRID,
                 durationLabel = "30 MIN", promise = "A treadmill-only sample switching between run, climb, walk, and sprint demands.",
-                duration = 30, intensity = PlanIntensity.HIGH, focus = PlanFocus.BALANCED,
+                duration = 30, supportedDurations = listOf(20, 30, 45),
+                intensity = PlanIntensity.HIGH, focus = PlanFocus.BALANCED,
                 maxSpeed = 90, maxIncline = 80, speedRange = 30..90, inclineRange = 0..80,
                 profile = listOf(
                     segment("Warm Up", 5, 35, 10), segment("Run", 5, 55, 10), segment("Climb", 5, 45, 60),
@@ -292,6 +314,7 @@ private fun programDefinition(
     durationLabel: String,
     promise: String,
     duration: Int,
+    supportedDurations: List<Int> = listOf(duration),
     intensity: PlanIntensity,
     focus: PlanFocus,
     maxSpeed: Int,
@@ -322,6 +345,7 @@ private fun programDefinition(
             inclineRange = InclineRange(InclineTenths(inclineRange.first), InclineTenths(inclineRange.last)),
             profile = profile,
             previewMode = previewMode,
+            supportedDurations = supportedDurations.map(::DurationMinutes),
         ),
         hero = hero,
     )

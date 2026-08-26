@@ -30,7 +30,24 @@ data class ProgramDetail(
     val inclineRange: InclineRange,
     val profile: List<ProgramSegmentSummary>,
     val previewMode: ProgramPreviewMode = ProgramPreviewMode.FIXED_PROFILE_PREVIEW,
+    val supportedDurations: List<DurationMinutes> = listOf(defaultSettings.duration),
 ) {
+    init {
+        require(supportedDurations.isNotEmpty()) { "Supported durations must not be empty" }
+        require(supportedDurations.all { it.value > 0 }) {
+            "Supported durations must be positive"
+        }
+        require(supportedDurations.map { it.value }.distinct().size == supportedDurations.size) {
+            "Supported durations must be distinct"
+        }
+        require(supportedDurations == supportedDurations.sortedBy { it.value }) {
+            "Supported durations must be sorted"
+        }
+        require(defaultSettings.duration in supportedDurations) {
+            "Default duration must be supported"
+        }
+    }
+
     val defaultDuration: DurationMinutes
         get() = defaultSettings.duration
 }

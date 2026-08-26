@@ -6,8 +6,13 @@ value class ValidatedWorkoutPlan private constructor(val plan: WorkoutPlan) {
         fun create(
             plan: WorkoutPlan,
             capabilities: DeviceCapabilities,
+            supportedDurations: List<DurationMinutes>? = null,
         ): ValidatedWorkoutPlanResult {
-            val errors = WorkoutPlanValidator.validate(plan, capabilities)
+            val errors = WorkoutPlanValidator.validate(
+                plan = plan,
+                capabilities = capabilities,
+                supportedDurations = supportedDurations,
+            )
             return if (errors.isEmpty()) {
                 ValidatedWorkoutPlanResult.Valid(ValidatedWorkoutPlan(plan))
             } else {

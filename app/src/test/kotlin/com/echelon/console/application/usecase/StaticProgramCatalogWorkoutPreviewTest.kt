@@ -43,7 +43,7 @@ class StaticProgramCatalogWorkoutPreviewTest {
                 )
             }
 
-            val started = when (val result = StartWorkout(coordinator)(plan.plan, compositionCapabilities)) {
+            val started = when (val result = StartWorkout(coordinator, catalog)(plan.plan, compositionCapabilities)) {
                 is StartWorkoutResult.Valid -> result.plan
                 is StartWorkoutResult.Invalid -> error(
                     "${detail.programId.value} should start: ${result.errors}",
@@ -103,7 +103,7 @@ class StaticProgramCatalogWorkoutPreviewTest {
             assertEquals(expectedMode, detail.previewMode)
 
             val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
-            val result = StartWorkout(coordinator)(
+            val result = StartWorkout(coordinator, catalog)(
                 plan = WorkoutPlan(detail.programId, detail.defaultSettings),
                 capabilities = compositionCapabilities,
             )
@@ -113,13 +113,33 @@ class StaticProgramCatalogWorkoutPreviewTest {
         }
     }
 
+    @Test
+    fun `endurance supports the reviewed 90 minute preview`() {
+        val catalog = StaticProgramCatalog()
+        val detail = requireNotNull(catalog.findProgramDetail(ProgramId("ENDURANCE")))
+        val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
+        val result = StartWorkout(coordinator, catalog)(
+            plan = WorkoutPlan(
+                detail.programId,
+                detail.defaultSettings.copy(duration = DurationMinutes(90)),
+            ),
+            capabilities = compositionCapabilities,
+        )
+
+        assertTrue(result is StartWorkoutResult.Valid)
+        val running = checkNotNull(coordinator.currentState()) as WorkoutSessionState.Running
+        assertEquals(5_400, running.timeline.totalDurationSeconds)
+        assertEquals("Warm Up", running.timeline.segments.first().name)
+        assertEquals("Cool Down", running.timeline.segments.last().name)
+    }
+
     private companion object {
         const val SECONDS_PER_MINUTE = 60
 
         val compositionCapabilities = DeviceCapabilities(
             duration = DurationLimits(
                 min = DurationMinutes(10),
-                max = DurationMinutes(60),
+                max = DurationMinutes(90),
                 step = DurationMinutes(5),
             ),
             speed = SpeedRange(SpeedTenths(20), SpeedTenths(120)),

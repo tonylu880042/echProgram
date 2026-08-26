@@ -19,7 +19,7 @@ import org.junit.Test
 
 class StaticProgramCatalogCompletenessTest {
     private val compositionRootCapabilities = DeviceCapabilities(
-        duration = DurationLimits(DurationMinutes(10), DurationMinutes(60), DurationMinutes(5)),
+        duration = DurationLimits(DurationMinutes(10), DurationMinutes(90), DurationMinutes(5)),
         speed = SpeedRange(SpeedTenths(20), SpeedTenths(120)),
         incline = InclineRange(InclineTenths(0), InclineTenths(150)),
     )

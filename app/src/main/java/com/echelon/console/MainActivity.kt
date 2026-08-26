@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
     private val programSetupViewModel: ProgramSetupViewModel by viewModels {
         ProgramSetupViewModelFactory(
             getProgramDetail = GetProgramDetail(programCatalog),
-            startWorkout = StartWorkout(workoutSessionCoordinator),
+            startWorkout = StartWorkout(workoutSessionCoordinator, programCatalog),
             startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(workoutSessionCoordinator),
             generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
             startFiveKReadySessionDraft = StartFiveKReadySessionDraft(workoutSessionCoordinator),
@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
             capabilities = DeviceCapabilities(
                 duration = DurationLimits(
                     min = DurationMinutes(10),
-                    max = DurationMinutes(60),
+                    max = DurationMinutes(90),
                     step = DurationMinutes(5),
                 ),
                 speed = SpeedRange(SpeedTenths(20), SpeedTenths(120)),

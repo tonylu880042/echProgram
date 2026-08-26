@@ -23,6 +23,13 @@ sealed interface PlanValidationError {
         override val field: PlanField = PlanField.DURATION
     }
 
+    data class DurationNotSupported(
+        val value: DurationMinutes,
+        val supportedDurations: List<DurationMinutes>,
+    ) : PlanValidationError {
+        override val field: PlanField = PlanField.DURATION
+    }
+
     data class MaxSpeedOutOfRange(
         val value: SpeedTenths,
         val limits: SpeedRange,
@@ -42,6 +49,7 @@ object WorkoutPlanValidator {
     fun validate(
         plan: WorkoutPlan,
         capabilities: DeviceCapabilities,
+        supportedDurations: List<DurationMinutes>? = null,
     ): List<PlanValidationError> = buildList {
         val duration = plan.settings.duration.value
         val durationLimits = capabilities.duration
@@ -49,6 +57,14 @@ object WorkoutPlanValidator {
             add(PlanValidationError.DurationOutOfRange(plan.settings.duration, durationLimits))
         } else if ((duration - durationLimits.min.value) % durationLimits.step.value != 0) {
             add(PlanValidationError.DurationStepMismatch(plan.settings.duration, durationLimits))
+        }
+        if (supportedDurations != null && plan.settings.duration !in supportedDurations) {
+            add(
+                PlanValidationError.DurationNotSupported(
+                    value = plan.settings.duration,
+                    supportedDurations = supportedDurations,
+                ),
+            )
         }
 
         val speed = plan.settings.maxSpeed.value

@@ -45,7 +45,7 @@ class ProgramSetupStaticCatalogTest {
                 val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
                 val viewModel = ProgramSetupViewModel(
                     getProgramDetail = GetProgramDetail(catalog),
-                    startWorkout = StartWorkout(coordinator),
+                    startWorkout = StartWorkout(coordinator, catalog),
                     startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
                     generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                     startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),

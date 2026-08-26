@@ -467,7 +467,8 @@ private fun ProgramCard(
         onClick = onClick,
         modifier = modifier
             .heightIn(min = 120.dp)
-            .widthIn(min = 120.dp),
+            .widthIn(min = 120.dp)
+            .semantics { contentDescription = "Open ${program.title}" },
         shape = RoundedCornerShape(4.dp),
         border = BorderStroke(1.dp, RuleColor),
         colors = CardDefaults.cardColors(containerColor = CarbonLow),

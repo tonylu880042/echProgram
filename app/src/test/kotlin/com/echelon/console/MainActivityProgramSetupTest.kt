@@ -44,7 +44,7 @@ class MainActivityProgramSetupTest {
         composeTestRule.onNodeWithText("MAKE IT YOURS").performScrollTo().performClick()
 
         waitForText("PROJECTED TRAJECTORY")
-        composeTestRule.onNodeWithContentDescription("Increase duration").performScrollTo().performClick()
+        composeTestRule.onNodeWithContentDescription("Select duration 45 minutes").performScrollTo().performClick()
         composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
 
         waitForText("PREVIEW ONLY")
@@ -53,7 +53,7 @@ class MainActivityProgramSetupTest {
         composeTestRule.onNodeWithText("TARGET SPEED").assertIsDisplayed()
         composeTestRule.onNodeWithText("3.0 MPH").assertIsDisplayed()
         composeTestRule.onNodeWithText("TIME REMAINING").assertIsDisplayed()
-        composeTestRule.onNodeWithText("35:00").assertIsDisplayed()
+        composeTestRule.onNodeWithText("45:00").assertIsDisplayed()
         assertTrue(
             composeTestRule.activity.workoutSessionCoordinator.currentState()
                 is WorkoutSessionState.Running,
@@ -136,6 +136,27 @@ class MainActivityProgramSetupTest {
             composeTestRule.activity.workoutSessionCoordinator.currentState()
                 is WorkoutSessionState.Running,
         )
+    }
+
+    @Test
+    fun `endurance offers and starts the reviewed 90 minute preview`() {
+        waitForText("WHAT DO YOU WANT TODAY?")
+        composeTestRule.onNodeWithContentDescription("Open ENDURANCE")
+            .performScrollTo()
+            .performClick()
+
+        waitForText("START WORKOUT")
+        composeTestRule.onNodeWithText("MAKE IT YOURS").performScrollTo().performClick()
+        composeTestRule.onNodeWithContentDescription("Select duration 90 minutes")
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
+
+        waitForText("PREVIEW ONLY")
+        composeTestRule.onNodeWithText("1:30:00").assertIsDisplayed()
+        val running = composeTestRule.activity.workoutSessionCoordinator.currentState()
+            as WorkoutSessionState.Running
+        assertEquals(5_400, running.timeline.totalDurationSeconds)
     }
 
     @Test

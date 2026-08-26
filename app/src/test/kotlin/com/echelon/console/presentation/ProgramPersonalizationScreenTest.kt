@@ -48,7 +48,9 @@ class ProgramPersonalizationScreenTest {
             .onNodeWithText("Sustained calorie-burning work without requiring hard running.")
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("DURATION (MIN)").assertIsDisplayed()
-        composeTestRule.onNodeWithText("45").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithContentDescription("Select duration 45 minutes")
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText("MAX SPEED (MPH)").performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("5.5").performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("MAX INCLINE (%)").performScrollTo().assertIsDisplayed()
@@ -64,8 +66,12 @@ class ProgramPersonalizationScreenTest {
         val actions = mutableListOf<ProgramSetupAction>()
         setContent(onAction = actions::add)
 
-        composeTestRule.onNodeWithContentDescription("Increase duration").performClick()
-        composeTestRule.onNodeWithContentDescription("Decrease duration").performClick()
+        composeTestRule.onNodeWithContentDescription("Select duration 20 minutes")
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithContentDescription("Select duration 45 minutes")
+            .performScrollTo()
+            .performClick()
         composeTestRule.onNodeWithContentDescription("Select intensity HIGH").performScrollTo().performClick()
         composeTestRule.onNodeWithContentDescription("Increase max speed").performScrollTo().performClick()
         composeTestRule.onNodeWithContentDescription("Decrease max incline").performScrollTo().performClick()
@@ -75,8 +81,8 @@ class ProgramPersonalizationScreenTest {
 
         assertEquals(
             listOf(
-                ProgramSetupAction.SetDuration(DurationMinutes(50)),
-                ProgramSetupAction.SetDuration(DurationMinutes(40)),
+                ProgramSetupAction.SetDuration(DurationMinutes(20)),
+                ProgramSetupAction.SetDuration(DurationMinutes(45)),
                 ProgramSetupAction.SetIntensity(PlanIntensity.HIGH),
                 ProgramSetupAction.SetMaxSpeed(SpeedTenths(60)),
                 ProgramSetupAction.SetMaxIncline(InclineTenths(110)),
@@ -88,7 +94,7 @@ class ProgramPersonalizationScreenTest {
         )
 
         listOf(
-            "Increase duration",
+            "Select duration 20 minutes",
             "Select intensity HIGH",
             "Adapt to You",
             "START WORKOUT",
@@ -99,6 +105,28 @@ class ProgramPersonalizationScreenTest {
                 .fetchSemanticsNode()
             assertTrue("$description is smaller than 48dp", node.boundsInRoot.height >= 48f)
         }
+    }
+
+    @Test
+    fun `duration control exposes only the detail supported options`() {
+        val actions = mutableListOf<ProgramSetupAction>()
+        setContent(
+            state = personalizingState().copy(
+                detail = detail().copy(
+                    supportedDurations = listOf(20, 30, 45).map(::DurationMinutes),
+                ),
+            ),
+            onAction = actions::add,
+        )
+
+        composeTestRule.onNodeWithContentDescription("Select duration 20 minutes")
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithContentDescription("Select duration 45 minutes").assertIsDisplayed()
+        assertEquals(
+            listOf(ProgramSetupAction.SetDuration(DurationMinutes(20))),
+            actions,
+        )
     }
 
     @Test
@@ -208,6 +236,7 @@ class ProgramPersonalizationScreenTest {
             maxIncline = InclineTenths(120),
             adaptToYou = false,
         ),
+        supportedDurations = listOf(20, 30, 45).map(::DurationMinutes),
         speedRange = SpeedRange(SpeedTenths(28), SpeedTenths(55)),
         inclineRange = InclineRange(InclineTenths(10), InclineTenths(120)),
         profile = listOf(

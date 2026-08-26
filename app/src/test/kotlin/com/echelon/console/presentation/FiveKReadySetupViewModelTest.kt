@@ -219,7 +219,7 @@ class FiveKReadySetupViewModelTest {
         capabilitiesOverride: DeviceCapabilities = capabilities,
     ): ProgramSetupViewModel = ProgramSetupViewModel(
         getProgramDetail = GetProgramDetail(catalog),
-        startWorkout = StartWorkout(coordinator),
+        startWorkout = StartWorkout(coordinator, catalog),
         startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
         generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
         startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),

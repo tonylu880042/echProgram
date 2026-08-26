@@ -97,6 +97,27 @@ class FitOsPayloadMapperTest {
     }
 
     @Test
+    fun `overflow during imperial normalization remains absent`() {
+        val state = FitOsPayloadMapper.mapState(
+            FitOsStatePayload(
+                connectionStatus = "CONNECTED",
+                equipmentType = "RUN",
+                isMetric = false,
+                isBindDevice = true,
+            ),
+        )
+
+        val mapped = requireNotNull(
+            FitOsPayloadMapper.mapTelemetry(
+                FitOsSnapshotPayload(speed = "1.5E308", elapsedRealtimeMillis = 4_000L),
+                state,
+            ),
+        )
+
+        assertNull(mapped.speed)
+    }
+
+    @Test
     fun `limits preserve run speed kilometer units and incline levels`() {
         val mapped = FitOsPayloadMapper.mapLimits(
             FitOsLimitsPayload(

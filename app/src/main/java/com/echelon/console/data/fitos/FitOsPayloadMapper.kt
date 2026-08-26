@@ -50,17 +50,21 @@ internal object FitOsPayloadMapper {
             EquipmentSpeedUnit.MILES_PER_HOUR
         }
         val displaySpeed = payload.speed.parseNonNegativeDouble()
+        val speed = displaySpeed?.let { value ->
+            val kmh = if (state.isMetric) value else value * MPH_TO_KMH
+            kmh.takeIf { it.isFinite() }?.let { canonicalKmh ->
+                EquipmentSpeed(
+                    canonicalKmh = SpeedKmh(canonicalKmh),
+                    displayValue = value,
+                    unit = displayUnit,
+                )
+            }
+        }
 
         return EquipmentTelemetry(
             elapsedRealtimeMillis = timestamp,
             elapsedTime = payload.timeElapsed.cleanText(),
-            speed = displaySpeed?.let { value ->
-                EquipmentSpeed(
-                    canonicalKmh = SpeedKmh(if (state.isMetric) value else value * MPH_TO_KMH),
-                    displayValue = value,
-                    unit = displayUnit,
-                )
-            },
+            speed = speed,
             incline = payload.incline.parseNonNegativeInt()?.let(::EquipmentInclineLevel),
             heartRateBpm = payload.hr.parseNonNegativeInt(),
             distance = payload.distance.parseNonNegativeDouble(),

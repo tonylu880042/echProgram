@@ -204,6 +204,11 @@ enum class Zone2HeartRateHysteresisStatus {
     NO_HYSTERESIS_APPROVED,
 }
 
+/** The intended HR telemetry source for the ZONE 2 preview boundary. */
+enum class Zone2HeartRateIntendedSource {
+    FITOS_EQUIPMENT_SNAPSHOT,
+}
+
 data class Zone2HeartRateEvaluation(
     val status: Zone2HeartRateStatus,
     val advice: Zone2HeartRateAdvice,

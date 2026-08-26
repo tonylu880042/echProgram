@@ -198,6 +198,7 @@ class LiveWorkoutViewModel(
                     )
                 }
             }
+            else -> null
         }
 
     private fun displayLabel(segment: WorkoutTimelineSegment): String = when (

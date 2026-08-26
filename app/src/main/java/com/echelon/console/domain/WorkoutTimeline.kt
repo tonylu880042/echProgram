@@ -12,6 +12,23 @@ sealed interface WorkoutTimelineContext {
         val progressStatus: VerticalProgressStatus,
         val controlStatus: VerticalWorkoutDraftControlStatus,
     ) : WorkoutTimelineContext
+
+    /**
+     * Static ZONE 2 phase metadata. This context contains no current sample
+     * or computed HR status; those arrive from a later telemetry increment.
+     */
+    data class Zone2Preview(
+        val programId: ProgramId,
+        val target: HeartRateTargetRange,
+        val intendedSource: Zone2HeartRateIntendedSource,
+        val previewStatus: Zone2HeartRatePreviewStatus,
+        val adviceMode: Zone2HeartRateAdviceMode,
+        val thresholdMode: Zone2HeartRateThresholdMode,
+        val hysteresisStatus: Zone2HeartRateHysteresisStatus,
+        val duration: DurationMinutes,
+        val effectiveMaxSpeed: SpeedTenths,
+        val effectiveMaxIncline: InclineTenths,
+    ) : WorkoutTimelineContext
 }
 
 /** Typed coaching meaning carried with a compiled timeline segment. */
@@ -75,6 +92,21 @@ sealed interface WorkoutTimelineCompileError {
     data class ContextProgramIdMismatch(
         val expected: ProgramId,
         val actual: ProgramId,
+    ) : WorkoutTimelineCompileError
+
+    data class ContextDurationMismatch(
+        val expected: DurationMinutes,
+        val actual: DurationMinutes,
+    ) : WorkoutTimelineCompileError
+
+    data class ContextMaxSpeedMismatch(
+        val expected: SpeedTenths,
+        val actual: SpeedTenths,
+    ) : WorkoutTimelineCompileError
+
+    data class ContextMaxInclineMismatch(
+        val expected: InclineTenths,
+        val actual: InclineTenths,
     ) : WorkoutTimelineCompileError
 
     data class AnnotationCountMismatch(
@@ -154,7 +186,7 @@ object WorkoutTimelineCompiler {
             )
         }
 
-        val contextError = validateContext(programId, profile.context)
+        val contextError = validateContext(programId, profile.context, settings)
         if (contextError != null) {
             return WorkoutTimelineCompileResult.Invalid(contextError)
         }
@@ -253,6 +285,7 @@ object WorkoutTimelineCompiler {
     private fun validateContext(
         programId: ProgramId,
         context: WorkoutTimelineContext,
+        settings: PlanSettings,
     ): WorkoutTimelineCompileError? = when (context) {
         WorkoutTimelineContext.None -> null
         is WorkoutTimelineContext.VerticalPreview -> when {
@@ -272,6 +305,45 @@ object WorkoutTimelineCompiler {
                 WorkoutTimelineCompileError.ContextProgramIdMismatch(
                     expected = programId,
                     actual = context.programId,
+                )
+
+            else -> null
+        }
+        is WorkoutTimelineContext.Zone2Preview -> when {
+            context.programId != ZONE_2_PROGRAM_ID ->
+                WorkoutTimelineCompileError.ContextProgramIdMismatch(
+                    expected = ZONE_2_PROGRAM_ID,
+                    actual = context.programId,
+                )
+
+            programId != ZONE_2_PROGRAM_ID ->
+                WorkoutTimelineCompileError.ContextProgramIdMismatch(
+                    expected = ZONE_2_PROGRAM_ID,
+                    actual = programId,
+                )
+
+            context.programId != programId ->
+                WorkoutTimelineCompileError.ContextProgramIdMismatch(
+                    expected = programId,
+                    actual = context.programId,
+                )
+
+            context.duration != settings.duration ->
+                WorkoutTimelineCompileError.ContextDurationMismatch(
+                    expected = settings.duration,
+                    actual = context.duration,
+                )
+
+            context.effectiveMaxSpeed != settings.maxSpeed ->
+                WorkoutTimelineCompileError.ContextMaxSpeedMismatch(
+                    expected = settings.maxSpeed,
+                    actual = context.effectiveMaxSpeed,
+                )
+
+            context.effectiveMaxIncline != settings.maxIncline ->
+                WorkoutTimelineCompileError.ContextMaxInclineMismatch(
+                    expected = settings.maxIncline,
+                    actual = context.effectiveMaxIncline,
                 )
 
             else -> null
@@ -353,6 +425,7 @@ object WorkoutTimelineCompiler {
 
     private const val SECONDS_PER_MINUTE = 60L
     private val VERTICAL_PROGRAM_ID = ProgramId("VERTICAL")
+    private val ZONE_2_PROGRAM_ID = ProgramId("ZONE_2")
 }
 
 /** Maps a generated 5K draft into the generic typed timeline boundary. */
@@ -395,3 +468,17 @@ fun VerticalWorkoutDraft.toWorkoutTimelineProfile(): AnnotatedWorkoutProfile =
             )
         },
     )
+
+/** Maps the reviewed static ZONE 2 profile into its typed preview context. */
+fun ProgramDetail.toZone2WorkoutTimelineProfile(
+    context: WorkoutTimelineContext.Zone2Preview,
+): AnnotatedWorkoutProfile = AnnotatedWorkoutProfile(
+    programId = programId,
+    context = context,
+    segments = profile.map { summary ->
+        AnnotatedWorkoutProfileSegment(
+            summary = summary,
+            annotation = WorkoutTimelineAnnotation.Unannotated,
+        )
+    },
+)

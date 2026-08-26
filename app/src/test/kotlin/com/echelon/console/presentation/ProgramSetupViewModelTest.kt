@@ -210,6 +210,27 @@ class ProgramSetupViewModelTest {
     }
 
     @Test
+    fun `back from started returns to library`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val viewModel = viewModel(dispatcher = dispatcher)
+            viewModel.onAction(ProgramSetupAction.OpenProgram(detail.programId))
+            advanceUntilIdle()
+            viewModel.onAction(ProgramSetupAction.StartDefault)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value is ProgramSetupUiState.Started)
+
+            viewModel.onAction(ProgramSetupAction.Back)
+
+            assertEquals(ProgramSetupUiState.Library, viewModel.state.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
     fun `valid customized plan forwards exact settings and becomes started`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         Dispatchers.setMain(dispatcher)

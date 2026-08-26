@@ -3,6 +3,7 @@ package com.echelon.console
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -43,6 +44,21 @@ class MainActivityProgramSetupTest {
 
         waitForText("WORKOUT READY")
         composeTestRule.onNodeWithText("5.5 MPH").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `started workout back returns to program library`() {
+        waitForText("WHAT DO YOU WANT TODAY?")
+        composeTestRule.onNodeWithText("FAT BURN").performClick()
+
+        waitForText("START WORKOUT")
+        composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
+
+        waitForText("WORKOUT READY")
+        composeTestRule.onNodeWithContentDescription("Back").performClick()
+
+        waitForText("WHAT DO YOU WANT TODAY?")
+        composeTestRule.onNodeWithText("ALL PROGRAMS").performScrollTo().assertIsDisplayed()
     }
 
     private fun waitForText(text: String) {

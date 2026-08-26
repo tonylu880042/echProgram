@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -52,22 +49,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.echelon.console.domain.HeroProgram
 import com.echelon.console.domain.Program
 import com.echelon.console.domain.ProgramCategory
-
-private val ConsoleCanvas = Color(0xFF071016)
-private val CarbonLow = Color(0xFF0C171E)
-private val CarbonHigh = Color(0xFF12232C)
-private val RuleColor = Color(0xFF253842)
-private val Cyan = Color(0xFF28A8FF)
-private val PrimaryText = Color(0xFFE5EDF2)
-private val MutedText = Color(0xFFA4B3BD)
-
-enum class ProgramLibraryDestination {
-    DASHBOARD,
-    PROGRAMS,
-    FREE_RUN,
-    HISTORY,
-    SETTINGS,
-}
 
 @Composable
 fun ProgramLibraryRoute(
@@ -91,140 +72,15 @@ fun ProgramLibraryScreen(
     onNavigate: (ProgramLibraryDestination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = ConsoleCanvas,
-        contentColor = PrimaryText,
+    ConsoleScaffold(
+        onNavigate = onNavigate,
+        modifier = modifier,
+        activeDestination = ProgramLibraryDestination.PROGRAMS,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding(),
-        ) {
-            Row(modifier = Modifier.fillMaxSize()) {
-                ProgramLibraryNavigationRail(onNavigate = onNavigate)
-                Column(modifier = Modifier.fillMaxSize()) {
-                    ProgramTelemetryHeader()
-                    ProgramLibraryContent(
-                        state = state,
-                        onAction = onAction,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProgramTelemetryHeader() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .background(CarbonLow)
-            .border(width = 1.dp, color = RuleColor),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = "TELEMETRY",
-            modifier = Modifier.padding(horizontal = 16.dp),
-            color = MutedText,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.6.sp,
+        ProgramLibraryContent(
+            state = state,
+            onAction = onAction,
         )
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text = "BT", color = MutedText, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-            Text(text = "WF", color = MutedText, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-            Text(text = "BAT", color = MutedText, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-            Text(text = "PROFILE", color = Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-private data class RailItem(
-    val destination: ProgramLibraryDestination,
-    val label: String,
-    val mark: String,
-)
-
-private val RailItems = listOf(
-    RailItem(ProgramLibraryDestination.DASHBOARD, "Dashboard", "DB"),
-    RailItem(ProgramLibraryDestination.PROGRAMS, "Programs", "PR"),
-    RailItem(ProgramLibraryDestination.FREE_RUN, "Free Run", "FR"),
-    RailItem(ProgramLibraryDestination.HISTORY, "History", "HI"),
-    RailItem(ProgramLibraryDestination.SETTINGS, "Settings", "ST"),
-)
-
-@Composable
-private fun ProgramLibraryNavigationRail(
-    onNavigate: (ProgramLibraryDestination) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .width(64.dp)
-            .fillMaxHeight()
-            .background(CarbonLow)
-            .border(width = 1.dp, color = RuleColor),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(modifier = Modifier.height(64.dp))
-        RailItems.forEach { item ->
-            val isActive = item.destination == ProgramLibraryDestination.PROGRAMS
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .background(if (isActive) CarbonHigh else Color.Transparent)
-                    .clickable { onNavigate(item.destination) }
-                    .semantics {
-                        role = Role.Button
-                        contentDescription = item.label
-                    },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(4.dp)
-                        .fillMaxHeight()
-                        .background(if (isActive) Cyan else Color.Transparent),
-                )
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text(
-                        text = item.mark,
-                        color = if (isActive) Cyan else MutedText,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = item.label,
-                        color = if (isActive) Cyan else MutedText,
-                        fontSize = 9.sp,
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Box(
-            modifier = Modifier
-                .padding(bottom = 16.dp)
-                .size(36.dp)
-                .background(Cyan, RoundedCornerShape(4.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(text = "E", color = ConsoleCanvas, fontWeight = FontWeight.Bold)
-        }
     }
 }
 

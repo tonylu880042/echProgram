@@ -37,6 +37,7 @@ import com.echelon.console.domain.EquipmentReadState
 import com.echelon.console.domain.PlanFocus
 import com.echelon.console.domain.PlanIntensity
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import java.util.Locale
@@ -132,6 +133,7 @@ fun ProgramSetupScreen(
 
         is ProgramSetupUiState.Started -> StartedWorkoutScreen(
             plan = state.plan,
+            previewMode = state.previewMode,
             equipmentState = equipmentState,
             onBack = { onAction(ProgramSetupAction.Back) },
             onNavigate = onNavigate,
@@ -185,6 +187,7 @@ private fun ProgramSetupStatus(
 @Composable
 private fun StartedWorkoutScreen(
     plan: ValidatedWorkoutPlan,
+    previewMode: ProgramPreviewMode,
     equipmentState: EquipmentReadState,
     onBack: () -> Unit,
     onNavigate: (ProgramLibraryDestination) -> Unit,
@@ -209,6 +212,7 @@ private fun StartedWorkoutScreen(
                 color = MutedText,
                 fontSize = 16.sp,
             )
+            ProgramPreviewNotice(previewMode = previewMode)
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(4.dp),

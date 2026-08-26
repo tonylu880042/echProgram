@@ -13,15 +13,15 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class StaticProgramDetailCatalogTest {
+class StaticProgramCatalogDetailTest {
     @Test
     fun `fat burn detail keeps safe promise default config and ordered profile`() {
-        val detail = StaticProgramDetailCatalog().findProgramDetail(ProgramId("FAT_BURN"))
+        val detail = StaticProgramCatalog().findProgramDetail(ProgramId("FAT_BURN"))
 
         assertNotNull(detail)
         requireNotNull(detail)
-        assertTrue(detail.promise.contains("without requiring hard running"))
-        assertEquals(DurationMinutes(45), detail.defaultSettings.duration)
+        assertTrue(detail.promise.contains("controlled burn"))
+        assertEquals(DurationMinutes(30), detail.defaultSettings.duration)
         assertEquals(PlanIntensity.MEDIUM, detail.defaultSettings.intensity)
         assertEquals(PlanFocus.BALANCED, detail.defaultSettings.focus)
         assertEquals(SpeedTenths(55), detail.defaultSettings.maxSpeed)
@@ -29,7 +29,9 @@ class StaticProgramDetailCatalogTest {
         assertEquals(SpeedRange(SpeedTenths(28), SpeedTenths(55)), detail.speedRange)
         assertEquals(InclineRange(InclineTenths(10), InclineTenths(120)), detail.inclineRange)
         assertEquals(
-            listOf("Warm Up", "Steady Burn", "Climb", "Push", "Recovery", "Cool Down"),
+            listOf(
+                "Warm Up", "Climb", "Climb", "Push", "Climb", "Push", "Big Climb", "Finish", "Cool Down",
+            ),
             detail.profile.map { it.name },
         )
         assertEquals(

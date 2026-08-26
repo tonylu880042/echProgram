@@ -75,14 +75,14 @@ class ProgramLibraryViewModelTest {
 
             advanceUntilIdle()
 
-            viewModel.onAction(ProgramLibraryAction.FilterPrograms(ProgramCategory.HIIT))
+            viewModel.onAction(ProgramLibraryAction.FilterPrograms(ProgramCategory.SWEAT))
 
             assertEquals(
-                listOf("SPEED_DEMON"),
+                listOf("HIIT_20", "SWEAT_30", "PYRAMID"),
                 (viewModel.state.value as ProgramLibraryUiState.Ready).visiblePrograms.map { it.id.value },
             )
             assertEquals(
-                ProgramCategory.HIIT,
+                ProgramCategory.SWEAT,
                 (viewModel.state.value as ProgramLibraryUiState.Ready).activeCategory,
             )
         } finally {

@@ -12,7 +12,6 @@ import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.WorkoutSessionStarter
 import com.echelon.console.data.StaticProgramCatalog
-import com.echelon.console.data.StaticProgramDetailCatalog
 import com.echelon.console.data.fitos.AndroidFitOsClientFactory
 import com.echelon.console.data.fitos.FitOsEquipmentAdapter
 import com.echelon.console.domain.DeviceCapabilities
@@ -39,6 +38,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 class MainActivity : ComponentActivity() {
+    private val programCatalog: StaticProgramCatalog by lazy { StaticProgramCatalog() }
+
     private val equipmentTelemetrySource: EquipmentTelemetrySource by lazy {
         FitOsEquipmentAdapter(
             clientFactory = AndroidFitOsClientFactory(applicationContext),
@@ -53,13 +54,13 @@ class MainActivity : ComponentActivity() {
 
     private val programLibraryViewModel: ProgramLibraryViewModel by viewModels {
         ProgramLibraryViewModelFactory(
-            listProgramLibrary = ListProgramLibrary(StaticProgramCatalog()),
+            listProgramLibrary = ListProgramLibrary(programCatalog),
         )
     }
 
     private val programSetupViewModel: ProgramSetupViewModel by viewModels {
         ProgramSetupViewModelFactory(
-            getProgramDetail = GetProgramDetail(StaticProgramDetailCatalog()),
+            getProgramDetail = GetProgramDetail(programCatalog),
             startWorkout = StartWorkout(NoOpWorkoutSessionStarter),
             capabilities = DeviceCapabilities(
                 duration = DurationLimits(

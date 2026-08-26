@@ -31,7 +31,7 @@ class MainActivityProgramSetupTest {
         composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
 
         waitForText("WORKOUT READY")
-        composeTestRule.onNodeWithText("45 MIN").assertIsDisplayed()
+        composeTestRule.onNodeWithText("30 MIN").assertIsDisplayed()
     }
 
     @Test
@@ -44,6 +44,19 @@ class MainActivityProgramSetupTest {
 
         waitForText("WORKOUT READY")
         composeTestRule.onNodeWithText("5.5 MPH").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `glute blast flows from library to workout ready`() {
+        waitForText("WHAT DO YOU WANT TODAY?")
+        composeTestRule.onNodeWithText("GLUTE BLAST").performClick()
+
+        waitForText("START WORKOUT")
+        composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
+
+        waitForText("WORKOUT READY")
+        composeTestRule.onNodeWithText("GLUTE_BLAST").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("4.0 MPH").performScrollTo().assertIsDisplayed()
     }
 
     @Test

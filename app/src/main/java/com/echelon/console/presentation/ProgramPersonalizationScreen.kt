@@ -142,6 +142,7 @@ private fun HeadingCopy(detail: ProgramDetail) {
         )
         Text(text = detail.title, color = Cyan, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Text(text = detail.promise, color = MutedText, fontSize = 14.sp)
+        ProgramPreviewNotice(previewMode = detail.previewMode)
     }
 }
 

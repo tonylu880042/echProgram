@@ -92,6 +92,7 @@ private fun ProgramDetailHeading(detail: ProgramDetail) {
             color = MutedText,
             fontSize = 16.sp,
         )
+        ProgramPreviewNotice(previewMode = detail.previewMode)
     }
 }
 

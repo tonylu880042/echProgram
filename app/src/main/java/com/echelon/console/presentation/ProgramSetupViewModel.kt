@@ -123,7 +123,10 @@ class ProgramSetupViewModel(
         viewModelScope.launch(dispatcher) {
             try {
                 when (val result = startWorkout(plan, deviceCapabilities)) {
-                    is StartWorkoutResult.Valid -> _state.value = ProgramSetupUiState.Started(result.plan)
+                    is StartWorkoutResult.Valid -> _state.value = ProgramSetupUiState.Started(
+                        plan = result.plan,
+                        previewMode = detail.previewMode,
+                    )
                     is StartWorkoutResult.Invalid -> {
                         _state.value = invalidState?.copy(fieldErrors = result.errors)
                             ?: ProgramSetupUiState.Error("Unable to start workout")

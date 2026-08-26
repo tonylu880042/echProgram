@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.echelon.console.MainActivity
+import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
 import com.echelon.console.domain.DurationMinutes
@@ -18,6 +19,7 @@ import com.echelon.console.domain.PlanIntensity
 import com.echelon.console.domain.PlanSettings
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.ProgramSegmentSummary
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
@@ -103,9 +105,35 @@ class ProgramSetupScreenTest {
         setContent(ProgramSetupUiState.Started(plan), onAction = {})
 
         composeTestRule.onNodeWithText("WORKOUT READY").assertIsDisplayed()
-        composeTestRule.onNodeWithText("45 MIN").assertIsDisplayed()
+        composeTestRule.onNodeWithText("30 MIN").assertIsDisplayed()
         composeTestRule.onNodeWithText("5.5 MPH").performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("12.0%").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `non fixed preview is disclosed on detail personalization and ready states`() {
+        val detail = requireNotNull(StaticProgramCatalog().findProgramDetail(ProgramId("ZONE_2")))
+        setContent(ProgramSetupUiState.Ready(detail), onAction = {})
+        composeTestRule.onNodeWithText("PREVIEW ONLY").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Heart-rate zone control requires an approved HR source.").assertIsDisplayed()
+
+        setContent(ProgramSetupUiState.Personalizing(detail, detail.defaultSettings), onAction = {})
+        composeTestRule.onNodeWithText("PREVIEW ONLY").assertIsDisplayed()
+
+        val capabilities = DeviceCapabilities(
+            duration = DurationLimits(DurationMinutes(10), DurationMinutes(60), DurationMinutes(5)),
+            speed = SpeedRange(SpeedTenths(20), SpeedTenths(120)),
+            incline = InclineRange(InclineTenths(0), InclineTenths(150)),
+        )
+        val plan = (ValidatedWorkoutPlan.create(
+            plan = com.echelon.console.domain.WorkoutPlan(detail.programId, detail.defaultSettings),
+            capabilities = capabilities,
+        ) as ValidatedWorkoutPlanResult.Valid).plan
+        setContent(
+            ProgramSetupUiState.Started(plan, ProgramPreviewMode.HEART_RATE_PREVIEW),
+            onAction = {},
+        )
+        composeTestRule.onNodeWithText("PREVIEW ONLY").assertIsDisplayed()
     }
 
     @Test
@@ -143,7 +171,7 @@ class ProgramSetupScreenTest {
         title = "FAT BURN",
         promise = "Sustained calorie-burning work without requiring hard running.",
         defaultSettings = PlanSettings(
-            duration = DurationMinutes(45),
+            duration = DurationMinutes(30),
             intensity = PlanIntensity.MEDIUM,
             focus = PlanFocus.BALANCED,
             maxSpeed = SpeedTenths(55),

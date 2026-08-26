@@ -4,6 +4,7 @@ import com.echelon.console.domain.PlanSettings
 import com.echelon.console.domain.PlanValidationError
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.ValidatedWorkoutPlan
 
 sealed interface ProgramSetupUiState {
@@ -23,7 +24,10 @@ sealed interface ProgramSetupUiState {
         val fieldErrors: List<PlanValidationError> = emptyList(),
     ) : ProgramSetupUiState
 
-    data class Started(val plan: ValidatedWorkoutPlan) : ProgramSetupUiState
+    data class Started(
+        val plan: ValidatedWorkoutPlan,
+        val previewMode: ProgramPreviewMode = ProgramPreviewMode.FIXED_PROFILE_PREVIEW,
+    ) : ProgramSetupUiState
 
     data class Error(val message: String) : ProgramSetupUiState
 }

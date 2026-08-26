@@ -92,9 +92,9 @@ class ProgramLibraryScreenTest {
         }
 
         composeTestRule.onNodeWithText("ALL PROGRAMS").performScrollTo()
-        composeTestRule.onNodeWithText("Easy Stroll").performScrollTo().performClick()
+        composeTestRule.onNodeWithText("SUMMIT").performScrollTo().performClick()
 
-        assertEquals(listOf(ProgramId("EASY_STROLL")), opened)
+        assertEquals(listOf(ProgramId("SUMMIT")), opened)
     }
 
     @Test
@@ -110,10 +110,10 @@ class ProgramLibraryScreenTest {
 
         composeTestRule.onNodeWithText("FILTER").performScrollTo().performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithContentDescription("Filter HIIT").performScrollTo().performClick()
+        composeTestRule.onNodeWithContentDescription("Filter SWEAT").performScrollTo().performClick()
 
         assertEquals(
-            listOf(ProgramLibraryAction.FilterPrograms(ProgramCategory.HIIT)),
+            listOf(ProgramLibraryAction.FilterPrograms(ProgramCategory.SWEAT)),
             actions,
         )
     }
@@ -137,7 +137,7 @@ class ProgramLibraryScreenTest {
                 state = ProgramLibraryUiState.Ready(
                     heroPrograms = readyState().heroPrograms,
                     visiblePrograms = emptyList(),
-                    activeCategory = ProgramCategory.HIIT,
+                    activeCategory = ProgramCategory.SWEAT,
                 ),
                 onAction = {},
                 onNavigate = {},

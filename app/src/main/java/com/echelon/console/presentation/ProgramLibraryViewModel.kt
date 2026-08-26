@@ -22,6 +22,7 @@ sealed interface ProgramLibraryUiState {
         val heroPrograms: List<HeroProgram>,
         val visiblePrograms: List<Program>,
         val selectedHeroId: ProgramId? = null,
+        val activeCategory: ProgramCategory = ProgramCategory.ALL,
         val allPrograms: List<Program> = visiblePrograms,
     ) : ProgramLibraryUiState
 
@@ -57,6 +58,7 @@ class ProgramLibraryViewModel(
             is ProgramLibraryAction.SelectHero -> ready.copy(selectedHeroId = action.id)
             is ProgramLibraryAction.FilterPrograms -> ready.copy(
                 visiblePrograms = ready.allPrograms.filterBy(action.category),
+                activeCategory = action.category,
             )
         }
     }

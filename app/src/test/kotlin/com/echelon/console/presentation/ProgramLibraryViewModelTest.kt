@@ -81,6 +81,10 @@ class ProgramLibraryViewModelTest {
                 listOf("SPEED_DEMON"),
                 (viewModel.state.value as ProgramLibraryUiState.Ready).visiblePrograms.map { it.id.value },
             )
+            assertEquals(
+                ProgramCategory.HIIT,
+                (viewModel.state.value as ProgramLibraryUiState.Ready).activeCategory,
+            )
         } finally {
             Dispatchers.resetMain()
         }

@@ -40,6 +40,12 @@ data class FiveKReadySessionDraftMetadata(
     val mode: FiveKReadyDraftMode,
     val durationMinutes: Int,
     val baselinePace: FiveKReadyBaselinePace,
+    val userMaxSpeed: SpeedTenths,
+    val machineMaxSpeed: SpeedTenths,
+    val userMaxIncline: InclineTenths,
+    val machineMaxIncline: InclineTenths,
+    /** Stable v1 input fingerprint used to reject altered draft provenance. */
+    val replayFingerprint: String,
     val wasClamped: Boolean,
     val clampSummary: FiveKReadyClampSummary?,
 ) {
@@ -253,6 +259,11 @@ class FiveKReadySessionGenerator {
                     mode = FiveKReadyDraftMode.SINGLE_SESSION_PREVIEW,
                     durationMinutes = input.durationMinutes,
                     baselinePace = baseline,
+                    userMaxSpeed = input.userMaxSpeed,
+                    machineMaxSpeed = input.machineMaxSpeed,
+                    userMaxIncline = input.userMaxIncline,
+                    machineMaxIncline = input.machineMaxIncline,
+                    replayFingerprint = replayFingerprint(input),
                     wasClamped = clampSummary != null,
                     clampSummary = clampSummary,
                 ),
@@ -359,6 +370,23 @@ class FiveKReadySessionGenerator {
 
     private fun walkSpeed(preferred: Int, baselineSpeed: Int): Int =
         minOf(preferred, baselineSpeed - 1)
+
+    private fun replayFingerprint(input: FiveKReadySessionGeneratorInput): String = buildString {
+        append("5K_READY|v1|")
+        append(input.durationMinutes)
+        append('|')
+        append(input.baselinePace?.speed?.value)
+        append('|')
+        append(input.baselinePace?.source?.name)
+        append('|')
+        append(input.userMaxSpeed.value)
+        append('|')
+        append(input.machineMaxSpeed.value)
+        append('|')
+        append(input.userMaxIncline.value)
+        append('|')
+        append(input.machineMaxIncline.value)
+    }
 
     private data class TemplateBlock(
         val name: String,

@@ -1,6 +1,10 @@
 package com.echelon.console.application.usecase
 
+import com.echelon.console.domain.FiveKReadySessionDraft
+import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.ProgramId
+import com.echelon.console.domain.ProgramSegmentSummary
+import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.WorkoutSessionAction
@@ -69,7 +73,10 @@ sealed interface WorkoutSessionCommandFailure {
 
 class InMemoryWorkoutSessionCoordinator(
     private val catalog: ProgramDetailCatalog,
-) : WorkoutSessionStarter, SurpriseWorkoutDraftSessionStarter, WorkoutSessionController {
+) : WorkoutSessionStarter,
+    SurpriseWorkoutDraftSessionStarter,
+    FiveKReadySessionDraftSessionStarter,
+    WorkoutSessionController {
     private var sessionState: WorkoutSessionState? = null
 
     override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
@@ -85,28 +92,65 @@ class InMemoryWorkoutSessionCoordinator(
     override fun start(
         draft: SurpriseWorkoutDraft,
         plan: ValidatedWorkoutPlan,
+    ): WorkoutSessionStarterResult = startDraft(
+        draftProgramId = draft.metadata.programId,
+        draftDurationMinutes = draft.metadata.durationMinutes,
+        draftMaxSpeed = draft.effectiveSpeedCap,
+        draftMaxIncline = draft.effectiveInclineCap,
+        profile = draft.profile,
+        plan = plan,
+    )
+
+    override fun start(
+        draft: FiveKReadySessionDraft,
+        plan: ValidatedWorkoutPlan,
+    ): WorkoutSessionStarterResult = startDraft(
+        draftProgramId = draft.metadata.programId,
+        draftDurationMinutes = draft.metadata.durationMinutes,
+        draftMaxSpeed = draft.effectiveSpeedCap,
+        draftMaxIncline = draft.effectiveInclineCap,
+        profile = draft.profile,
+        plan = plan,
+    )
+
+    private fun startDraft(
+        draftProgramId: ProgramId,
+        draftDurationMinutes: Int,
+        draftMaxSpeed: SpeedTenths,
+        draftMaxIncline: InclineTenths,
+        profile: List<ProgramSegmentSummary>,
+        plan: ValidatedWorkoutPlan,
     ): WorkoutSessionStarterResult {
         activeSessionFailure()?.let { return it }
-        draftPlanMismatch(draft, plan)?.let { return it }
+        draftPlanMismatch(
+            draftProgramId = draftProgramId,
+            draftDurationMinutes = draftDurationMinutes,
+            draftMaxSpeed = draftMaxSpeed,
+            draftMaxIncline = draftMaxIncline,
+            plan = plan,
+        )?.let { return it }
         return startTimeline(
             WorkoutTimelineCompiler.compile(
-                programId = draft.metadata.programId,
-                profile = draft.profile,
+                programId = draftProgramId,
+                profile = profile,
                 settings = plan.plan.settings,
             ),
         )
     }
 
     private fun draftPlanMismatch(
-        draft: SurpriseWorkoutDraft,
+        draftProgramId: ProgramId,
+        draftDurationMinutes: Int,
+        draftMaxSpeed: SpeedTenths,
+        draftMaxIncline: InclineTenths,
         plan: ValidatedWorkoutPlan,
     ): WorkoutSessionStarterResult.Failed? {
         val settings = plan.plan.settings
         val mismatch = when {
-            plan.plan.programId != draft.metadata.programId -> DraftPlanMismatchField.PROGRAM_ID
-            settings.duration.value != draft.metadata.durationMinutes -> DraftPlanMismatchField.DURATION
-            settings.maxSpeed != draft.effectiveSpeedCap -> DraftPlanMismatchField.MAX_SPEED
-            settings.maxIncline != draft.effectiveInclineCap -> DraftPlanMismatchField.MAX_INCLINE
+            plan.plan.programId != draftProgramId -> DraftPlanMismatchField.PROGRAM_ID
+            settings.duration.value != draftDurationMinutes -> DraftPlanMismatchField.DURATION
+            settings.maxSpeed != draftMaxSpeed -> DraftPlanMismatchField.MAX_SPEED
+            settings.maxIncline != draftMaxIncline -> DraftPlanMismatchField.MAX_INCLINE
             else -> null
         }
         return mismatch?.let {

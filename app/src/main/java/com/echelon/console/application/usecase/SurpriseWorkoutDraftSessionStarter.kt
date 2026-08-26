@@ -8,7 +8,7 @@ import com.echelon.console.domain.ValidatedWorkoutPlan
  * The implementation may create only an in-memory profile session; device
  * control is deliberately outside this port.
  */
-fun interface WorkoutDraftSessionStarter {
+fun interface SurpriseWorkoutDraftSessionStarter {
     fun start(
         draft: SurpriseWorkoutDraft,
         plan: ValidatedWorkoutPlan,

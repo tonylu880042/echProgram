@@ -20,6 +20,8 @@ import com.echelon.console.domain.SurpriseWorkoutGeneratorInput
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.ValidatedWorkoutPlan
+import com.echelon.console.domain.ValidatedWorkoutPlanResult
+import com.echelon.console.domain.WorkoutPlan
 import com.echelon.console.domain.WorkoutSessionState
 import com.echelon.console.domain.WorkoutTimelineCompileError
 import org.junit.Assert.assertEquals
@@ -102,7 +104,7 @@ class StartSurpriseWorkoutDraftTest {
         )
 
         expected.forEach { (effort, intensity) ->
-            val starter = RecordingDraftStarter(
+            val starter = RecordingDraftSessionStarter(
                 WorkoutSessionStarterResult.Failed(
                     WorkoutSessionStartFailure.TimelineCompileFailed(WorkoutTimelineCompileError.EmptyProfile),
                 ),
@@ -139,7 +141,51 @@ class StartSurpriseWorkoutDraftTest {
         )
 
         tampered.forEach { invalidDraft ->
-            val starter = RecordingDraftStarter(
+            val starter = RecordingDraftSessionStarter(
+                WorkoutSessionStarterResult.Failed(WorkoutSessionStartFailure.ActiveSessionExists),
+            )
+
+            val result = StartSurpriseWorkoutDraft(starter)(invalidDraft, capabilities)
+
+            assertTrue(result is StartSurpriseWorkoutDraftResult.InvalidDraft)
+            assertNull(starter.received)
+        }
+    }
+
+    @Test
+    fun `tampered replay metadata caps and profile are rejected before starter`() {
+        val original = draft(durationMinutes = 20)
+        val tampered = listOf(
+            original.copy(
+                profile = original.profile.mapIndexed { index, segment ->
+                    if (index == 0) segment.copy(speed = SpeedTenths(-1)) else segment
+                },
+            ),
+            original.copy(
+                profile = original.profile.mapIndexed { index, segment ->
+                    if (index == 0) segment.copy(incline = InclineTenths(-1)) else segment
+                },
+            ),
+            original.copy(effectiveSpeedCap = SpeedTenths(81)),
+            original.copy(effectiveInclineCap = InclineTenths(101)),
+            original.copy(
+                profile = original.profile.mapIndexed { index, segment ->
+                    if (index == 0) segment.copy(speed = SpeedTenths(segment.speed.value + 1)) else segment
+                },
+            ),
+            original.copy(
+                metadata = original.metadata.copy(stableSeed = original.metadata.stableSeed + 1),
+            ),
+            original.copy(
+                metadata = original.metadata.copy(userProfileRevision = " "),
+            ),
+            original.copy(
+                metadata = original.metadata.copy(generatorVersion = "v2"),
+            ),
+        )
+
+        tampered.forEach { invalidDraft ->
+            val starter = RecordingDraftSessionStarter(
                 WorkoutSessionStarterResult.Failed(WorkoutSessionStartFailure.ActiveSessionExists),
             )
 
@@ -152,7 +198,7 @@ class StartSurpriseWorkoutDraftTest {
 
     @Test
     fun `device capability validation is distinct and starter remains untouched`() {
-        val starter = RecordingDraftStarter(
+        val starter = RecordingDraftSessionStarter(
             WorkoutSessionStarterResult.Failed(WorkoutSessionStartFailure.ActiveSessionExists),
         )
         val narrowCapabilities = capabilities.copy(
@@ -187,12 +233,41 @@ class StartSurpriseWorkoutDraftTest {
     @Test
     fun `timeline compile failure remains explicit after draft validation`() {
         val failure = WorkoutSessionStartFailure.TimelineCompileFailed(WorkoutTimelineCompileError.EmptyProfile)
-        val starter = RecordingDraftStarter(WorkoutSessionStarterResult.Failed(failure))
+        val starter = RecordingDraftSessionStarter(WorkoutSessionStarterResult.Failed(failure))
 
         val result = StartSurpriseWorkoutDraft(starter)(draft(), capabilities)
 
         assertEquals(StartSurpriseWorkoutDraftResult.StarterFailed(failure), result)
         assertNotNull(starter.received)
+    }
+
+    @Test
+    fun `direct draft starter rejects a plan whose identity or caps differ`() {
+        val draft = draft(durationMinutes = 20)
+        val coordinator = InMemoryWorkoutSessionCoordinator(
+            catalog = ProgramDetailCatalog { null },
+        )
+        val mismatchedPlans = listOf(
+            DraftPlanMismatchField.PROGRAM_ID to draftPlan(draft, programId = ProgramId("FAT_BURN")),
+            DraftPlanMismatchField.DURATION to draftPlan(draft, durationMinutes = 30),
+            DraftPlanMismatchField.MAX_SPEED to draftPlan(
+                draft,
+                maxSpeed = SpeedTenths(draft.effectiveSpeedCap.value - 1),
+            ),
+            DraftPlanMismatchField.MAX_INCLINE to draftPlan(
+                draft,
+                maxIncline = InclineTenths(draft.effectiveInclineCap.value - 1),
+            ),
+        )
+
+        mismatchedPlans.forEach { (field, plan) ->
+            val result = coordinator.start(draft, plan)
+
+            assertTrue(result is WorkoutSessionStarterResult.Failed)
+            val failure = (result as WorkoutSessionStarterResult.Failed).failure
+            assertEquals(WorkoutSessionStartFailure.DraftPlanMismatch(field), failure)
+            assertNull(coordinator.currentState())
+        }
     }
 
     private fun draft(
@@ -242,6 +317,33 @@ class StartSurpriseWorkoutDraftTest {
         previewMode = ProgramPreviewMode.GENERATED_PREVIEW,
     )
 
+    private fun draftPlan(
+        draft: SurpriseWorkoutDraft,
+        programId: ProgramId = draft.metadata.programId,
+        durationMinutes: Int = draft.metadata.durationMinutes,
+        maxSpeed: SpeedTenths = draft.effectiveSpeedCap,
+        maxIncline: InclineTenths = draft.effectiveInclineCap,
+    ): ValidatedWorkoutPlan = when (
+        val result = ValidatedWorkoutPlan.create(
+            WorkoutPlan(
+                programId = programId,
+                settings = PlanSettings(
+                    duration = DurationMinutes(durationMinutes),
+                    intensity = PlanIntensity.MEDIUM,
+                    focus = PlanFocus.BALANCED,
+                    maxSpeed = maxSpeed,
+                    maxIncline = maxIncline,
+                    adaptToYou = false,
+                ),
+            ),
+            capabilities,
+        )
+    ) {
+        is ValidatedWorkoutPlanResult.Valid -> result.plan
+        is ValidatedWorkoutPlanResult.Invalid ->
+            error("Expected valid draft plan, got $result")
+    }
+
     private fun assertStarted(
         result: StartSurpriseWorkoutDraftResult,
     ): StartSurpriseWorkoutDraftResult.Started = when (result) {
@@ -249,9 +351,9 @@ class StartSurpriseWorkoutDraftTest {
         else -> error("Expected started result, got $result")
     }
 
-    private class RecordingDraftStarter(
+    private class RecordingDraftSessionStarter(
         private val result: WorkoutSessionStarterResult,
-    ) : WorkoutDraftSessionStarter {
+    ) : SurpriseWorkoutDraftSessionStarter {
         var received: ValidatedWorkoutPlan? = null
 
         override fun start(

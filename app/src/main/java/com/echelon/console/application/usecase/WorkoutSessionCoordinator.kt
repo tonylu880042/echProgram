@@ -35,7 +35,18 @@ sealed interface WorkoutSessionStartFailure {
         val error: WorkoutSessionError,
     ) : WorkoutSessionStartFailure
 
+    data class DraftPlanMismatch(
+        val field: DraftPlanMismatchField,
+    ) : WorkoutSessionStartFailure
+
     data object ActiveSessionExists : WorkoutSessionStartFailure
+}
+
+enum class DraftPlanMismatchField {
+    PROGRAM_ID,
+    DURATION,
+    MAX_SPEED,
+    MAX_INCLINE,
 }
 
 sealed interface WorkoutSessionCommandResult {
@@ -58,7 +69,7 @@ sealed interface WorkoutSessionCommandFailure {
 
 class InMemoryWorkoutSessionCoordinator(
     private val catalog: ProgramDetailCatalog,
-) : WorkoutSessionStarter, WorkoutDraftSessionStarter, WorkoutSessionController {
+) : WorkoutSessionStarter, SurpriseWorkoutDraftSessionStarter, WorkoutSessionController {
     private var sessionState: WorkoutSessionState? = null
 
     override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
@@ -76,6 +87,7 @@ class InMemoryWorkoutSessionCoordinator(
         plan: ValidatedWorkoutPlan,
     ): WorkoutSessionStarterResult {
         activeSessionFailure()?.let { return it }
+        draftPlanMismatch(draft, plan)?.let { return it }
         return startTimeline(
             WorkoutTimelineCompiler.compile(
                 programId = draft.metadata.programId,
@@ -83,6 +95,23 @@ class InMemoryWorkoutSessionCoordinator(
                 settings = plan.plan.settings,
             ),
         )
+    }
+
+    private fun draftPlanMismatch(
+        draft: SurpriseWorkoutDraft,
+        plan: ValidatedWorkoutPlan,
+    ): WorkoutSessionStarterResult.Failed? {
+        val settings = plan.plan.settings
+        val mismatch = when {
+            plan.plan.programId != draft.metadata.programId -> DraftPlanMismatchField.PROGRAM_ID
+            settings.duration.value != draft.metadata.durationMinutes -> DraftPlanMismatchField.DURATION
+            settings.maxSpeed != draft.effectiveSpeedCap -> DraftPlanMismatchField.MAX_SPEED
+            settings.maxIncline != draft.effectiveInclineCap -> DraftPlanMismatchField.MAX_INCLINE
+            else -> null
+        }
+        return mismatch?.let {
+            WorkoutSessionStarterResult.Failed(WorkoutSessionStartFailure.DraftPlanMismatch(it))
+        }
     }
 
     private fun startTimeline(

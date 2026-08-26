@@ -11,14 +11,23 @@ import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.SurpriseWorkoutDraftControlStatus
 import com.echelon.console.domain.SurpriseWorkoutEffort
+import com.echelon.console.domain.SurpriseWorkoutGenerationFailure
+import com.echelon.console.domain.SurpriseWorkoutGenerationResult
+import com.echelon.console.domain.SurpriseWorkoutGenerator
+import com.echelon.console.domain.SurpriseWorkoutGeneratorInput
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.ValidatedWorkoutPlanResult
 import com.echelon.console.domain.WorkoutPlan
 import com.echelon.console.domain.WorkoutSessionState
 
+/**
+ * Explicitly accepts a validated preview draft into an in-memory profile
+ * session. Generation alone never starts a session or sends device control.
+ */
 class StartSurpriseWorkoutDraft(
-    private val sessionStarter: WorkoutDraftSessionStarter,
+    private val sessionStarter: SurpriseWorkoutDraftSessionStarter,
+    private val generator: SurpriseWorkoutGenerator = SurpriseWorkoutGenerator(),
 ) {
     operator fun invoke(
         draft: SurpriseWorkoutDraft,
@@ -105,7 +114,34 @@ class StartSurpriseWorkoutDraft(
                 profileDurationMinutes = totalProfileMinutes,
             )
         } else {
-            null
+            validateReplay(draft)
+        }
+    }
+
+    private fun validateReplay(
+        draft: SurpriseWorkoutDraft,
+    ): SurpriseWorkoutDraftValidationFailure? {
+        val input = SurpriseWorkoutGeneratorInput(
+            durationMinutes = draft.metadata.durationMinutes,
+            effort = draft.metadata.effort,
+            userProfileRevision = draft.metadata.userProfileRevision,
+            regenerationIndex = draft.metadata.regenerationIndex,
+            generatorVersion = draft.metadata.generatorVersion,
+            userMaxSpeed = draft.effectiveSpeedCap,
+            machineMaxSpeed = draft.effectiveSpeedCap,
+            userMaxIncline = draft.effectiveInclineCap,
+            machineMaxIncline = draft.effectiveInclineCap,
+        )
+        return when (val result = generator.generate(input)) {
+            is SurpriseWorkoutGenerationResult.Rejected ->
+                SurpriseWorkoutDraftValidationFailure.ReplayGenerationRejected(result.failure)
+
+            is SurpriseWorkoutGenerationResult.Generated ->
+                if (result.draft == draft) {
+                    null
+                } else {
+                    SurpriseWorkoutDraftValidationFailure.ReplayMismatch
+                }
         }
     }
 
@@ -173,4 +209,10 @@ sealed interface SurpriseWorkoutDraftValidationFailure {
         val metadataDurationMinutes: Int,
         val profileDurationMinutes: Long,
     ) : SurpriseWorkoutDraftValidationFailure
+
+    data class ReplayGenerationRejected(
+        val failure: SurpriseWorkoutGenerationFailure,
+    ) : SurpriseWorkoutDraftValidationFailure
+
+    data object ReplayMismatch : SurpriseWorkoutDraftValidationFailure
 }

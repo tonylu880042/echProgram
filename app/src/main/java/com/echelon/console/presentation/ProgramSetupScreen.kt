@@ -148,11 +148,12 @@ fun ProgramSetupScreen(
             onNavigate = onNavigate,
         )
 
-        is ProgramSetupUiState.Zone2Configuring -> ProgramSetupStatus(
-            title = "ZONE 2 SETUP UI IS COMING NEXT",
-            message = "The validated preview boundary is ready, but target controls are not available on this screen yet.",
+        is ProgramSetupUiState.Zone2Configuring -> Zone2WorkoutSetupScreen(
+            state = state,
+            onAction = onAction,
             onBack = { onAction(ProgramSetupAction.Back) },
             onNavigate = onNavigate,
+            equipmentState = equipmentState,
             modifier = modifier,
         )
 

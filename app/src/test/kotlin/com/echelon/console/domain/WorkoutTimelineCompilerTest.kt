@@ -178,6 +178,48 @@ class WorkoutTimelineCompilerTest {
     }
 
     @Test
+    fun `duration beyond timeline seconds range returns an explicit invalid result`() {
+        val detail = detail(
+            duration = 1,
+            profile = listOf(segment("Only", 1, speed = 30, incline = 10)),
+        )
+
+        val result = WorkoutTimelineCompiler.compile(
+            detail,
+            detail.defaultSettings.copy(duration = DurationMinutes(Int.MAX_VALUE)),
+        )
+
+        assertEquals(
+            WorkoutTimelineCompileResult.Invalid(
+                WorkoutTimelineCompileError.SelectedDurationTooLarge(Int.MAX_VALUE),
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `one minute cannot be divided into more positive segments than seconds`() {
+        val detail = detail(
+            duration = 1,
+            profile = List(61) { index ->
+                segment("Block $index", 1, speed = 30, incline = 10)
+            },
+        )
+
+        val result = WorkoutTimelineCompiler.compile(detail, detail.defaultSettings)
+
+        assertEquals(
+            WorkoutTimelineCompileResult.Invalid(
+                WorkoutTimelineCompileError.SelectedDurationTooShort(
+                    durationMinutes = 1,
+                    segmentCount = 61,
+                ),
+            ),
+            result,
+        )
+    }
+
+    @Test
     fun `target preview detail compiles as a representative static timeline`() {
         val detail = detail(
             duration = 4,

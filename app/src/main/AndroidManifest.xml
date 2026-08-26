@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="com.ucare.fitos.permission.EQUIPMENT_SERVICE" />
+
+    <queries>
+        <package android:name="com.ucare.fitos" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:label="Echelon Console"

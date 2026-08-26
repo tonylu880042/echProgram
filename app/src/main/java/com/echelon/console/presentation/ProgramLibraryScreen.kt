@@ -49,11 +49,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.echelon.console.domain.HeroProgram
 import com.echelon.console.domain.Program
 import com.echelon.console.domain.ProgramCategory
+import com.echelon.console.domain.ProgramId
 
 @Composable
 fun ProgramLibraryRoute(
     viewModel: ProgramLibraryViewModel,
     onNavigate: (ProgramLibraryDestination) -> Unit,
+    onOpenProgram: (ProgramId) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -61,6 +63,7 @@ fun ProgramLibraryRoute(
         state = state,
         onAction = viewModel::onAction,
         onNavigate = onNavigate,
+        onOpenProgram = onOpenProgram,
         modifier = modifier,
     )
 }
@@ -70,6 +73,7 @@ fun ProgramLibraryScreen(
     state: ProgramLibraryUiState,
     onAction: (ProgramLibraryAction) -> Unit,
     onNavigate: (ProgramLibraryDestination) -> Unit,
+    onOpenProgram: (ProgramId) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     ConsoleScaffold(
@@ -80,6 +84,7 @@ fun ProgramLibraryScreen(
         ProgramLibraryContent(
             state = state,
             onAction = onAction,
+            onOpenProgram = onOpenProgram,
         )
     }
 }
@@ -88,6 +93,7 @@ fun ProgramLibraryScreen(
 private fun ProgramLibraryContent(
     state: ProgramLibraryUiState,
     onAction: (ProgramLibraryAction) -> Unit,
+    onOpenProgram: (ProgramId) -> Unit,
 ) {
     when (state) {
         ProgramLibraryUiState.Loading -> ProgramLibraryStatus(
@@ -103,6 +109,7 @@ private fun ProgramLibraryContent(
         is ProgramLibraryUiState.Ready -> ProgramLibraryReadyContent(
             state = state,
             onAction = onAction,
+            onOpenProgram = onOpenProgram,
         )
     }
 }
@@ -135,6 +142,7 @@ private fun ProgramLibraryStatus(
 private fun ProgramLibraryReadyContent(
     state: ProgramLibraryUiState.Ready,
     onAction: (ProgramLibraryAction) -> Unit,
+    onOpenProgram: (ProgramId) -> Unit,
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -166,13 +174,17 @@ private fun ProgramLibraryReadyContent(
                 programs = state.heroPrograms,
                 selectedHeroId = state.selectedHeroId,
                 heroHeight = heroHeight,
-                onSelect = { onAction(ProgramLibraryAction.SelectHero(it)) },
+                onSelect = {
+                    onAction(ProgramLibraryAction.SelectHero(it))
+                    onOpenProgram(it)
+                },
             )
             AllProgramsSection(
                 programs = state.visiblePrograms,
                 activeCategory = state.activeCategory,
                 columns = if (isWideLandscape) 4 else 2,
                 onFilter = { onAction(ProgramLibraryAction.FilterPrograms(it)) },
+                onOpenProgram = onOpenProgram,
             )
         }
     }
@@ -355,6 +367,7 @@ private fun AllProgramsSection(
     activeCategory: ProgramCategory,
     columns: Int,
     onFilter: (ProgramCategory) -> Unit,
+    onOpenProgram: (ProgramId) -> Unit,
 ) {
     var filterOpen by remember { mutableStateOf(false) }
 
@@ -429,7 +442,11 @@ private fun AllProgramsSection(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     rowPrograms.forEach { program ->
-                        ProgramCard(program = program, modifier = Modifier.weight(1f))
+                        ProgramCard(
+                            program = program,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onOpenProgram(program.id) },
+                        )
                     }
                     repeat(columns - rowPrograms.size) {
                         Spacer(modifier = Modifier.weight(1f))
@@ -444,8 +461,10 @@ private fun AllProgramsSection(
 private fun ProgramCard(
     program: Program,
     modifier: Modifier,
+    onClick: () -> Unit,
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier
             .heightIn(min = 120.dp)
             .widthIn(min = 120.dp),

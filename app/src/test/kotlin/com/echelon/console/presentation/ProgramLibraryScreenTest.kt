@@ -1,5 +1,9 @@
 package com.echelon.console.presentation
 
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -15,6 +19,7 @@ import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.ProgramCategory
 import com.echelon.console.domain.ProgramId
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -151,6 +156,47 @@ class ProgramLibraryScreenTest {
             listOf(ProgramLibraryDestination.PROGRAMS, ProgramLibraryDestination.HISTORY),
             destinations,
         )
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h720dp-land")
+    fun `landscape content stays inside safe drawing insets`() {
+        composeTestRule.activity.setContent {
+            ProgramLibraryScreen(
+                state = readyState(),
+                onAction = {},
+                onNavigate = {},
+            )
+        }
+        composeTestRule.runOnIdle {
+            WindowCompat.setDecorFitsSystemWindows(composeTestRule.activity.window, false)
+            val insets = WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.statusBars(), Insets.of(0, 24, 0, 0))
+                .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, 24))
+                .build()
+            ViewCompat.dispatchApplyWindowInsets(composeTestRule.activity.window.decorView, insets)
+        }
+        composeTestRule.waitForIdle()
+
+        val heading = composeTestRule.onNodeWithText("WHAT DO YOU WANT TODAY?")
+            .fetchSemanticsNode()
+        val telemetry = composeTestRule.onNodeWithText("TELEMETRY")
+            .fetchSemanticsNode()
+        val rail = composeTestRule.onNodeWithText("Programs")
+            .fetchSemanticsNode()
+        val allPrograms = composeTestRule.onNodeWithText("ALL PROGRAMS")
+            .performScrollTo()
+            .fetchSemanticsNode()
+        val root = composeTestRule.onRoot().fetchSemanticsNode()
+
+        assertTrue("telemetry header overlaps status bar", telemetry.boundsInRoot.top >= 24f)
+        assertTrue("heading overlaps status bar", heading.boundsInRoot.top >= 24f)
+        assertTrue("rail overlaps status bar", rail.boundsInRoot.top >= 24f)
+        assertTrue(
+            "all programs overlaps navigation bar",
+            allPrograms.boundsInRoot.bottom <= root.boundsInRoot.bottom - 24f,
+        )
+        composeTestRule.onNodeWithText("ALL PROGRAMS").assertIsDisplayed()
     }
 
     private fun readyState(): ProgramLibraryUiState.Ready {

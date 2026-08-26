@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -95,14 +96,20 @@ fun ProgramLibraryScreen(
         color = ConsoleCanvas,
         contentColor = PrimaryText,
     ) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            ProgramLibraryNavigationRail(onNavigate = onNavigate)
-            Column(modifier = Modifier.fillMaxSize()) {
-                ProgramTelemetryHeader()
-                ProgramLibraryContent(
-                    state = state,
-                    onAction = onAction,
-                )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding(),
+        ) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                ProgramLibraryNavigationRail(onNavigate = onNavigate)
+                Column(modifier = Modifier.fillMaxSize()) {
+                    ProgramTelemetryHeader()
+                    ProgramLibraryContent(
+                        state = state,
+                        onAction = onAction,
+                    )
+                }
             }
         }
     }
@@ -609,12 +616,12 @@ private fun ProgramCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = "•",
+                    text = program.category.label.take(2),
                     color = MutedText,
-                    fontSize = 18.sp,
-                    modifier = Modifier.clearAndSetSemantics {
-                        contentDescription = "Program marker"
-                    },
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clearAndSetSemantics { },
                 )
                 Text(
                     text = program.durationLabel,

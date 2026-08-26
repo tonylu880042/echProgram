@@ -16,6 +16,7 @@ import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
+import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.data.fitos.AndroidFitOsClientFactory
@@ -80,6 +81,10 @@ class MainActivity : ComponentActivity() {
             generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
             startVerticalWorkoutDraft = StartVerticalWorkoutDraft(workoutSessionCoordinator),
             generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+            startZone2WorkoutPreview = StartZone2WorkoutPreview(
+                programCatalog,
+                workoutSessionCoordinator,
+            ),
             capabilities = DeviceCapabilities(
                 duration = DurationLimits(
                     min = DurationMinutes(10),

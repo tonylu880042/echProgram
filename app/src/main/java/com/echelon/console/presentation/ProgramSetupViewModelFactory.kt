@@ -9,6 +9,7 @@ import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
+import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.domain.DeviceCapabilities
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,6 +26,7 @@ class ProgramSetupViewModelFactory(
     private val generateFiveKReadySessionDraft: GenerateFiveKReadySessionDraft,
     private val startVerticalWorkoutDraft: StartVerticalWorkoutDraft,
     private val generateVerticalWorkoutDraft: GenerateVerticalWorkoutDraft,
+    private val startZone2WorkoutPreview: StartZone2WorkoutPreview,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -40,6 +42,7 @@ class ProgramSetupViewModelFactory(
                 generateFiveKReadySessionDraft = generateFiveKReadySessionDraft,
                 startVerticalWorkoutDraft = startVerticalWorkoutDraft,
                 generateVerticalWorkoutDraft = generateVerticalWorkoutDraft,
+                startZone2WorkoutPreview = startZone2WorkoutPreview,
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

@@ -8,6 +8,7 @@ import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
+import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
@@ -55,6 +56,7 @@ class ProgramSetupStaticCatalogTest {
                     generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
                     startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
                     generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+                    startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
                     capabilities = compositionCapabilities,
                     dispatcher = dispatcher,
                 )

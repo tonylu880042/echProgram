@@ -29,6 +29,13 @@ internal val FiveKReadyDurationOptions = listOf(
     DurationMinutes(60),
 )
 
+internal val Zone2DurationOptions = listOf(
+    DurationMinutes(20),
+    DurationMinutes(30),
+    DurationMinutes(45),
+    DurationMinutes(60),
+)
+
 internal val VerticalTargetOptions = VerticalTarget.values().toList()
 
 sealed interface ProgramSetupUiState {
@@ -105,6 +112,18 @@ sealed interface ProgramSetupUiState {
     data class VerticalDraftPreview(
         val detail: ProgramDetail,
         val draft: VerticalWorkoutDraft,
+        val userMaxSpeed: SpeedTenths,
+        val machineMaxSpeed: SpeedTenths,
+        val userMaxIncline: InclineTenths,
+        val machineMaxIncline: InclineTenths,
+        val errorMessage: String? = null,
+    ) : ProgramSetupUiState
+
+    data class Zone2Configuring(
+        val detail: ProgramDetail,
+        val duration: DurationMinutes,
+        val lowerBpmText: String,
+        val upperBpmText: String,
         val userMaxSpeed: SpeedTenths,
         val machineMaxSpeed: SpeedTenths,
         val userMaxIncline: InclineTenths,

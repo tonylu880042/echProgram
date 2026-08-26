@@ -18,12 +18,16 @@ import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.StartWorkoutResult
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraftResult
+import com.echelon.console.application.usecase.StartZone2WorkoutPreview
+import com.echelon.console.application.usecase.StartZone2WorkoutPreviewRequest
+import com.echelon.console.application.usecase.StartZone2WorkoutPreviewResult
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationMinutes
 import com.echelon.console.domain.FiveKReadyBaselinePace
 import com.echelon.console.domain.FiveKReadyBaselineSource
 import com.echelon.console.domain.FiveKReadySessionGenerationFailure
 import com.echelon.console.domain.FiveKReadySessionGenerationResult
+import com.echelon.console.domain.HeartRateTargetRangeFailure
 import com.echelon.console.domain.PlanSettings
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
@@ -56,6 +60,7 @@ class ProgramSetupViewModel(
     private val generateFiveKReadySessionDraft: GenerateFiveKReadySessionDraft,
     private val startVerticalWorkoutDraft: StartVerticalWorkoutDraft,
     private val generateVerticalWorkoutDraft: GenerateVerticalWorkoutDraft,
+    private val startZone2WorkoutPreview: StartZone2WorkoutPreview,
 ) : ViewModel() {
     private val _state = MutableStateFlow<ProgramSetupUiState>(ProgramSetupUiState.Library)
 
@@ -86,6 +91,10 @@ class ProgramSetupViewModel(
             is ProgramSetupAction.SetVerticalTarget -> setVerticalTarget(action.target)
             ProgramSetupAction.GenerateVerticalPreview -> generateVerticalPreview()
             ProgramSetupAction.AcceptVerticalPlan -> acceptVerticalPlan()
+            is ProgramSetupAction.SetZone2Duration -> setZone2Duration(action.duration)
+            is ProgramSetupAction.SetZone2LowerBpm -> setZone2LowerBpm(action.text)
+            is ProgramSetupAction.SetZone2UpperBpm -> setZone2UpperBpm(action.text)
+            ProgramSetupAction.StartZone2Preview -> startZone2Preview()
         }
     }
 
@@ -107,7 +116,9 @@ class ProgramSetupViewModel(
 
     private fun makeItYours() {
         val ready = _state.value as? ProgramSetupUiState.Ready ?: return
-        if (isVertical(ready.detail)) {
+        if (isZone2(ready.detail)) {
+            enterZone2Configuring(ready.detail)
+        } else if (isVertical(ready.detail)) {
             enterVerticalConfiguring(ready.detail)
         } else if (isFiveKReady(ready.detail)) {
             enterFiveKReadyConfiguring(ready.detail)
@@ -127,6 +138,7 @@ class ProgramSetupViewModel(
             is ProgramSetupUiState.FiveKReadyConfiguring -> ProgramSetupUiState.Ready(current.detail)
             is ProgramSetupUiState.Configuring -> ProgramSetupUiState.Ready(current.detail)
             is ProgramSetupUiState.VerticalConfiguring -> ProgramSetupUiState.Ready(current.detail)
+            is ProgramSetupUiState.Zone2Configuring -> ProgramSetupUiState.Ready(current.detail)
             is ProgramSetupUiState.FiveKReadyDraftPreview -> ProgramSetupUiState.FiveKReadyConfiguring(
                 detail = current.detail,
                 duration = DurationMinutes(current.draft.metadata.durationMinutes),
@@ -174,7 +186,9 @@ class ProgramSetupViewModel(
 
     private fun startDefault() {
         val ready = _state.value as? ProgramSetupUiState.Ready ?: return
-        if (isVertical(ready.detail)) {
+        if (isZone2(ready.detail)) {
+            enterZone2Configuring(ready.detail)
+        } else if (isVertical(ready.detail)) {
             enterVerticalConfiguring(ready.detail)
         } else if (isFiveKReady(ready.detail)) {
             enterFiveKReadyConfiguring(ready.detail)
@@ -200,6 +214,126 @@ class ProgramSetupViewModel(
                 invalidState = personalizing,
             )
         }
+    }
+
+    private fun enterZone2Configuring(detail: ProgramDetail) {
+        val deviceCapabilities = capabilities
+        if (deviceCapabilities == null) {
+            _state.value = ProgramSetupUiState.DeviceUnavailable
+            return
+        }
+        _state.value = ProgramSetupUiState.Zone2Configuring(
+            detail = detail,
+            duration = detail.defaultSettings.duration.takeIf {
+                it in Zone2DurationOptions
+            } ?: ZONE_2_DEFAULT_DURATION,
+            lowerBpmText = "",
+            upperBpmText = "",
+            userMaxSpeed = detail.defaultSettings.maxSpeed,
+            machineMaxSpeed = deviceCapabilities.speed.max,
+            userMaxIncline = detail.defaultSettings.maxIncline,
+            machineMaxIncline = deviceCapabilities.incline.max,
+        )
+    }
+
+    private fun setZone2Duration(duration: DurationMinutes) {
+        val current = _state.value as? ProgramSetupUiState.Zone2Configuring ?: return
+        if (duration !in Zone2DurationOptions) return
+        _state.value = current.copy(duration = duration, errorMessage = null)
+    }
+
+    private fun setZone2LowerBpm(text: String) {
+        val current = _state.value as? ProgramSetupUiState.Zone2Configuring ?: return
+        _state.value = current.copy(lowerBpmText = text, errorMessage = null)
+    }
+
+    private fun setZone2UpperBpm(text: String) {
+        val current = _state.value as? ProgramSetupUiState.Zone2Configuring ?: return
+        _state.value = current.copy(upperBpmText = text, errorMessage = null)
+    }
+
+    private fun startZone2Preview() {
+        val current = _state.value as? ProgramSetupUiState.Zone2Configuring ?: return
+        val deviceCapabilities = capabilities
+        if (deviceCapabilities == null) {
+            _state.value = ProgramSetupUiState.DeviceUnavailable
+            return
+        }
+
+        val targetResult = com.echelon.console.domain.HeartRateTargetRange.createUserConfirmed(
+            lowerBpm = current.lowerBpmText.trim().toIntOrNull(),
+            upperBpm = current.upperBpmText.trim().toIntOrNull(),
+        )
+        val target = when (targetResult) {
+            is com.echelon.console.domain.HeartRateTargetRangeResult.Accepted -> targetResult.target
+            is com.echelon.console.domain.HeartRateTargetRangeResult.Rejected -> {
+                _state.value = current.copy(
+                    errorMessage = zone2TargetError(
+                        targetResult.failure,
+                        current.lowerBpmText,
+                        current.upperBpmText,
+                    ),
+                )
+                return
+            }
+        }
+
+        _state.value = try {
+            when (
+                val result = startZone2WorkoutPreview(
+                    StartZone2WorkoutPreviewRequest(
+                        target = target,
+                        duration = current.duration,
+                        capabilities = deviceCapabilities,
+                    ),
+                )
+            ) {
+                is StartZone2WorkoutPreviewResult.Started -> ProgramSetupUiState.Started(
+                    plan = result.plan,
+                    previewMode = ProgramPreviewMode.HEART_RATE_PREVIEW,
+                )
+
+                is StartZone2WorkoutPreviewResult.ProgramNotFound -> current.copy(
+                    errorMessage = ZONE_2_PROGRAM_UNAVAILABLE_ERROR,
+                )
+
+                is StartZone2WorkoutPreviewResult.UnsupportedDuration -> current.copy(
+                    errorMessage = ZONE_2_UNSUPPORTED_DURATION_ERROR,
+                )
+
+                is StartZone2WorkoutPreviewResult.CapabilityValidationFailed -> current.copy(
+                    errorMessage = ZONE_2_CAPABILITIES_ERROR,
+                )
+
+                is StartZone2WorkoutPreviewResult.StarterFailed -> current.copy(
+                    errorMessage = ZONE_2_START_ERROR,
+                )
+            }
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            current.copy(errorMessage = ZONE_2_START_ERROR)
+        }
+    }
+
+    private fun zone2TargetError(
+        failure: HeartRateTargetRangeFailure,
+        lowerBpmText: String,
+        upperBpmText: String,
+    ): String = when (failure) {
+        HeartRateTargetRangeFailure.MissingLowerBound ->
+            if (lowerBpmText.isBlank()) "LOWER BPM IS REQUIRED" else "LOWER BPM MUST BE A WHOLE NUMBER"
+
+        HeartRateTargetRangeFailure.MissingUpperBound ->
+            if (upperBpmText.isBlank()) "UPPER BPM IS REQUIRED" else "UPPER BPM MUST BE A WHOLE NUMBER"
+
+        is HeartRateTargetRangeFailure.NonPositiveBound -> when (failure.bound) {
+            com.echelon.console.domain.HeartRateTargetBound.LOWER -> "LOWER BPM MUST BE GREATER THAN 0"
+            com.echelon.console.domain.HeartRateTargetBound.UPPER -> "UPPER BPM MUST BE GREATER THAN 0"
+        }
+
+        is HeartRateTargetRangeFailure.LowerAboveUpper ->
+            "LOWER BPM MUST NOT EXCEED UPPER BPM"
     }
 
     private fun enterFiveKReadyConfiguring(detail: ProgramDetail) {
@@ -558,6 +692,9 @@ class ProgramSetupViewModel(
     private fun isSurprise(detail: ProgramDetail): Boolean =
         detail.programId.value == SURPRISE_PROGRAM_ID
 
+    private fun isZone2(detail: ProgramDetail): Boolean =
+        detail.programId.value == ZONE_2_PROGRAM_ID
+
     private fun isVertical(detail: ProgramDetail): Boolean =
         detail.programId.value == VERTICAL_PROGRAM_ID
 
@@ -614,9 +751,15 @@ class ProgramSetupViewModel(
         const val FIVE_K_READY_ACCEPT_ERROR = "Unable to accept 5K READY preview"
         const val VERTICAL_CAPABILITIES_ERROR = "CAPABILITIES CANNOT SUPPORT THIS VERTICAL PREVIEW"
         const val VERTICAL_ACCEPT_ERROR = "Unable to accept VERTICAL preview"
+        const val ZONE_2_PROGRAM_ID = "ZONE_2"
+        const val ZONE_2_PROGRAM_UNAVAILABLE_ERROR = "ZONE 2 PREVIEW IS UNAVAILABLE"
+        const val ZONE_2_UNSUPPORTED_DURATION_ERROR = "SELECT 20, 30, 45, OR 60 MINUTES"
+        const val ZONE_2_CAPABILITIES_ERROR = "CAPABILITIES CANNOT SUPPORT ZONE 2 PREVIEW"
+        const val ZONE_2_START_ERROR = "UNABLE TO START ZONE 2 PREVIEW"
 
         val FIVE_K_READY_PACE_PATTERN = Regex("""^\d+(?:\.\d)?$""")
         val FIVE_K_READY_DEFAULT_DURATION = DurationMinutes(30)
+        val ZONE_2_DEFAULT_DURATION = DurationMinutes(30)
 
         val SURPRISE_DEFAULT_DURATION = DurationMinutes(20)
         val SURPRISE_DEFAULT_EFFORT = SurpriseWorkoutEffort.SWEAT

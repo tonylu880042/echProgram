@@ -9,6 +9,7 @@ import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
+import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.testStartedWorkoutResult
 import com.echelon.console.application.usecase.WorkoutSessionStarter
@@ -242,6 +243,7 @@ class ProgramSetupViewModelTest {
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
                 startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
                 generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+                startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -286,6 +288,7 @@ class ProgramSetupViewModelTest {
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
                 startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
                 generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+                startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -335,6 +338,7 @@ class ProgramSetupViewModelTest {
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
                 startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
                 generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+                startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -453,6 +457,10 @@ class ProgramSetupViewModelTest {
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
                 startVerticalWorkoutDraft = StartVerticalWorkoutDraft(missingCapabilitiesCoordinator),
                 generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+                startZone2WorkoutPreview = StartZone2WorkoutPreview(
+                    missingCapabilitiesCatalog,
+                    missingCapabilitiesCoordinator,
+                ),
                 capabilities = null,
                 dispatcher = dispatcher,
             )
@@ -476,6 +484,7 @@ class ProgramSetupViewModelTest {
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
                 startVerticalWorkoutDraft = StartVerticalWorkoutDraft(unsafeCoordinator),
                 generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+                startZone2WorkoutPreview = StartZone2WorkoutPreview(unsafeCatalog, unsafeCoordinator),
                 capabilities = unsafeCapabilities,
                 dispatcher = dispatcher,
             )
@@ -753,6 +762,7 @@ class ProgramSetupViewModelTest {
         generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
         startVerticalWorkoutDraft = StartVerticalWorkoutDraft(InMemoryWorkoutSessionCoordinator(catalog)),
         generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+        startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, InMemoryWorkoutSessionCoordinator(catalog)),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )
@@ -770,6 +780,7 @@ class ProgramSetupViewModelTest {
         generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
         startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
         generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+        startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )

@@ -55,4 +55,12 @@ sealed interface ProgramSetupAction {
     data object GenerateVerticalPreview : ProgramSetupAction
 
     data object AcceptVerticalPlan : ProgramSetupAction
+
+    data class SetZone2Duration(val duration: DurationMinutes) : ProgramSetupAction
+
+    data class SetZone2LowerBpm(val text: String) : ProgramSetupAction
+
+    data class SetZone2UpperBpm(val text: String) : ProgramSetupAction
+
+    data object StartZone2Preview : ProgramSetupAction
 }

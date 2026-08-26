@@ -148,6 +148,14 @@ fun ProgramSetupScreen(
             onNavigate = onNavigate,
         )
 
+        is ProgramSetupUiState.Zone2Configuring -> ProgramSetupStatus(
+            title = "ZONE 2 SETUP UI IS COMING NEXT",
+            message = "The validated preview boundary is ready, but target controls are not available on this screen yet.",
+            onBack = { onAction(ProgramSetupAction.Back) },
+            onNavigate = onNavigate,
+            modifier = modifier,
+        )
+
         is ProgramSetupUiState.Unavailable -> ProgramSetupStatus(
             title = "PROGRAM UNAVAILABLE",
             message = "Program ${state.programId.value} is not available on this console.",

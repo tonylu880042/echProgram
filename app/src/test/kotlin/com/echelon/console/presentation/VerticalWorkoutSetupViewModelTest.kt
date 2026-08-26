@@ -5,6 +5,7 @@ import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
+import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
@@ -216,6 +217,7 @@ class VerticalWorkoutSetupViewModelTest {
         generateFiveKReadySessionDraft = com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft(),
         startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
         generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
+        startZone2WorkoutPreview = StartZone2WorkoutPreview(StaticProgramCatalog(), coordinator),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )

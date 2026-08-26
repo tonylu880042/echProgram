@@ -1,7 +1,6 @@
 package com.echelon.console.application.usecase
 
 import com.echelon.console.domain.ProgramId
-import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.WorkoutSessionAction
 import com.echelon.console.domain.WorkoutSessionError
@@ -25,10 +24,6 @@ sealed interface WorkoutSessionStarterResult {
 sealed interface WorkoutSessionStartFailure {
     data class ProgramNotFound(
         val programId: ProgramId,
-    ) : WorkoutSessionStartFailure
-
-    data class UnsupportedPreviewMode(
-        val mode: ProgramPreviewMode,
     ) : WorkoutSessionStartFailure
 
     data class TimelineCompileFailed(
@@ -84,12 +79,6 @@ class InMemoryWorkoutSessionCoordinator(
             ?: return WorkoutSessionStarterResult.Failed(
                 WorkoutSessionStartFailure.ProgramNotFound(plan.plan.programId),
             )
-        if (detail.previewMode != ProgramPreviewMode.FIXED_PROFILE_PREVIEW) {
-            return WorkoutSessionStarterResult.Failed(
-                WorkoutSessionStartFailure.UnsupportedPreviewMode(detail.previewMode),
-            )
-        }
-
         val timeline = when (
             val result = WorkoutTimelineCompiler.compile(detail, plan.plan.settings)
         ) {

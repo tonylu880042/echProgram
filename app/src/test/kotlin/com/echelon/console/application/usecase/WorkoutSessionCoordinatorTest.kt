@@ -21,6 +21,7 @@ import com.echelon.console.domain.WorkoutSessionAction
 import com.echelon.console.domain.WorkoutSessionError
 import com.echelon.console.domain.WorkoutSessionState
 import com.echelon.console.domain.WorkoutSessionStateKind
+import com.echelon.console.domain.WorkoutSessionTargetMode
 import com.echelon.console.domain.WorkoutTimelineCompileError
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -65,21 +66,18 @@ class WorkoutSessionCoordinatorTest {
     }
 
     @Test
-    fun `every non fixed preview mode is rejected`() {
+    fun `every non fixed preview mode starts its representative profile`() {
         ProgramPreviewMode.values()
             .filterNot { it == ProgramPreviewMode.FIXED_PROFILE_PREVIEW }
             .forEach { mode ->
-                val coordinator = coordinator { detail().copy(previewMode = mode) }
+                val coordinator = coordinator {
+                    detail().copy(previewMode = mode)
+                }
 
-                val result = coordinator.start(validatedPlan())
-
-                assertEquals(
-                    WorkoutSessionStarterResult.Failed(
-                        WorkoutSessionStartFailure.UnsupportedPreviewMode(mode),
-                    ),
-                    result,
-                )
-                assertNull(coordinator.currentState())
+                val running = assertStarted(coordinator.start(validatedPlan())).state
+                assertEquals(ProgramId("FAT_BURN"), running.timeline.programId)
+                assertEquals(WorkoutSessionTargetMode.PROFILE, running.progress.target.mode)
+                assertEquals(running, coordinator.currentState())
             }
     }
 

@@ -18,6 +18,11 @@ visibility query required by the API guide for target SDK 30 and higher.
 This increment consumes only connection, state, limits, and telemetry reads;
 workout and equipment-control methods remain outside the application boundary.
 
+The adapter reports the service as unavailable when no service callback arrives
+within five seconds, and marks a ready telemetry stream stale when the host
+timestamp is at least three seconds old. These are conservative app-side
+read-state thresholds, not FitOS host guarantees.
+
 The supplied artifact does not contain independent release metadata or a
 license notice. FitOS release/version and redistribution terms remain an open
 release-readiness question.

@@ -105,6 +105,11 @@ sealed interface FiveKReadySessionGenerationFailure {
         val effectiveCap: SpeedTenths,
     ) : FiveKReadySessionGenerationFailure
 
+    data class BaselineLeavesNoRecoveryMargin(
+        val baseline: SpeedTenths,
+        val minimumWalkSpeed: SpeedTenths,
+    ) : FiveKReadySessionGenerationFailure
+
     data class InvalidSpeedCap(
         val userMaximum: SpeedTenths,
         val machineMaximum: SpeedTenths,
@@ -177,6 +182,14 @@ class FiveKReadySessionGenerator {
         if (baseline.speed.value !in BASELINE_MIN_SPEED_TENTHS..GLOBAL_MAX_SPEED_TENTHS) {
             return FiveKReadySessionGenerationResult.Rejected(
                 FiveKReadySessionGenerationFailure.BaselineOutsideGlobalEnvelope(baseline.speed),
+            )
+        }
+        if (baseline.speed.value == BASELINE_MIN_SPEED_TENTHS) {
+            return FiveKReadySessionGenerationResult.Rejected(
+                FiveKReadySessionGenerationFailure.BaselineLeavesNoRecoveryMargin(
+                    baseline = baseline.speed,
+                    minimumWalkSpeed = SpeedTenths(BASELINE_MIN_SPEED_TENTHS),
+                ),
             )
         }
         if (baseline.speed.value > effectiveSpeedCap.value) {
@@ -373,7 +386,7 @@ class FiveKReadySessionGenerator {
     private companion object {
         const val PROGRAM_ID = "5K_READY"
         const val STEADY_RUN_DELTA = 3
-        const val GLOBAL_MIN_SPEED_TENTHS = 25
+        const val GLOBAL_MIN_SPEED_TENTHS = 28
         const val GLOBAL_MAX_SPEED_TENTHS = 60
         const val BASELINE_MIN_SPEED_TENTHS = 28
         const val GLOBAL_MIN_INCLINE_TENTHS = 0

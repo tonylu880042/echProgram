@@ -149,6 +149,30 @@ class FiveKReadySessionGeneratorTest {
     }
 
     @Test
+    fun `baseline at the proposal floor is rejected without recovery margin`() {
+        val result = generator.generate(input(baselineSpeed = 28))
+
+        assertEquals(
+            FiveKReadySessionGenerationResult.Rejected(
+                FiveKReadySessionGenerationFailure.BaselineLeavesNoRecoveryMargin(
+                    baseline = SpeedTenths(28),
+                    minimumWalkSpeed = SpeedTenths(28),
+                ),
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `every generated profile stays inside the 2 point 8 to 6 point 0 speed proposal`() {
+        listOf(20, 30, 40, 60).forEach { durationMinutes ->
+            val draft = generate(input(durationMinutes = durationMinutes, baselineSpeed = 29))
+
+            assertTrue(draft.profile.all { it.speed.value in 28..60 })
+        }
+    }
+
+    @Test
     fun `negative and non intersecting caps are explicit failures`() {
         val cases = listOf(
             input(userMaxSpeed = -1) to FiveKReadySessionGenerationFailure.InvalidSpeedCap::class.java,
@@ -183,17 +207,18 @@ class FiveKReadySessionGeneratorTest {
         assertTrue(draft.metadata.clampSummary!!.speedSegmentNames.contains("STEADY RUN"))
         assertEquals(42, draft.profile[3].speed.value)
         assertEquals(40, draft.profile[1].speed.value)
-        assertTrue(draft.profile.all { it.speed.value in 25..42 })
+        assertTrue(draft.profile.all { it.speed.value in 28..42 })
         assertTrue(draft.profile.all { it.incline.value in 0..60 })
     }
 
     @Test
     fun `low accepted baseline keeps every walk target below the run pace`() {
-        val draft = generate(input(baselineSpeed = 28))
+        val draft = generate(input(baselineSpeed = 29))
 
         val walkIndexes = listOf(0, 2, 4, 6, 7)
-        assertTrue(walkIndexes.all { draft.profile[it].speed.value < 28 })
-        assertTrue(walkIndexes.all { draft.profile[it].speed.value in 25..60 })
+        assertEquals(listOf(28, 28, 28, 28, 28), walkIndexes.map { draft.profile[it].speed.value })
+        assertTrue(walkIndexes.all { draft.profile[it].speed.value < 29 })
+        assertTrue(walkIndexes.all { draft.profile[it].speed.value in 28..60 })
     }
 
     @Test

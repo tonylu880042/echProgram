@@ -9,11 +9,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.echelon.console.application.usecase.EquipmentTelemetrySource
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
+import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
 import com.echelon.console.application.usecase.ListProgramLibrary
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
+import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.data.fitos.AndroidFitOsClientFactory
@@ -76,6 +78,8 @@ class MainActivity : ComponentActivity() {
             generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
             startFiveKReadySessionDraft = StartFiveKReadySessionDraft(workoutSessionCoordinator),
             generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
+            startVerticalWorkoutDraft = StartVerticalWorkoutDraft(workoutSessionCoordinator),
+            generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
             capabilities = DeviceCapabilities(
                 duration = DurationLimits(
                     min = DurationMinutes(10),

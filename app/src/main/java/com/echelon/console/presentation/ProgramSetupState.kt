@@ -12,6 +12,8 @@ import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.SurpriseWorkoutEffort
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.ValidatedWorkoutPlan
+import com.echelon.console.domain.VerticalTarget
+import com.echelon.console.domain.VerticalWorkoutDraft
 
 internal val SurpriseWorkoutDurationOptions = listOf(
     DurationMinutes(10),
@@ -26,6 +28,8 @@ internal val FiveKReadyDurationOptions = listOf(
     DurationMinutes(40),
     DurationMinutes(60),
 )
+
+internal val VerticalTargetOptions = VerticalTarget.values().toList()
 
 sealed interface ProgramSetupUiState {
     data object Library : ProgramSetupUiState
@@ -81,6 +85,26 @@ sealed interface ProgramSetupUiState {
         val detail: ProgramDetail,
         val draft: FiveKReadySessionDraft,
         val baselinePaceText: String,
+        val userMaxSpeed: SpeedTenths,
+        val machineMaxSpeed: SpeedTenths,
+        val userMaxIncline: InclineTenths,
+        val machineMaxIncline: InclineTenths,
+        val errorMessage: String? = null,
+    ) : ProgramSetupUiState
+
+    data class VerticalConfiguring(
+        val detail: ProgramDetail,
+        val target: VerticalTarget,
+        val userMaxSpeed: SpeedTenths,
+        val machineMaxSpeed: SpeedTenths,
+        val userMaxIncline: InclineTenths,
+        val machineMaxIncline: InclineTenths,
+        val errorMessage: String? = null,
+    ) : ProgramSetupUiState
+
+    data class VerticalDraftPreview(
+        val detail: ProgramDetail,
+        val draft: VerticalWorkoutDraft,
         val userMaxSpeed: SpeedTenths,
         val machineMaxSpeed: SpeedTenths,
         val userMaxIncline: InclineTenths,

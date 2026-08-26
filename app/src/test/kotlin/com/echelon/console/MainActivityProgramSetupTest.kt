@@ -10,6 +10,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraftRequest
+import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
+import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraftRequest
 import com.echelon.console.domain.FiveKReadyBaselinePace
 import com.echelon.console.domain.FiveKReadyBaselineSource
 import com.echelon.console.domain.FiveKReadySessionGenerationResult
@@ -19,6 +21,8 @@ import com.echelon.console.domain.SurpriseWorkoutEffort
 import com.echelon.console.domain.SurpriseWorkoutGenerationResult
 import com.echelon.console.domain.SurpriseWorkoutGenerator
 import com.echelon.console.domain.SurpriseWorkoutGeneratorInput
+import com.echelon.console.domain.VerticalTarget
+import com.echelon.console.domain.VerticalWorkoutGenerationResult
 import com.echelon.console.domain.WorkoutSessionState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -236,6 +240,66 @@ class MainActivityProgramSetupTest {
             expectedDraft.profile.map { it.incline.value },
             running.timeline.segments.map { it.targetIncline.value },
         )
+    }
+
+    @Test
+    fun `vertical target preview accepts exact profile into live route with safe context`() {
+        waitForText("WHAT DO YOU WANT TODAY?")
+        composeTestRule.onNodeWithText("VERTICAL").performClick()
+
+        waitForText("START WORKOUT")
+        composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
+
+        waitForText("CONFIGURE VERTICAL")
+        composeTestRule.onNodeWithContentDescription("Select vertical target 2,000 feet")
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithContentDescription("GENERATE VERTICAL PREVIEW")
+            .performScrollTo()
+            .performClick()
+
+        waitForText("VERTICAL DRAFT PREVIEW")
+        composeTestRule.onNodeWithText("REPRESENTATIVE 50-MIN SESSION").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("PROPOSED LIMIT 120 MIN · NOT SESSION DURATION")
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("ELEVATION SOURCE UNAVAILABLE").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("PROGRESS NOT CALCULATED").performScrollTo().assertIsDisplayed()
+        assertTrue(composeTestRule.onAllNodesWithText("NO ELEVATION FORMULA").fetchSemanticsNodes().isNotEmpty())
+        assertNull(composeTestRule.activity.workoutSessionCoordinator.currentState())
+
+        composeTestRule.onNodeWithContentDescription("ACCEPT VERTICAL PLAN")
+            .performScrollTo()
+            .performClick()
+
+        waitForText("LIVE PREVIEW")
+        composeTestRule.onNodeWithText("TARGET 2,000 FT").assertIsDisplayed()
+        composeTestRule.onNodeWithText("PROPOSED LIMIT 120 MIN · NOT SESSION DURATION").assertIsDisplayed()
+        composeTestRule.onNodeWithText("ELEVATION SOURCE UNAVAILABLE").assertIsDisplayed()
+        composeTestRule.onNodeWithText("PROGRESS NOT CALCULATED").assertIsDisplayed()
+        composeTestRule.onNodeWithText("PREVIEW ONLY · NO DEVICE COMMANDS").assertIsDisplayed()
+        composeTestRule.onNodeWithText("0 FT").assertDoesNotExist()
+
+        val expectedDraft = when (
+            val result = GenerateVerticalWorkoutDraft()(
+                GenerateVerticalWorkoutDraftRequest(
+                    target = VerticalTarget.TWO_THOUSAND_FEET,
+                    userMaxSpeed = SpeedTenths(40),
+                    machineMaxSpeed = SpeedTenths(120),
+                    userMaxIncline = InclineTenths(150),
+                    machineMaxIncline = InclineTenths(150),
+                ),
+            )
+        ) {
+            is VerticalWorkoutGenerationResult.Generated -> result.draft
+            is VerticalWorkoutGenerationResult.Rejected -> error("Expected generated VERTICAL draft")
+        }
+        val running = composeTestRule.activity.workoutSessionCoordinator.currentState()
+            as WorkoutSessionState.Running
+        assertEquals(expectedDraft.profile.map { it.name }, running.timeline.segments.map { it.name })
+        assertEquals(expectedDraft.profile.map { it.duration.value * 60 }, running.timeline.segments.map { it.durationSeconds })
+        assertEquals(expectedDraft.profile.map { it.speed.value }, running.timeline.segments.map { it.targetSpeed.value })
+        assertEquals(expectedDraft.profile.map { it.incline.value }, running.timeline.segments.map { it.targetIncline.value })
     }
 
     @Test

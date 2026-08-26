@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
+import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
+import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.domain.DeviceCapabilities
 import kotlinx.coroutines.CoroutineDispatcher
@@ -21,6 +23,8 @@ class ProgramSetupViewModelFactory(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
     private val startFiveKReadySessionDraft: StartFiveKReadySessionDraft,
     private val generateFiveKReadySessionDraft: GenerateFiveKReadySessionDraft,
+    private val startVerticalWorkoutDraft: StartVerticalWorkoutDraft,
+    private val generateVerticalWorkoutDraft: GenerateVerticalWorkoutDraft,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -34,6 +38,8 @@ class ProgramSetupViewModelFactory(
                 dispatcher = dispatcher,
                 startFiveKReadySessionDraft = startFiveKReadySessionDraft,
                 generateFiveKReadySessionDraft = generateFiveKReadySessionDraft,
+                startVerticalWorkoutDraft = startVerticalWorkoutDraft,
+                generateVerticalWorkoutDraft = generateVerticalWorkoutDraft,
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.echelon.console.MainActivity
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
@@ -26,6 +27,12 @@ import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.ValidatedWorkoutPlan
 import com.echelon.console.domain.ValidatedWorkoutPlanResult
+import com.echelon.console.domain.VerticalElevationSource
+import com.echelon.console.domain.VerticalProgressStatus
+import com.echelon.console.domain.VerticalTarget
+import com.echelon.console.domain.VerticalTimeLimitProposal
+import com.echelon.console.domain.VerticalTimeLimitStatus
+import com.echelon.console.domain.VerticalWorkoutDraftControlStatus
 import com.echelon.console.domain.WorkoutPlan
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.emptyFlow
@@ -252,6 +259,58 @@ class LiveWorkoutScreenTest {
     }
 
     @Test
+    fun `vertical active and terminal states show source aware context without fake progress`() {
+        val context = LiveVerticalWorkoutContext(
+            target = VerticalTarget.VERTICAL_MILE,
+            proposedTimeLimit = VerticalTimeLimitProposal(240, VerticalTimeLimitStatus.PROPOSED),
+            elevationSource = VerticalElevationSource.UNAVAILABLE,
+            progressStatus = VerticalProgressStatus.NOT_CALCULATED,
+            controlStatus = VerticalWorkoutDraftControlStatus.PREVIEW_ONLY,
+        )
+        val verticalActive = activeState().copy(
+            workout = activeState().workout.copy(
+                programId = ProgramId("VERTICAL"),
+                programTitle = "VERTICAL",
+                previewMode = ProgramPreviewMode.ELEVATION_TARGET_PREVIEW,
+                verticalContext = context,
+            ),
+        )
+        setContent(verticalActive)
+        assertVerticalContextIsDisplayed()
+        composeTestRule.onNodeWithText("0 FT").assertDoesNotExist()
+
+        setContent(
+            LiveWorkoutUiState.Completed(
+                summary = LiveWorkoutSummary(
+                    programId = ProgramId("VERTICAL"),
+                    elapsedSeconds = 3_000,
+                    totalDurationSeconds = 3_000,
+                    programTitle = "VERTICAL",
+                    previewMode = ProgramPreviewMode.ELEVATION_TARGET_PREVIEW,
+                    verticalContext = context,
+                ),
+            ),
+        )
+        assertVerticalContextIsDisplayed()
+        composeTestRule.onNodeWithText("0 FT").assertDoesNotExist()
+
+        setContent(
+            LiveWorkoutUiState.Stopped(
+                summary = LiveWorkoutSummary(
+                    programId = ProgramId("VERTICAL"),
+                    elapsedSeconds = 59,
+                    totalDurationSeconds = 3_000,
+                    programTitle = "VERTICAL",
+                    previewMode = ProgramPreviewMode.ELEVATION_TARGET_PREVIEW,
+                    verticalContext = context,
+                ),
+            ),
+        )
+        assertVerticalContextIsDisplayed()
+        composeTestRule.onNodeWithText("0 FT").assertDoesNotExist()
+    }
+
+    @Test
     fun `terminal state renders the title supplied by the read model`() {
         setContent(
             state = LiveWorkoutUiState.Completed(
@@ -324,6 +383,14 @@ class LiveWorkoutScreenTest {
                 onNavigate = onNavigate,
             )
         }
+    }
+
+    private fun assertVerticalContextIsDisplayed() {
+        composeTestRule.onNodeWithText("TARGET 5,280 FT · VERTICAL MILE").assertIsDisplayed()
+        composeTestRule.onNodeWithText("PROPOSED LIMIT 240 MIN · NOT SESSION DURATION").assertIsDisplayed()
+        composeTestRule.onNodeWithText("ELEVATION SOURCE UNAVAILABLE").assertIsDisplayed()
+        composeTestRule.onNodeWithText("PROGRESS NOT CALCULATED").assertIsDisplayed()
+        composeTestRule.onNodeWithText("PREVIEW ONLY · NO DEVICE COMMANDS").assertIsDisplayed()
     }
 
     private fun activeState(): LiveWorkoutUiState.Active = LiveWorkoutUiState.Active(

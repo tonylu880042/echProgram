@@ -179,6 +179,9 @@ private fun LiveWorkoutTerminalContent(
                 modifier = Modifier.padding(top = 8.dp),
             )
         }
+        summary.verticalContext?.let { context ->
+            LiveVerticalContextPanel(context)
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()

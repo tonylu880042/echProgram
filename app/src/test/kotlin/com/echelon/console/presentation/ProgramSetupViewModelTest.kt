@@ -2,11 +2,13 @@ package com.echelon.console.presentation
 
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
+import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
+import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.testStartedWorkoutResult
 import com.echelon.console.application.usecase.WorkoutSessionStarter
@@ -238,6 +240,8 @@ class ProgramSetupViewModelTest {
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
+                startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
+                generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -280,6 +284,8 @@ class ProgramSetupViewModelTest {
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
+                startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
+                generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -327,6 +333,8 @@ class ProgramSetupViewModelTest {
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
+                startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
+                generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                 capabilities = capabilities,
                 dispatcher = dispatcher,
             )
@@ -443,6 +451,8 @@ class ProgramSetupViewModelTest {
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(missingCapabilitiesCoordinator),
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
+                startVerticalWorkoutDraft = StartVerticalWorkoutDraft(missingCapabilitiesCoordinator),
+                generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                 capabilities = null,
                 dispatcher = dispatcher,
             )
@@ -464,6 +474,8 @@ class ProgramSetupViewModelTest {
                 generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                 startFiveKReadySessionDraft = StartFiveKReadySessionDraft(unsafeCoordinator),
                 generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
+                startVerticalWorkoutDraft = StartVerticalWorkoutDraft(unsafeCoordinator),
+                generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                 capabilities = unsafeCapabilities,
                 dispatcher = dispatcher,
             )
@@ -739,6 +751,8 @@ class ProgramSetupViewModelTest {
         generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
         startFiveKReadySessionDraft = StartFiveKReadySessionDraft(InMemoryWorkoutSessionCoordinator(catalog)),
         generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
+        startVerticalWorkoutDraft = StartVerticalWorkoutDraft(InMemoryWorkoutSessionCoordinator(catalog)),
+        generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )
@@ -754,6 +768,8 @@ class ProgramSetupViewModelTest {
         generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
         startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
         generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
+        startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
+        generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
         capabilities = capabilities,
         dispatcher = dispatcher,
     )

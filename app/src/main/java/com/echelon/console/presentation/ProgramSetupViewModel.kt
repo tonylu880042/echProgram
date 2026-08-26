@@ -6,6 +6,8 @@ import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraftRequest
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraftRequest
+import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
+import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraftRequest
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailResult
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
@@ -14,6 +16,8 @@ import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraftResult
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.StartWorkoutResult
+import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
+import com.echelon.console.application.usecase.StartVerticalWorkoutDraftResult
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationMinutes
 import com.echelon.console.domain.FiveKReadyBaselinePace
@@ -29,6 +33,9 @@ import com.echelon.console.domain.SurpriseWorkoutEffort
 import com.echelon.console.domain.SurpriseWorkoutGenerationResult
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.WorkoutPlan
+import com.echelon.console.domain.VerticalTarget
+import com.echelon.console.domain.VerticalWorkoutGenerationFailure
+import com.echelon.console.domain.VerticalWorkoutGenerationResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +54,8 @@ class ProgramSetupViewModel(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
     private val startFiveKReadySessionDraft: StartFiveKReadySessionDraft,
     private val generateFiveKReadySessionDraft: GenerateFiveKReadySessionDraft,
+    private val startVerticalWorkoutDraft: StartVerticalWorkoutDraft,
+    private val generateVerticalWorkoutDraft: GenerateVerticalWorkoutDraft,
 ) : ViewModel() {
     private val _state = MutableStateFlow<ProgramSetupUiState>(ProgramSetupUiState.Library)
 
@@ -74,6 +83,9 @@ class ProgramSetupViewModel(
             is ProgramSetupAction.SetFiveKReadyBaselinePace -> setFiveKReadyBaselinePace(action.text)
             ProgramSetupAction.GenerateFiveKReadyPreview -> generateFiveKReadyPreview()
             ProgramSetupAction.AcceptFiveKReadyPlan -> acceptFiveKReadyPlan()
+            is ProgramSetupAction.SetVerticalTarget -> setVerticalTarget(action.target)
+            ProgramSetupAction.GenerateVerticalPreview -> generateVerticalPreview()
+            ProgramSetupAction.AcceptVerticalPlan -> acceptVerticalPlan()
         }
     }
 
@@ -95,7 +107,9 @@ class ProgramSetupViewModel(
 
     private fun makeItYours() {
         val ready = _state.value as? ProgramSetupUiState.Ready ?: return
-        if (isFiveKReady(ready.detail)) {
+        if (isVertical(ready.detail)) {
+            enterVerticalConfiguring(ready.detail)
+        } else if (isFiveKReady(ready.detail)) {
             enterFiveKReadyConfiguring(ready.detail)
         } else if (isSurprise(ready.detail)) {
             enterSurpriseConfiguring(ready.detail)
@@ -112,6 +126,7 @@ class ProgramSetupViewModel(
             is ProgramSetupUiState.Personalizing -> ProgramSetupUiState.Ready(current.detail)
             is ProgramSetupUiState.FiveKReadyConfiguring -> ProgramSetupUiState.Ready(current.detail)
             is ProgramSetupUiState.Configuring -> ProgramSetupUiState.Ready(current.detail)
+            is ProgramSetupUiState.VerticalConfiguring -> ProgramSetupUiState.Ready(current.detail)
             is ProgramSetupUiState.FiveKReadyDraftPreview -> ProgramSetupUiState.FiveKReadyConfiguring(
                 detail = current.detail,
                 duration = DurationMinutes(current.draft.metadata.durationMinutes),
@@ -126,6 +141,14 @@ class ProgramSetupViewModel(
                 duration = DurationMinutes(current.draft.metadata.durationMinutes),
                 effort = current.draft.metadata.effort,
                 regenerationIndex = current.draft.metadata.regenerationIndex,
+                userMaxSpeed = current.userMaxSpeed,
+                machineMaxSpeed = current.machineMaxSpeed,
+                userMaxIncline = current.userMaxIncline,
+                machineMaxIncline = current.machineMaxIncline,
+            )
+            is ProgramSetupUiState.VerticalDraftPreview -> ProgramSetupUiState.VerticalConfiguring(
+                detail = current.detail,
+                target = current.draft.metadata.target,
                 userMaxSpeed = current.userMaxSpeed,
                 machineMaxSpeed = current.machineMaxSpeed,
                 userMaxIncline = current.userMaxIncline,
@@ -151,7 +174,9 @@ class ProgramSetupViewModel(
 
     private fun startDefault() {
         val ready = _state.value as? ProgramSetupUiState.Ready ?: return
-        if (isFiveKReady(ready.detail)) {
+        if (isVertical(ready.detail)) {
+            enterVerticalConfiguring(ready.detail)
+        } else if (isFiveKReady(ready.detail)) {
             enterFiveKReadyConfiguring(ready.detail)
         } else if (isSurprise(ready.detail)) {
             enterSurpriseConfiguring(ready.detail)?.let(::generateSurprisePreview)
@@ -194,6 +219,93 @@ class ProgramSetupViewModel(
             userMaxIncline = detail.defaultSettings.maxIncline,
             machineMaxIncline = deviceCapabilities.incline.max,
         )
+    }
+
+    private fun enterVerticalConfiguring(detail: ProgramDetail) {
+        val deviceCapabilities = capabilities
+        if (deviceCapabilities == null) {
+            _state.value = ProgramSetupUiState.DeviceUnavailable
+            return
+        }
+        _state.value = ProgramSetupUiState.VerticalConfiguring(
+            detail = detail,
+            target = VerticalTarget.ONE_THOUSAND_FEET,
+            userMaxSpeed = detail.defaultSettings.maxSpeed,
+            machineMaxSpeed = deviceCapabilities.speed.max,
+            userMaxIncline = detail.defaultSettings.maxIncline,
+            machineMaxIncline = deviceCapabilities.incline.max,
+        )
+    }
+
+    private fun setVerticalTarget(target: VerticalTarget) {
+        val current = _state.value as? ProgramSetupUiState.VerticalConfiguring ?: return
+        if (target !in VerticalTargetOptions) return
+        _state.value = current.copy(target = target, errorMessage = null)
+    }
+
+    private fun generateVerticalPreview() {
+        val current = _state.value as? ProgramSetupUiState.VerticalConfiguring ?: return
+        when (
+            val result = generateVerticalWorkoutDraft(
+                GenerateVerticalWorkoutDraftRequest(
+                    target = current.target,
+                    userMaxSpeed = current.userMaxSpeed,
+                    machineMaxSpeed = current.machineMaxSpeed,
+                    userMaxIncline = current.userMaxIncline,
+                    machineMaxIncline = current.machineMaxIncline,
+                ),
+            )
+        ) {
+            is VerticalWorkoutGenerationResult.Generated -> _state.value =
+                ProgramSetupUiState.VerticalDraftPreview(
+                    detail = current.detail,
+                    draft = result.draft,
+                    userMaxSpeed = current.userMaxSpeed,
+                    machineMaxSpeed = current.machineMaxSpeed,
+                    userMaxIncline = current.userMaxIncline,
+                    machineMaxIncline = current.machineMaxIncline,
+                )
+
+            is VerticalWorkoutGenerationResult.Rejected -> _state.value = current.copy(
+                errorMessage = verticalGenerationError(result.failure),
+            )
+        }
+    }
+
+    private fun acceptVerticalPlan() {
+        val current = _state.value as? ProgramSetupUiState.VerticalDraftPreview ?: return
+        val deviceCapabilities = capabilities
+        if (deviceCapabilities == null) {
+            _state.value = ProgramSetupUiState.DeviceUnavailable
+            return
+        }
+        _state.value = try {
+            when (val result = startVerticalWorkoutDraft(current.draft, deviceCapabilities)) {
+                is StartVerticalWorkoutDraftResult.Started -> ProgramSetupUiState.Started(
+                    plan = result.plan,
+                    previewMode = ProgramPreviewMode.ELEVATION_TARGET_PREVIEW,
+                )
+
+                is StartVerticalWorkoutDraftResult.InvalidDraft,
+                is StartVerticalWorkoutDraftResult.CapabilityValidationFailed,
+                is StartVerticalWorkoutDraftResult.StarterFailed,
+                -> ProgramSetupUiState.Error(VERTICAL_ACCEPT_ERROR)
+            }
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            ProgramSetupUiState.Error(VERTICAL_ACCEPT_ERROR)
+        }
+    }
+
+    private fun verticalGenerationError(
+        failure: VerticalWorkoutGenerationFailure,
+    ): String = when (failure) {
+        is VerticalWorkoutGenerationFailure.InvalidSpeedCaps,
+        is VerticalWorkoutGenerationFailure.InvalidInclineCaps,
+        is VerticalWorkoutGenerationFailure.SpeedCapsDoNotIntersect,
+        is VerticalWorkoutGenerationFailure.InclineCapsDoNotIntersect,
+        -> VERTICAL_CAPABILITIES_ERROR
     }
 
     private fun setFiveKReadyDuration(duration: DurationMinutes) {
@@ -446,6 +558,9 @@ class ProgramSetupViewModel(
     private fun isSurprise(detail: ProgramDetail): Boolean =
         detail.programId.value == SURPRISE_PROGRAM_ID
 
+    private fun isVertical(detail: ProgramDetail): Boolean =
+        detail.programId.value == VERTICAL_PROGRAM_ID
+
     private fun isFiveKReady(detail: ProgramDetail): Boolean =
         detail.programId.value == FIVE_K_READY_PROGRAM_ID
 
@@ -486,6 +601,7 @@ class ProgramSetupViewModel(
     private companion object {
         const val SURPRISE_PROGRAM_ID = "SURPRISE_ME"
         const val FIVE_K_READY_PROGRAM_ID = "5K_READY"
+        const val VERTICAL_PROGRAM_ID = "VERTICAL"
         const val SURPRISE_PROFILE_REVISION = "anonymous-baseline-r1"
         const val SURPRISE_GENERATION_ERROR = "Unable to generate workout preview"
         const val SURPRISE_ACCEPT_ERROR = "Unable to accept workout preview"
@@ -496,6 +612,8 @@ class ProgramSetupViewModel(
         const val FIVE_K_READY_CAPABILITIES_ERROR =
             "CAPABILITIES CANNOT SUPPORT THIS PREVIEW"
         const val FIVE_K_READY_ACCEPT_ERROR = "Unable to accept 5K READY preview"
+        const val VERTICAL_CAPABILITIES_ERROR = "CAPABILITIES CANNOT SUPPORT THIS VERTICAL PREVIEW"
+        const val VERTICAL_ACCEPT_ERROR = "Unable to accept VERTICAL preview"
 
         val FIVE_K_READY_PACE_PATTERN = Regex("""^\d+(?:\.\d)?$""")
         val FIVE_K_READY_DEFAULT_DURATION = DurationMinutes(30)

@@ -118,6 +118,9 @@ private fun LiveWorkoutTitleBlock(
             previewMode = workout.previewMode,
             equipmentState = equipmentState,
         )
+        workout.verticalContext?.let { context ->
+            LiveVerticalContextPanel(context)
+        }
     }
 }
 

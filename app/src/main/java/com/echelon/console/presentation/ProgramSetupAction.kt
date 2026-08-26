@@ -7,6 +7,7 @@ import com.echelon.console.domain.PlanIntensity
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.SurpriseWorkoutEffort
+import com.echelon.console.domain.VerticalTarget
 
 sealed interface ProgramSetupAction {
     data class OpenProgram(val programId: ProgramId) : ProgramSetupAction
@@ -48,4 +49,10 @@ sealed interface ProgramSetupAction {
     data object GenerateFiveKReadyPreview : ProgramSetupAction
 
     data object AcceptFiveKReadyPlan : ProgramSetupAction
+
+    data class SetVerticalTarget(val target: VerticalTarget) : ProgramSetupAction
+
+    data object GenerateVerticalPreview : ProgramSetupAction
+
+    data object AcceptVerticalPlan : ProgramSetupAction
 }

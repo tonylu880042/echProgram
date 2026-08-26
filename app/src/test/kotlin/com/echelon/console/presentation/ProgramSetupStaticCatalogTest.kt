@@ -2,10 +2,12 @@ package com.echelon.console.presentation
 
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
+import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
+import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
@@ -17,6 +19,7 @@ import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.SpeedRange
 import com.echelon.console.domain.SpeedTenths
+import com.echelon.console.domain.VerticalTarget
 import com.echelon.console.domain.WorkoutSessionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,6 +53,8 @@ class ProgramSetupStaticCatalogTest {
                     generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
                     startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
                     generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
+                    startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
+                    generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
                     capabilities = compositionCapabilities,
                     dispatcher = dispatcher,
                 )
@@ -59,7 +64,18 @@ class ProgramSetupStaticCatalogTest {
                 viewModel.onAction(ProgramSetupAction.StartDefault)
                 advanceUntilIdle()
 
-                if (programId == ProgramId("SURPRISE_ME")) {
+                if (programId == ProgramId("VERTICAL")) {
+                    val configuring = viewModel.state.value as ProgramSetupUiState.VerticalConfiguring
+                    assertEquals(VerticalTarget.ONE_THOUSAND_FEET, configuring.target)
+                    assertNull(coordinator.currentState())
+
+                    viewModel.onAction(ProgramSetupAction.GenerateVerticalPreview)
+                    val draftPreview = viewModel.state.value as ProgramSetupUiState.VerticalDraftPreview
+                    assertEquals(programId, draftPreview.draft.metadata.programId)
+                    assertNull(coordinator.currentState())
+
+                    viewModel.onAction(ProgramSetupAction.AcceptVerticalPlan)
+                } else if (programId == ProgramId("SURPRISE_ME")) {
                     val draftPreview = viewModel.state.value as ProgramSetupUiState.DraftPreview
                     assertEquals(programId, draftPreview.draft.metadata.programId)
                     assertNull(coordinator.currentState())

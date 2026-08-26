@@ -32,3 +32,34 @@ read-state thresholds, not FitOS host guarantees.
 The supplied artifact does not contain independent release metadata or a
 license notice. FitOS release/version and redistribution terms remain an open
 release-readiness question.
+
+## Zone 2 HR advisory contract (preview only)
+
+The workspace guide at
+`AIDL/FitOS-Equipment-SDK-Integration-Guide-v1/FitOS-Equipment-SDK-Integration-Guide-v1.html`
+is the source for these API facts:
+
+- `EquipmentSnapshot.hr` is a display `String` containing BPM. It may be empty
+  or otherwise not parseable, so the domain treats missing or invalid values as
+  unavailable rather than guessing a value.
+- `EquipmentSnapshot.elapsedRealtimeMillis` is the host's
+  `SystemClock.elapsedRealtime()` value. It is the timestamp used for sample
+  age, freshness, and gaps between callbacks.
+- `onEquipmentDataChanged` arrives roughly once per second while the equipment
+  reports, with field changes within one machine tick conflated into one push.
+
+The Zone 2 domain contract accepts only a positive, ordered target range that
+the user has confirmed (`USER_CONFIRMED`); it does not derive a zone from age,
+maximum heart rate, or a medical formula. Evaluation uses caller-provided
+`nowElapsedRealtimeMillis` and `staleAfterMillis`, inclusive lower/upper
+thresholds, and marks a sample as `HR_SIGNAL_LOST` when its age is at least the
+stale threshold. Results are explicitly `PREVIEW_ONLY` and `ADVISORY_ONLY`:
+they may suggest incline, suggest reducing effort with manual-stop
+availability, hold, or make no adjustment in manual mode. They contain no
+motor setpoint, speed/incline command, command acknowledgement, or automatic
+control operation.
+
+FitOS does not provide target-zone ownership, hysteresis semantics, or medical
+formula approval. The domain therefore labels this behavior
+`DIRECT_THRESHOLD_PREVIEW` and `NO_HYSTERESIS_APPROVED`; those product and
+safety decisions remain open for customer/FitOS confirmation.

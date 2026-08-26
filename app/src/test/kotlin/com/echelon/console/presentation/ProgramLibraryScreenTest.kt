@@ -144,9 +144,13 @@ class ProgramLibraryScreenTest {
             )
         }
 
+        composeTestRule.onNodeWithText("Programs").performClick()
         composeTestRule.onNodeWithText("History").performClick()
 
-        assertEquals(listOf(ProgramLibraryDestination.HISTORY), destinations)
+        assertEquals(
+            listOf(ProgramLibraryDestination.PROGRAMS, ProgramLibraryDestination.HISTORY),
+            destinations,
+        )
     }
 
     private fun readyState(): ProgramLibraryUiState.Ready {

@@ -154,11 +154,11 @@ class StaticProgramCatalog : ProgramCatalog, ProgramDetailCatalog {
                 id = "ECHELON_CHALLENGE", title = "ECHELON CHALLENGE", category = ProgramCategory.CHALLENGE,
                 durationLabel = "30 MIN", promise = "A representative baseline-match profile with one controlled challenge block.",
                 duration = 30, intensity = PlanIntensity.HIGH, focus = PlanFocus.BALANCED,
-                maxSpeed = 60, maxIncline = 30, speedRange = 30..80, inclineRange = 0..100,
+                maxSpeed = 53, maxIncline = 40, speedRange = 30..80, inclineRange = 0..100,
                 previewMode = ProgramPreviewMode.HISTORY_ADAPTIVE_PREVIEW,
                 profile = listOf(
-                    segment("Warm Up", 5, 45, 20), segment("Base Match", 7, 55, 20), segment("Challenge Block", 7, 58, 30),
-                    segment("Hold", 6, 56, 30), segment("Final Push", 3, 60, 30), segment("Cool Down", 2, 43, 10),
+                    segment("Warm Up", 5, 40, 30), segment("Base Match", 7, 50, 30), segment("Challenge Block", 7, 53, 40),
+                    segment("Hold", 6, 51, 40), segment("Final Push", 3, 53, 40), segment("Cool Down", 2, 38, 10),
                 ),
             ),
             programDefinition(

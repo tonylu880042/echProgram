@@ -79,6 +79,9 @@ enum class Zone2PreviewContextPlanMismatchField {
     DURATION,
     MAX_SPEED,
     MAX_INCLINE,
+    INTENSITY,
+    FOCUS,
+    ADAPT_TO_YOU,
 }
 
 sealed interface WorkoutSessionCommandResult {
@@ -176,14 +179,30 @@ class InMemoryWorkoutSessionCoordinator(
             ?: return WorkoutSessionStarterResult.Failed(
                 WorkoutSessionStartFailure.ProgramNotFound(ZONE_2_PROGRAM_ID),
             )
+        val settings = plan.plan.settings
+        val reviewedSettingsMismatch = when {
+            settings.intensity != detail.defaultSettings.intensity ->
+                Zone2PreviewContextPlanMismatchField.INTENSITY
+
+            settings.focus != detail.defaultSettings.focus ->
+                Zone2PreviewContextPlanMismatchField.FOCUS
+
+            settings.adaptToYou -> Zone2PreviewContextPlanMismatchField.ADAPT_TO_YOU
+            else -> null
+        }
+        reviewedSettingsMismatch?.let {
+            return WorkoutSessionStarterResult.Failed(
+                WorkoutSessionStartFailure.Zone2PreviewContextPlanMismatch(it),
+            )
+        }
         if (
-            plan.plan.settings.duration !in ZONE_2_PREVIEW_SUPPORTED_DURATIONS ||
-            plan.plan.settings.duration !in detail.supportedDurations
+            settings.duration !in ZONE_2_PREVIEW_SUPPORTED_DURATIONS ||
+            settings.duration !in detail.supportedDurations
         ) {
             return WorkoutSessionStarterResult.Failed(
                 WorkoutSessionStartFailure.UnsupportedDuration(
                     programId = ZONE_2_PROGRAM_ID,
-                    duration = plan.plan.settings.duration,
+                    duration = settings.duration,
                     supportedDurations = ZONE_2_PREVIEW_SUPPORTED_DURATIONS,
                 ),
             )
@@ -193,7 +212,7 @@ class InMemoryWorkoutSessionCoordinator(
             detail.defaultSettings.maxSpeed.value,
             detail.speedRange.max.value,
         )
-        if (plan.plan.settings.maxSpeed.value > detailMaxSpeed) {
+        if (settings.maxSpeed.value > detailMaxSpeed) {
             return WorkoutSessionStarterResult.Failed(
                 WorkoutSessionStartFailure.Zone2PreviewContextPlanMismatch(
                     Zone2PreviewContextPlanMismatchField.MAX_SPEED,
@@ -204,7 +223,7 @@ class InMemoryWorkoutSessionCoordinator(
             detail.defaultSettings.maxIncline.value,
             detail.inclineRange.max.value,
         )
-        if (plan.plan.settings.maxIncline.value > detailMaxIncline) {
+        if (settings.maxIncline.value > detailMaxIncline) {
             return WorkoutSessionStarterResult.Failed(
                 WorkoutSessionStartFailure.Zone2PreviewContextPlanMismatch(
                     Zone2PreviewContextPlanMismatchField.MAX_INCLINE,

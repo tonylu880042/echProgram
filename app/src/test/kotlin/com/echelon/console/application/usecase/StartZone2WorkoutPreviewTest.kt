@@ -270,6 +270,34 @@ class StartZone2WorkoutPreviewTest {
         }
     }
 
+    @Test
+    fun `direct coordinator rejects reviewed settings mismatches without creating a session`() {
+        val catalog = ProgramDetailCatalog { staticCatalog.findProgramDetail(it) }
+        val mismatches = listOf(
+            Zone2PreviewContextPlanMismatchField.INTENSITY to validPlan(
+                intensity = PlanIntensity.HIGH,
+            ),
+            Zone2PreviewContextPlanMismatchField.FOCUS to validPlan(
+                focus = PlanFocus.MORE_INCLINE,
+            ),
+            Zone2PreviewContextPlanMismatchField.ADAPT_TO_YOU to validPlan(
+                adaptToYou = true,
+            ),
+        )
+
+        mismatches.forEach { (field, plan) ->
+            val coordinator = InMemoryWorkoutSessionCoordinator(catalog)
+
+            assertEquals(
+                WorkoutSessionStarterResult.Failed(
+                    WorkoutSessionStartFailure.Zone2PreviewContextPlanMismatch(field),
+                ),
+                coordinator.start(context(target()), plan),
+            )
+            assertNull(coordinator.currentState())
+        }
+    }
+
     private fun target(): HeartRateTargetRange = when (
         val result = HeartRateTargetRange.createUserConfirmed(120, 140)
     ) {
@@ -298,19 +326,22 @@ class StartZone2WorkoutPreviewTest {
     private fun validPlan(
         programId: ProgramId = ProgramId("ZONE_2"),
         duration: DurationMinutes = DurationMinutes(30),
+        intensity: PlanIntensity = PlanIntensity.LOW,
+        focus: PlanFocus = PlanFocus.BALANCED,
         maxSpeed: SpeedTenths = SpeedTenths(50),
         maxIncline: InclineTenths = InclineTenths(80),
+        adaptToYou: Boolean = false,
     ): ValidatedWorkoutPlan = when (
         val result = ValidatedWorkoutPlan.create(
             WorkoutPlan(
                 programId = programId,
                 settings = PlanSettings(
                     duration = duration,
-                    intensity = PlanIntensity.LOW,
-                    focus = PlanFocus.BALANCED,
+                    intensity = intensity,
+                    focus = focus,
                     maxSpeed = maxSpeed,
                     maxIncline = maxIncline,
-                    adaptToYou = false,
+                    adaptToYou = adaptToYou,
                 ),
             ),
             capabilities,

@@ -198,7 +198,7 @@ class LiveWorkoutViewModel(
                     )
                 }
             }
-            else -> null
+            is WorkoutTimelineContext.Zone2Preview -> null
         }
 
     private fun displayLabel(segment: WorkoutTimelineSegment): String = when (

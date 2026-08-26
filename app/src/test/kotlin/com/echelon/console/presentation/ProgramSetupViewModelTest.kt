@@ -343,6 +343,64 @@ class ProgramSetupViewModelTest {
         }
     }
 
+    @Test
+    fun `back from unavailable returns to library`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val viewModel = viewModel(
+                dispatcher = dispatcher,
+                catalog = ProgramDetailCatalog { null },
+            )
+            viewModel.onAction(ProgramSetupAction.OpenProgram(ProgramId("MISSING")))
+            advanceUntilIdle()
+
+            viewModel.onAction(ProgramSetupAction.Back)
+
+            assertEquals(ProgramSetupUiState.Library, viewModel.state.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `back from device unavailable returns to library`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val viewModel = viewModel(dispatcher = dispatcher, capabilities = null)
+            viewModel.onAction(ProgramSetupAction.OpenProgram(detail.programId))
+            advanceUntilIdle()
+            viewModel.onAction(ProgramSetupAction.StartDefault)
+
+            viewModel.onAction(ProgramSetupAction.Back)
+
+            assertEquals(ProgramSetupUiState.Library, viewModel.state.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `back from error returns to library`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            val viewModel = viewModel(
+                dispatcher = dispatcher,
+                catalog = ProgramDetailCatalog { throw IllegalStateException("private stack") },
+            )
+            viewModel.onAction(ProgramSetupAction.OpenProgram(detail.programId))
+            advanceUntilIdle()
+
+            viewModel.onAction(ProgramSetupAction.Back)
+
+            assertEquals(ProgramSetupUiState.Library, viewModel.state.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
     private fun viewModel(
         dispatcher: CoroutineDispatcher,
         catalog: ProgramDetailCatalog = ProgramDetailCatalog { detail },

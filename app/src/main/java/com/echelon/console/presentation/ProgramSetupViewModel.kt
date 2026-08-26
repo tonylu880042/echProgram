@@ -73,6 +73,10 @@ class ProgramSetupViewModel(
         _state.value = when (val current = _state.value) {
             is ProgramSetupUiState.Personalizing -> ProgramSetupUiState.Ready(current.detail)
             is ProgramSetupUiState.Ready -> ProgramSetupUiState.Library
+            is ProgramSetupUiState.Unavailable,
+            ProgramSetupUiState.DeviceUnavailable,
+            is ProgramSetupUiState.Error,
+            -> ProgramSetupUiState.Library
             else -> return
         }
     }

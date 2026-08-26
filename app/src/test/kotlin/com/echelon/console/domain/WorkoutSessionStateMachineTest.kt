@@ -92,6 +92,10 @@ class WorkoutSessionStateMachineTest {
         val nextSegment = assertRunning(WorkoutSessionStateMachine.advance(overridden, 30))
         assertEquals(1, nextSegment.progress.currentSegmentIndex)
         assertEquals(WorkoutSessionTarget(SpeedTenths(40), InclineTenths(20), WorkoutSessionTargetMode.PROFILE), nextSegment.progress.target)
+        assertEquals(listOf(30, 40, 50), running.timeline.segments.map { it.targetSpeed.value })
+        assertEquals(listOf(10, 20, 30), running.timeline.segments.map { it.targetIncline.value })
+        assertEquals(listOf(30, 40, 50), nextSegment.timeline.segments.map { it.targetSpeed.value })
+        assertEquals(listOf(10, 20, 30), nextSegment.timeline.segments.map { it.targetIncline.value })
     }
 
     @Test
@@ -142,6 +146,48 @@ class WorkoutSessionStateMachineTest {
 
         assertEquals(
             WorkoutSessionResult.Invalid(WorkoutSessionError.EmptyTimeline),
+            result,
+        )
+    }
+
+    @Test
+    fun `non-empty timeline with non-positive duration cannot create a session`() {
+        val invalid = timeline().copy(totalDurationSeconds = 0)
+
+        val result = WorkoutSessionStateMachine.create(invalid)
+
+        assertEquals(
+            WorkoutSessionResult.Invalid(WorkoutSessionError.NonPositiveTimelineDuration),
+            result,
+        )
+    }
+
+    @Test
+    fun `timeline gap or overlap returns the invalid segment index`() {
+        val invalid = timeline().copy(
+            segments = listOf(
+                timeline().segments[0],
+                WorkoutTimelineSegment("Build", 70, 120, SpeedTenths(40), InclineTenths(20)),
+                timeline().segments[2],
+            ),
+        )
+
+        val result = WorkoutSessionStateMachine.create(invalid)
+
+        assertEquals(
+            WorkoutSessionResult.Invalid(WorkoutSessionError.InvalidTimelineSegment(1)),
+            result,
+        )
+    }
+
+    @Test
+    fun `timeline final end must match total duration`() {
+        val invalid = timeline().copy(totalDurationSeconds = 181)
+
+        val result = WorkoutSessionStateMachine.create(invalid)
+
+        assertEquals(
+            WorkoutSessionResult.Invalid(WorkoutSessionError.InvalidTimelineSegment(2)),
             result,
         )
     }

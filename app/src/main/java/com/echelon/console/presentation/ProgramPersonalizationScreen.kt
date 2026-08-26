@@ -411,7 +411,7 @@ private fun PersonalizationPreview(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 260.dp)
+                    .height(260.dp)
                     .padding(16.dp)
                     .semantics { contentDescription = "Projected trajectory profile" },
             ) {
@@ -424,7 +424,11 @@ private fun PersonalizationPreview(
 
 @Composable
 private fun ProjectedTrajectoryCanvas(detail: ProgramDetail) {
-    Canvas(modifier = Modifier.fillMaxSize()) {
+    Canvas(
+        modifier = Modifier
+            .fillMaxSize()
+            .semantics { contentDescription = "Projected trajectory canvas" },
+    ) {
         val maxSpeed = max(1f, detail.speedRange.max.value.toFloat())
         val points = detail.profile.mapIndexed { index, segment ->
             val x = if (detail.profile.size == 1) 0f else size.width * index / (detail.profile.lastIndex)

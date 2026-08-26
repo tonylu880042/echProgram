@@ -76,6 +76,7 @@ class ProgramSetupViewModel(
             is ProgramSetupUiState.Unavailable,
             ProgramSetupUiState.DeviceUnavailable,
             is ProgramSetupUiState.Error,
+            is ProgramSetupUiState.Started,
             -> ProgramSetupUiState.Library
             else -> return
         }

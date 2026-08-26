@@ -5,7 +5,10 @@ Jetpack Compose and Clean Architecture. Gate 1 now wires a static goal-first
 program library into a lifecycle-aware Compose route with loading, ready,
 empty, and error states. The ready page exposes **Fat Burn**, **Glute Blast**,
 **Vertical**, and **Surprise Me** in catalog order, plus filtering and
-navigation seams for the remaining screens.
+navigation seams for the remaining screens. Gate 2 now adds the Fat Burn
+program detail, **Make It Yours** setup controls, and a validated
+**WORKOUT READY** handoff without pretending that live workout/device control
+exists yet.
 
 ## Prerequisites and verified toolchain
 
@@ -30,10 +33,10 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
 ```
 
 The clean gate covers pure JVM tests, Android lint, import-direction checking,
-debug packaging, and the aggregate `check` task. No emulator/device is
-currently connected, so instrumentation tests and manual Compose rendering are
-deferred until an Android target is available; this is intentionally not
-claimed as runtime verification.
+debug packaging, and the aggregate `check` task. Gate 1 has been runtime
+verified by Sol on an Android 36 emulator. Gate 2's final runtime review is
+still pending with Sol; the current **WORKOUT READY** state is a setup-boundary
+handoff, not live workout or Gate 3 device execution.
 
 ## Architecture
 
@@ -44,7 +47,9 @@ MainActivity (composition root): wires presentation + data
 ```
 
 Domain code is Android-free. Use cases depend on contracts, `data` provides the
-static adapter, and presentation receives the use-case result. Run
+static adapters, and presentation receives the use-case result. Gate 2's
+library → detail → personalization → validated-ready path remains explicit in
+StateFlow/UDF seams. Run
 `./gradlew architectureCheck` to verify forbidden import directions.
 
 ## Project guidance
@@ -56,7 +61,7 @@ static adapter, and presentation receives the use-case result. Run
 - [`DESIGN.md`](DESIGN.md) — Echelon Console visual system for Android/Compose
 - [`docs/STITCH_BRIEF.md`](docs/STITCH_BRIEF.md) — 12-screen Stitch handoff
 - [`docs/STITCH_OUTPUT.md`](docs/STITCH_OUTPUT.md) — tracked Stitch archive and
-  Gate 1 screen adaptation notes
+  Gate 1–2 screen adaptation notes
 
 ## Source references
 

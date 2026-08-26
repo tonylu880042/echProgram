@@ -208,12 +208,17 @@ data class Zone2HeartRateEvaluation(
     val status: Zone2HeartRateStatus,
     val advice: Zone2HeartRateAdvice,
     val sampleAgeMillis: Long,
-    val targetSource: HeartRateTargetSource,
+    val currentBpm: Int,
+    val target: HeartRateTargetRange,
     val previewStatus: Zone2HeartRatePreviewStatus,
     val adviceMode: Zone2HeartRateAdviceMode,
     val thresholdMode: Zone2HeartRateThresholdMode,
     val hysteresisStatus: Zone2HeartRateHysteresisStatus,
-)
+) {
+    /** Backward-compatible source projection from the immutable target snapshot. */
+    val targetSource: HeartRateTargetSource
+        get() = target.source
+}
 
 sealed interface Zone2HeartRateEvaluationResult {
     data class Evaluated(val evaluation: Zone2HeartRateEvaluation) : Zone2HeartRateEvaluationResult
@@ -297,7 +302,8 @@ class Zone2HeartRateEvaluator {
                 status = statusAndAdvice.first,
                 advice = statusAndAdvice.second,
                 sampleAgeMillis = sampleAgeMillis,
-                targetSource = target.source,
+                currentBpm = sample.bpm,
+                target = target,
                 previewStatus = Zone2HeartRatePreviewStatus.PREVIEW_ONLY,
                 adviceMode = Zone2HeartRateAdviceMode.ADVISORY_ONLY,
                 thresholdMode = Zone2HeartRateThresholdMode.DIRECT_THRESHOLD_PREVIEW,

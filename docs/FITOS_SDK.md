@@ -54,7 +54,9 @@ maximum heart rate, or a medical formula. Evaluation uses caller-provided
 `nowElapsedRealtimeMillis` and `staleAfterMillis`, inclusive lower/upper
 thresholds, and marks a sample as `HR_SIGNAL_LOST` when its age is at least the
 stale threshold. Results are explicitly `PREVIEW_ONLY` and `ADVISORY_ONLY`:
-they may suggest incline, suggest reducing effort with manual-stop
+each evaluated result snapshots the current BPM and the complete target range
+so a stale sample cannot be paired later with a different target.
+They may suggest incline, suggest reducing effort with manual-stop
 availability, hold, or make no adjustment in manual mode. They contain no
 motor setpoint, speed/incline command, command acknowledgement, or automatic
 control operation.

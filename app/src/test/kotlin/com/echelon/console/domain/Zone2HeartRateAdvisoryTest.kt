@@ -182,6 +182,19 @@ class Zone2HeartRateAdvisoryTest {
                 50L
             }
             assertEquals(expectedAge, evaluation.sampleAgeMillis)
+            assertEquals(
+                if (evaluation.status == Zone2HeartRateStatus.TOO_LOW) {
+                    119
+                } else if (evaluation.status == Zone2HeartRateStatus.TOO_HIGH) {
+                    141
+                } else {
+                    130
+                },
+                evaluation.currentBpm,
+            )
+            assertEquals(120, evaluation.target.lowerBpm)
+            assertEquals(140, evaluation.target.upperBpm)
+            assertEquals(HeartRateTargetSource.USER_CONFIRMED, evaluation.target.source)
             assertEquals(HeartRateTargetSource.USER_CONFIRMED, evaluation.targetSource)
             assertEquals(Zone2HeartRatePreviewStatus.PREVIEW_ONLY, evaluation.previewStatus)
             assertEquals(Zone2HeartRateAdviceMode.ADVISORY_ONLY, evaluation.adviceMode)

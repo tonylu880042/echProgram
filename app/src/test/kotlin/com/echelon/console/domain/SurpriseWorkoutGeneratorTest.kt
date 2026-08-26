@@ -178,6 +178,117 @@ class SurpriseWorkoutGeneratorTest {
         }
     }
 
+    @Test
+    fun `rejects a syntactically valid but unsupported generator version`() {
+        val result = generator.generate(input(generatorVersion = "v2"))
+
+        assertEquals(
+            SurpriseWorkoutGenerationResult.Rejected(
+                SurpriseWorkoutGenerationFailure.InvalidGeneratorVersion("v2"),
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `hard recovery and cool down never increase targets and each lowers one target`() {
+        SUPPORTED_DURATIONS.forEach { durationMinutes ->
+            (0..3).forEach { regenerationIndex ->
+                val draft = generate(
+                    input(
+                        durationMinutes = durationMinutes,
+                        effort = SurpriseWorkoutEffort.HARD,
+                        regenerationIndex = regenerationIndex,
+                    ),
+                )
+                val recoveryIndex = draft.profile.indexOfFirst { it.name.startsWith("RECOVERY") }
+                val recoveryBefore = draft.profile[recoveryIndex - 1]
+                val recovery = draft.profile[recoveryIndex]
+                assertTrue(recovery.speed.value <= recoveryBefore.speed.value)
+                assertTrue(recovery.incline.value <= recoveryBefore.incline.value)
+                assertTrue(
+                    recovery.speed.value < recoveryBefore.speed.value ||
+                        recovery.incline.value < recoveryBefore.incline.value,
+                )
+
+                val coolDownBefore = draft.profile[draft.profile.lastIndex - 1]
+                val coolDown = draft.profile.last()
+                assertTrue(coolDown.speed.value <= coolDownBefore.speed.value)
+                assertTrue(coolDown.incline.value <= coolDownBefore.incline.value)
+                assertTrue(
+                    coolDown.speed.value < coolDownBefore.speed.value ||
+                        coolDown.incline.value < coolDownBefore.incline.value,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `consecutive regeneration indexes differ for every effort and duration`() {
+        val caps = listOf(
+            SpeedTenths(80) to InclineTenths(100),
+            SpeedTenths(26) to InclineTenths(1),
+            SpeedTenths(25) to InclineTenths(0),
+        )
+
+        SUPPORTED_DURATIONS.forEach { durationMinutes ->
+            SurpriseWorkoutEffort.values().forEach { effort ->
+                caps.forEach { (speedCap, inclineCap) ->
+                    val first = generator.generate(
+                        input(
+                            durationMinutes = durationMinutes,
+                            effort = effort,
+                            regenerationIndex = 0,
+                            userMaxSpeed = speedCap,
+                            machineMaxSpeed = speedCap,
+                            userMaxIncline = inclineCap,
+                            machineMaxIncline = inclineCap,
+                        ),
+                    )
+                    val second = generator.generate(
+                        input(
+                            durationMinutes = durationMinutes,
+                            effort = effort,
+                            regenerationIndex = 1,
+                            userMaxSpeed = speedCap,
+                            machineMaxSpeed = speedCap,
+                            userMaxIncline = inclineCap,
+                            machineMaxIncline = inclineCap,
+                        ),
+                    )
+
+                    assertConsecutiveRegenerationIsMeaningful(first, second)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `effort workload follows the baseline ordering`() {
+        SUPPORTED_DURATIONS.forEach { durationMinutes ->
+            val scores = SurpriseWorkoutEffort.values().associateWith { effort ->
+                val draft = generate(
+                    input(
+                        durationMinutes = durationMinutes,
+                        effort = effort,
+                    ),
+                )
+                draft.profile
+                    .filterNot { it.name == "WARM UP" || it.name == "COOL DOWN" }
+                    .filterNot { it.name.startsWith("RECOVERY") }
+                    .map { segment ->
+                        // Baseline proposal score: tenths-mph + tenths-percent.
+                        segment.speed.value + segment.incline.value
+                    }
+                    .average()
+            }
+
+            assertTrue(scores.getValue(SurpriseWorkoutEffort.HARD) > scores.getValue(SurpriseWorkoutEffort.BURN))
+            assertTrue(scores.getValue(SurpriseWorkoutEffort.BURN) > scores.getValue(SurpriseWorkoutEffort.SWEAT))
+            assertTrue(scores.getValue(SurpriseWorkoutEffort.SWEAT) > scores.getValue(SurpriseWorkoutEffort.EASY))
+        }
+    }
+
     private fun generate(input: SurpriseWorkoutGeneratorInput): SurpriseWorkoutDraft =
         generated(generator.generate(input))
 
@@ -187,6 +298,23 @@ class SurpriseWorkoutGeneratorTest {
             is SurpriseWorkoutGenerationResult.Rejected ->
                 error("Expected generated draft, got ${result.failure}")
         }
+
+    private fun assertConsecutiveRegenerationIsMeaningful(
+        first: SurpriseWorkoutGenerationResult,
+        second: SurpriseWorkoutGenerationResult,
+    ) {
+        if (first is SurpriseWorkoutGenerationResult.Generated &&
+            second is SurpriseWorkoutGenerationResult.Generated
+        ) {
+            assertNotEquals(first.draft.profile, second.draft.profile)
+        }
+        if (first is SurpriseWorkoutGenerationResult.Rejected) {
+            assertTrue(first.failure is SurpriseWorkoutGenerationFailure.ConstraintsUnsatisfied)
+        }
+        if (second is SurpriseWorkoutGenerationResult.Rejected) {
+            assertTrue(second.failure is SurpriseWorkoutGenerationFailure.ConstraintsUnsatisfied)
+        }
+    }
 
     private fun compile(draft: SurpriseWorkoutDraft): WorkoutTimeline {
         val detail = ProgramDetail(

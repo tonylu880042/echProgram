@@ -99,8 +99,9 @@ sealed interface SurpriseWorkoutGenerationResult {
  * Pure deterministic generator for the SURPRISE ME preview contract.
  *
  * No Kotlin/Java runtime random source is used. The versioned FNV-1a plus
- * SplitMix-style arithmetic below is deliberately small and stable so QA can
- * reproduce a draft from the metadata seed, generator version, and index.
+ * SplitMix-style arithmetic below is deliberately small and stable. Replay
+ * also requires the draft's effective speed/incline caps: the seed identifies
+ * the request, while those caps constrain the concrete profile.
  */
 class SurpriseWorkoutGenerator {
     fun generate(input: SurpriseWorkoutGeneratorInput): SurpriseWorkoutGenerationResult {
@@ -213,16 +214,19 @@ class SurpriseWorkoutGenerator {
         inclineCap: Int,
         random: StablePrng,
     ): List<ProgramSegmentSummary> {
-        val activeBlockCount = activeBlockCount(input.durationMinutes)
+        val activeBlockCount = activeBlockCount(
+            durationMinutes = input.durationMinutes,
+            regenerationIndex = input.regenerationIndex,
+        )
         val activeDurations = activeDurations(
             activeMinutes = input.durationMinutes - WARM_UP_MINUTES - COOL_DOWN_MINUTES,
             blockCount = activeBlockCount,
             random = random,
         )
-        val recoveryIndex = if (input.effort == SurpriseWorkoutEffort.HARD) {
-            1 + random.nextInt(maxOf(1, activeBlockCount - 2))
-        } else {
-            -1
+        val recoveryIndex = when {
+            input.effort != SurpriseWorkoutEffort.HARD -> -1
+            activeBlockCount <= 2 -> 0
+            else -> 1 + random.nextInt(activeBlockCount - 2)
         }
 
         var previous = Target(GLOBAL_MIN_SPEED_TENTHS, GLOBAL_MIN_INCLINE_TENTHS)
@@ -246,6 +250,7 @@ class SurpriseWorkoutGenerator {
                 previous = previous,
                 speedCap = speedCap,
                 inclineCap = inclineCap,
+                effort = input.effort,
                 random = random,
             ),
         )
@@ -257,6 +262,7 @@ class SurpriseWorkoutGenerator {
                 previous = previous,
                 speedCap = speedCap,
                 inclineCap = inclineCap,
+                effort = input.effort,
                 random = random,
             )
             val ordinal = index + 1
@@ -276,6 +282,7 @@ class SurpriseWorkoutGenerator {
                 previous = previous,
                 speedCap = speedCap,
                 inclineCap = inclineCap,
+                effort = input.effort,
                 random = random,
             ),
         )
@@ -287,23 +294,71 @@ class SurpriseWorkoutGenerator {
         previous: Target,
         speedCap: Int,
         inclineCap: Int,
+        effort: SurpriseWorkoutEffort,
         random: StablePrng,
     ): Target {
-        val speedCeiling = when (stage) {
-            Stage.WARM_UP -> minOf(speedCap, GLOBAL_MIN_SPEED_TENTHS + WARM_UP_SPEED_HEADROOM_TENTHS)
-            Stage.ACTIVE -> speedCap
-            Stage.RECOVERY -> recoverySpeedCeiling(speedCap)
-            Stage.COOL_DOWN -> minOf(speedCap, GLOBAL_MIN_SPEED_TENTHS + COOL_DOWN_SPEED_HEADROOM_TENTHS)
+        if (stage == Stage.RECOVERY || stage == Stage.COOL_DOWN) {
+            return nonIncreasingTarget(
+                previous = previous,
+                speedCap = speedCap,
+                inclineCap = inclineCap,
+                random = random,
+            )
         }
-        val inclineCeiling = when (stage) {
-            Stage.WARM_UP -> minOf(inclineCap, WARM_UP_INCLINE_HEADROOM_TENTHS)
-            Stage.ACTIVE -> inclineCap
-            Stage.RECOVERY -> recoveryInclineCeiling(inclineCap)
-            Stage.COOL_DOWN -> minOf(inclineCap, COOL_DOWN_INCLINE_HEADROOM_TENTHS)
+
+        val band = when (stage) {
+            Stage.WARM_UP -> warmUpBand(effort, speedCap, inclineCap)
+            Stage.ACTIVE -> activeBand(effort, speedCap, inclineCap)
+            Stage.RECOVERY,
+            Stage.COOL_DOWN -> error("Handled before selecting a target band")
         }
+        var desired = Target(
+            speed = random.nextIntInclusive(band.minimumSpeed, band.maximumSpeed),
+            incline = random.nextIntInclusive(band.minimumIncline, band.maximumIncline),
+        )
+        if (stage == Stage.ACTIVE && desired == Target(GLOBAL_MIN_SPEED_TENTHS, GLOBAL_MIN_INCLINE_TENTHS)) {
+            desired = when {
+                speedCap > GLOBAL_MIN_SPEED_TENTHS -> desired.copy(speed = GLOBAL_MIN_SPEED_TENTHS + 1)
+                inclineCap > GLOBAL_MIN_INCLINE_TENTHS -> desired.copy(incline = GLOBAL_MIN_INCLINE_TENTHS + 1)
+                else -> desired
+            }
+        }
+        if (stage == Stage.WARM_UP) {
+            return desired
+        }
+        return Target(
+            speed = ramp(previous.speed, desired.speed, SurpriseWorkoutRampBaselineProposal.MAX_ADJACENT_SPEED_JUMP_TENTHS)
+                .coerceIn(GLOBAL_MIN_SPEED_TENTHS, speedCap),
+            incline = ramp(previous.incline, desired.incline, SurpriseWorkoutRampBaselineProposal.MAX_ADJACENT_INCLINE_JUMP_TENTHS)
+                .coerceIn(GLOBAL_MIN_INCLINE_TENTHS, inclineCap),
+        )
+    }
+
+    private fun nonIncreasingTarget(
+        previous: Target,
+        speedCap: Int,
+        inclineCap: Int,
+        random: StablePrng,
+    ): Target {
+        val maximumSpeed = minOf(
+            previous.speed - 1,
+            recoverySpeedCeiling(speedCap),
+        )
+        val maximumIncline = minOf(
+            previous.incline - 1,
+            recoveryInclineCeiling(inclineCap),
+        )
         val desired = Target(
-            speed = random.nextIntInclusive(GLOBAL_MIN_SPEED_TENTHS, speedCeiling),
-            incline = random.nextIntInclusive(GLOBAL_MIN_INCLINE_TENTHS, inclineCeiling),
+            speed = if (maximumSpeed >= GLOBAL_MIN_SPEED_TENTHS) {
+                random.nextIntInclusive(GLOBAL_MIN_SPEED_TENTHS, maximumSpeed)
+            } else {
+                GLOBAL_MIN_SPEED_TENTHS
+            },
+            incline = if (maximumIncline >= GLOBAL_MIN_INCLINE_TENTHS) {
+                random.nextIntInclusive(GLOBAL_MIN_INCLINE_TENTHS, maximumIncline)
+            } else {
+                GLOBAL_MIN_INCLINE_TENTHS
+            },
         )
         return Target(
             speed = ramp(previous.speed, desired.speed, SurpriseWorkoutRampBaselineProposal.MAX_ADJACENT_SPEED_JUMP_TENTHS)
@@ -311,6 +366,32 @@ class SurpriseWorkoutGenerator {
             incline = ramp(previous.incline, desired.incline, SurpriseWorkoutRampBaselineProposal.MAX_ADJACENT_INCLINE_JUMP_TENTHS)
                 .coerceIn(GLOBAL_MIN_INCLINE_TENTHS, inclineCap),
         )
+    }
+
+    private fun warmUpBand(
+        effort: SurpriseWorkoutEffort,
+        speedCap: Int,
+        inclineCap: Int,
+    ): TargetBand = when (effort) {
+        SurpriseWorkoutEffort.EASY -> TargetBand(25, 28, 0, 3).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.SWEAT -> TargetBand(30, 35, 5, 10).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.BURN -> TargetBand(40, 45, 20, 30).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.HARD -> TargetBand(55, 60, 45, 55).clampedTo(speedCap, inclineCap)
+    }
+
+    /**
+     * Baseline proposal only: disjoint active lanes make effort ordering
+     * observable while client-specific effort envelopes remain unapproved.
+     */
+    private fun activeBand(
+        effort: SurpriseWorkoutEffort,
+        speedCap: Int,
+        inclineCap: Int,
+    ): TargetBand = when (effort) {
+        SurpriseWorkoutEffort.EASY -> TargetBand(25, 30, 0, 5).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.SWEAT -> TargetBand(35, 45, 10, 20).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.BURN -> TargetBand(50, 60, 30, 45).clampedTo(speedCap, inclineCap)
+        SurpriseWorkoutEffort.HARD -> TargetBand(65, 80, 60, 80).clampedTo(speedCap, inclineCap)
     }
 
     private fun validateProfile(
@@ -348,6 +429,26 @@ class SurpriseWorkoutGenerator {
         }
         if (input.effort == SurpriseWorkoutEffort.HARD && profile.none { it.name.startsWith("RECOVERY") }) {
             return "HARD profile must contain a recovery block"
+        }
+        profile.indexOfFirst { it.name.startsWith("RECOVERY") }
+            .takeIf { it > 0 }
+            ?.let { recoveryIndex ->
+                val before = profile[recoveryIndex - 1]
+                val recovery = profile[recoveryIndex]
+                if (recovery.speed.value > before.speed.value || recovery.incline.value > before.incline.value) {
+                    return "Recovery targets must not increase"
+                }
+                if (recovery.speed.value == before.speed.value && recovery.incline.value == before.incline.value) {
+                    return "Recovery must lower at least one target when feasible"
+                }
+            }
+        val coolDownBefore = profile[profile.lastIndex - 1]
+        val coolDown = profile.last()
+        if (coolDown.speed.value > coolDownBefore.speed.value || coolDown.incline.value > coolDownBefore.incline.value) {
+            return "Cool-down targets must not increase"
+        }
+        if (coolDown.speed.value == coolDownBefore.speed.value && coolDown.incline.value == coolDownBefore.incline.value) {
+            return "Cool-down must lower at least one target when feasible"
         }
         profile.zipWithNext().forEach { (previous, next) ->
             if (kotlin.math.abs(next.speed.value - previous.speed.value) >
@@ -401,14 +502,7 @@ class SurpriseWorkoutGenerator {
     }
 
     private fun isValidGeneratorVersion(version: String): Boolean =
-        version.isNotEmpty() && version.all { character ->
-            character in '0'..'9' ||
-                character in 'A'..'Z' ||
-                character in 'a'..'z' ||
-                character == '.' ||
-                character == '-' ||
-                character == '_'
-        }
+        version == SUPPORTED_GENERATOR_VERSION
 
     private fun effortSpeedMaximum(effort: SurpriseWorkoutEffort): Int = when (effort) {
         SurpriseWorkoutEffort.EASY -> EASY_MAX_SPEED_TENTHS
@@ -445,6 +539,24 @@ class SurpriseWorkoutGenerator {
         val incline: Int,
     )
 
+    private data class TargetBand(
+        val minimumSpeed: Int,
+        val maximumSpeed: Int,
+        val minimumIncline: Int,
+        val maximumIncline: Int,
+    ) {
+        fun clampedTo(speedCap: Int, inclineCap: Int): TargetBand {
+            val boundedMaximumSpeed = maximumSpeed.coerceAtMost(speedCap)
+            val boundedMaximumIncline = maximumIncline.coerceAtMost(inclineCap)
+            return copy(
+                minimumSpeed = minimumSpeed.coerceAtMost(boundedMaximumSpeed),
+                maximumSpeed = boundedMaximumSpeed,
+                minimumIncline = minimumIncline.coerceAtMost(boundedMaximumIncline),
+                maximumIncline = boundedMaximumIncline,
+            )
+        }
+    }
+
     private class StablePrng(seed: Long) {
         private var state = seed
 
@@ -479,12 +591,9 @@ class SurpriseWorkoutGenerator {
         const val BURN_MAX_INCLINE_TENTHS = 80
         const val WARM_UP_MINUTES = 2
         const val COOL_DOWN_MINUTES = 2
-        const val WARM_UP_SPEED_HEADROOM_TENTHS = 15
-        const val WARM_UP_INCLINE_HEADROOM_TENTHS = 20
-        const val COOL_DOWN_SPEED_HEADROOM_TENTHS = 10
-        const val COOL_DOWN_INCLINE_HEADROOM_TENTHS = 10
         const val RECOVERY_RATIO_NUMERATOR = 3
         const val RECOVERY_RATIO_DENOMINATOR = 10
+        const val SUPPORTED_GENERATOR_VERSION = "v1"
         const val FNV_OFFSET_BASIS = -3750763034362895579L
         const val FNV_PRIME = 1099511628211L
         const val SPLIT_MIX_GOLDEN_GAMMA = -7046029254386353131L
@@ -492,12 +601,15 @@ class SurpriseWorkoutGenerator {
         const val SPLIT_MIX_MULTIPLIER_TWO = -7723592293110705685L
         val SUPPORTED_DURATIONS = setOf(10, 20, 30, 45)
 
-        fun activeBlockCount(durationMinutes: Int): Int = when (durationMinutes) {
-            10 -> 3
-            20 -> 5
-            30 -> 7
-            45 -> 9
-            else -> error("Duration must be validated before profile generation")
+        fun activeBlockCount(durationMinutes: Int, regenerationIndex: Int): Int {
+            val baseline = when (durationMinutes) {
+                10 -> 3
+                20 -> 5
+                30 -> 7
+                45 -> 9
+                else -> error("Duration must be validated before profile generation")
+            }
+            return baseline - (regenerationIndex and 1)
         }
 
         fun mix64(value: Long): Long {

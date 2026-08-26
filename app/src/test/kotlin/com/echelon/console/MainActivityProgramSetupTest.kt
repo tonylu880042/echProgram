@@ -16,13 +16,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], qualifiers = "w1280dp-h720dp-land")
 class MainActivityProgramSetupTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun `fat burn flows from library to personalization to ready`() {
+    fun `fat burn customized workout starts live preview`() {
         waitForText("WHAT DO YOU WANT TODAY?")
         composeTestRule.onNodeWithText("FAT BURN").performClick()
 
@@ -30,22 +30,16 @@ class MainActivityProgramSetupTest {
         composeTestRule.onNodeWithText("MAKE IT YOURS").performScrollTo().performClick()
 
         waitForText("PROJECTED TRAJECTORY")
+        composeTestRule.onNodeWithContentDescription("Increase duration").performScrollTo().performClick()
         composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
 
-        waitForText("WORKOUT READY")
-        composeTestRule.onNodeWithText("30 MIN").assertIsDisplayed()
-    }
-
-    @Test
-    fun `fat burn detail can start default workout directly`() {
-        waitForText("WHAT DO YOU WANT TODAY?")
-        composeTestRule.onNodeWithText("FAT BURN").performClick()
-
-        waitForText("START WORKOUT")
-        composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
-
-        waitForText("WORKOUT READY")
-        composeTestRule.onNodeWithText("5.5 MPH").performScrollTo().assertIsDisplayed()
+        waitForText("PREVIEW ONLY")
+        composeTestRule.onNodeWithText("WORKOUT READY").assertDoesNotExist()
+        composeTestRule.onNodeWithText("FAT BURN").assertIsDisplayed()
+        composeTestRule.onNodeWithText("TARGET SPEED").assertIsDisplayed()
+        composeTestRule.onNodeWithText("3.0 MPH").assertIsDisplayed()
+        composeTestRule.onNodeWithText("TIME REMAINING").assertIsDisplayed()
+        composeTestRule.onNodeWithText("35:00").assertIsDisplayed()
         assertTrue(
             composeTestRule.activity.workoutSessionCoordinator.currentState()
                 is WorkoutSessionState.Running,
@@ -53,31 +47,69 @@ class MainActivityProgramSetupTest {
     }
 
     @Test
-    fun `glute blast flows from library to workout ready`() {
-        waitForText("WHAT DO YOU WANT TODAY?")
-        composeTestRule.onNodeWithText("GLUTE BLAST").performClick()
-
-        waitForText("START WORKOUT")
-        composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
-
-        waitForText("WORKOUT READY")
-        composeTestRule.onNodeWithText("GLUTE_BLAST").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("4.0 MPH").performScrollTo().assertIsDisplayed()
-    }
-
-    @Test
-    fun `started workout back returns to program library`() {
+    fun `fat burn default workout controls live session and returns to library`() {
         waitForText("WHAT DO YOU WANT TODAY?")
         composeTestRule.onNodeWithText("FAT BURN").performClick()
 
         waitForText("START WORKOUT")
         composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
 
-        waitForText("WORKOUT READY")
-        composeTestRule.onNodeWithContentDescription("Back").performClick()
+        waitForText("PREVIEW ONLY")
+        composeTestRule.onNodeWithText("WORKOUT READY").assertDoesNotExist()
+        composeTestRule.onNodeWithText("FAT BURN").assertIsDisplayed()
+        composeTestRule.onNodeWithText("TARGET SPEED").assertIsDisplayed()
+        composeTestRule.onNodeWithText("3.0 MPH").assertIsDisplayed()
+        composeTestRule.onNodeWithText("TIME REMAINING").assertIsDisplayed()
+        composeTestRule.onNodeWithText("30:00").assertIsDisplayed()
+        assertTrue(
+            composeTestRule.activity.workoutSessionCoordinator.currentState()
+                is WorkoutSessionState.Running,
+        )
 
+        composeTestRule.onNodeWithText("PAUSE").performClick()
+        waitForText("RESUME")
+        assertTrue(
+            composeTestRule.activity.workoutSessionCoordinator.currentState()
+                is WorkoutSessionState.Paused,
+        )
+
+        composeTestRule.onNodeWithText("RESUME").performClick()
+        waitForText("PAUSE")
+        assertTrue(
+            composeTestRule.activity.workoutSessionCoordinator.currentState()
+                is WorkoutSessionState.Running,
+        )
+
+        composeTestRule.onNodeWithText("END WORKOUT").performClick()
+        waitForText("WORKOUT STOPPED")
+        assertTrue(
+            composeTestRule.activity.workoutSessionCoordinator.currentState()
+                is WorkoutSessionState.Stopped,
+        )
+
+        composeTestRule.onNodeWithText("DONE").performClick()
         waitForText("WHAT DO YOU WANT TODAY?")
-        composeTestRule.onNodeWithText("ALL PROGRAMS").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `glute blast default workout starts live preview`() {
+        waitForText("WHAT DO YOU WANT TODAY?")
+        composeTestRule.onNodeWithText("GLUTE BLAST").performClick()
+
+        waitForText("START WORKOUT")
+        composeTestRule.onNodeWithText("START WORKOUT").performScrollTo().performClick()
+
+        waitForText("PREVIEW ONLY")
+        composeTestRule.onNodeWithText("WORKOUT READY").assertDoesNotExist()
+        composeTestRule.onNodeWithText("GLUTE BLAST").assertIsDisplayed()
+        composeTestRule.onNodeWithText("TARGET SPEED").assertIsDisplayed()
+        composeTestRule.onNodeWithText("2.7 MPH").assertIsDisplayed()
+        composeTestRule.onNodeWithText("TIME REMAINING").assertIsDisplayed()
+        composeTestRule.onNodeWithText("30:00").assertIsDisplayed()
+        assertTrue(
+            composeTestRule.activity.workoutSessionCoordinator.currentState()
+                is WorkoutSessionState.Running,
+        )
     }
 
     private fun waitForText(text: String) {

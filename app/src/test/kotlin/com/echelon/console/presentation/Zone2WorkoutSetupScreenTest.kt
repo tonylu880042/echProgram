@@ -17,9 +17,12 @@ import androidx.compose.ui.test.performTextInput
 import com.echelon.console.MainActivity
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DurationMinutes
+import com.echelon.console.domain.EquipmentControlState
 import com.echelon.console.domain.EquipmentConnection
+import com.echelon.console.domain.EquipmentDescriptor
 import com.echelon.console.domain.EquipmentReadState
 import com.echelon.console.domain.EquipmentTelemetry
+import com.echelon.console.domain.EquipmentType
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.SpeedTenths
@@ -42,6 +45,7 @@ class Zone2WorkoutSetupScreenTest {
             state = zone2State(),
             equipmentState = EquipmentReadState(
                 connection = EquipmentConnection.Ready,
+                equipment = descriptor(EquipmentType.RUN),
                 telemetry = EquipmentTelemetry(
                     elapsedRealtimeMillis = 12_000L,
                     elapsedTime = "00:12",
@@ -160,6 +164,46 @@ class Zone2WorkoutSetupScreenTest {
         composeTestRule.onNodeWithText("NOT AVAILABLE").assertIsDisplayed()
     }
 
+    @Test
+    fun `zone 2 source card hides bpm unless a ready run has a positive bpm`() {
+        listOf(
+            EquipmentReadState(
+                connection = EquipmentConnection.Ready,
+                telemetry = telemetry(132),
+            ),
+            EquipmentReadState(
+                connection = EquipmentConnection.Ready,
+                equipment = descriptor(EquipmentType.BIKE),
+                telemetry = telemetry(132),
+            ),
+            EquipmentReadState(
+                connection = EquipmentConnection.Ready,
+                equipment = descriptor(EquipmentType.RUN),
+                telemetry = telemetry(0),
+            ),
+            EquipmentReadState(
+                connection = EquipmentConnection.Ready,
+                equipment = descriptor(EquipmentType.RUN),
+                telemetry = telemetry(-1),
+            ),
+            EquipmentReadState(
+                connection = EquipmentConnection.Ready,
+                equipment = descriptor(EquipmentType.RUN),
+                telemetry = telemetry(null),
+            ),
+            EquipmentReadState(
+                connection = EquipmentConnection.Stale(ageMillis = 5_000L),
+                equipment = descriptor(EquipmentType.RUN),
+                telemetry = telemetry(132),
+            ),
+        ).forEach { equipmentState ->
+            setContent(state = zone2State(), equipmentState = equipmentState)
+            composeTestRule.onNodeWithText("CURRENT EQUIPMENT BPM").performScrollTo().assertIsDisplayed()
+            composeTestRule.onNodeWithText("NOT AVAILABLE").assertIsDisplayed()
+            composeTestRule.onNodeWithText("132 BPM").assertDoesNotExist()
+        }
+    }
+
     private fun setContent(
         state: ProgramSetupUiState.Zone2Configuring,
         onAction: (ProgramSetupAction) -> Unit = {},
@@ -216,5 +260,25 @@ class Zone2WorkoutSetupScreenTest {
         userMaxIncline = userMaxIncline,
         machineMaxIncline = machineMaxIncline,
         errorMessage = errorMessage,
+    )
+
+    private fun descriptor(type: EquipmentType): EquipmentDescriptor = EquipmentDescriptor(
+        connectionStatus = "CONNECTED",
+        equipmentType = type,
+        runType = null,
+        deviceName = "test-equipment",
+        isMetric = false,
+        isBindDevice = true,
+        controlState = EquipmentControlState.STARTED,
+    )
+
+    private fun telemetry(heartRateBpm: Int?): EquipmentTelemetry = EquipmentTelemetry(
+        elapsedRealtimeMillis = 12_000L,
+        elapsedTime = "00:12",
+        speed = null,
+        incline = null,
+        heartRateBpm = heartRateBpm,
+        distance = null,
+        calories = null,
     )
 }

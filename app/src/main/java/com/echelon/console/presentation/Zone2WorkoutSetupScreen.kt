@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.echelon.console.domain.DurationMinutes
 import com.echelon.console.domain.EquipmentConnection
 import com.echelon.console.domain.EquipmentReadState
+import com.echelon.console.domain.EquipmentType
 import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.SpeedTenths
 import java.util.Locale
@@ -284,7 +285,11 @@ private fun Zone2SourceCard(
         Zone2ReadoutRow(label = "FITOS STATUS", value = equipmentState.connection.zone2Status())
         val bpm = equipmentState.telemetry
             ?.heartRateBpm
-            ?.takeIf { equipmentState.connection == EquipmentConnection.Ready }
+            ?.takeIf {
+                equipmentState.connection == EquipmentConnection.Ready &&
+                    equipmentState.equipment?.equipmentType == EquipmentType.RUN &&
+                    it > 0
+            }
         Zone2ReadoutRow(label = "CURRENT EQUIPMENT BPM", value = bpm?.let { "$it BPM" } ?: "NOT AVAILABLE")
         Text(
             text = "Telemetry is read-only and does not change the user-confirmed target.",

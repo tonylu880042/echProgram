@@ -1,5 +1,19 @@
 package com.echelon.console.domain
 
+/** Typed context carried by a compiled timeline without adding progress calculations. */
+sealed interface WorkoutTimelineContext {
+    data object None : WorkoutTimelineContext
+
+    data class VerticalPreview(
+        val programId: ProgramId,
+        val target: VerticalTarget,
+        val proposedTimeLimit: VerticalTimeLimitProposal,
+        val elevationSource: VerticalElevationSource,
+        val progressStatus: VerticalProgressStatus,
+        val controlStatus: VerticalWorkoutDraftControlStatus,
+    ) : WorkoutTimelineContext
+}
+
 /** Typed coaching meaning carried with a compiled timeline segment. */
 sealed interface WorkoutTimelineAnnotation {
     data object Unannotated : WorkoutTimelineAnnotation
@@ -28,6 +42,7 @@ data class AnnotatedWorkoutProfileSegment(
 data class AnnotatedWorkoutProfile(
     val programId: ProgramId,
     val segments: List<AnnotatedWorkoutProfileSegment>,
+    val context: WorkoutTimelineContext = WorkoutTimelineContext.None,
 )
 
 data class WorkoutTimelineSegment(
@@ -46,12 +61,18 @@ data class WorkoutTimeline(
     val programId: ProgramId,
     val totalDurationSeconds: Int,
     val segments: List<WorkoutTimelineSegment>,
+    val context: WorkoutTimelineContext = WorkoutTimelineContext.None,
 )
 
 sealed interface WorkoutTimelineCompileError {
     data object EmptyProfile : WorkoutTimelineCompileError
 
     data class ProfileProgramIdMismatch(
+        val expected: ProgramId,
+        val actual: ProgramId,
+    ) : WorkoutTimelineCompileError
+
+    data class ContextProgramIdMismatch(
         val expected: ProgramId,
         val actual: ProgramId,
     ) : WorkoutTimelineCompileError
@@ -131,6 +152,11 @@ object WorkoutTimelineCompiler {
                     actual = profile.programId,
                 ),
             )
+        }
+
+        val contextError = validateContext(programId, profile.context)
+        if (contextError != null) {
+            return WorkoutTimelineCompileResult.Invalid(contextError)
         }
 
         val selectedDurationMinutes = settings.duration.value
@@ -219,8 +245,37 @@ object WorkoutTimelineCompiler {
                 programId = programId,
                 totalDurationSeconds = totalDurationSeconds.toInt(),
                 segments = segments.toList(),
+                context = profile.context,
             ),
         )
+    }
+
+    private fun validateContext(
+        programId: ProgramId,
+        context: WorkoutTimelineContext,
+    ): WorkoutTimelineCompileError? = when (context) {
+        WorkoutTimelineContext.None -> null
+        is WorkoutTimelineContext.VerticalPreview -> when {
+            context.programId != VERTICAL_PROGRAM_ID ->
+                WorkoutTimelineCompileError.ContextProgramIdMismatch(
+                    expected = VERTICAL_PROGRAM_ID,
+                    actual = context.programId,
+                )
+
+            programId != VERTICAL_PROGRAM_ID ->
+                WorkoutTimelineCompileError.ContextProgramIdMismatch(
+                    expected = VERTICAL_PROGRAM_ID,
+                    actual = programId,
+                )
+
+            context.programId != programId ->
+                WorkoutTimelineCompileError.ContextProgramIdMismatch(
+                    expected = programId,
+                    actual = context.programId,
+                )
+
+            else -> null
+        }
     }
 
     private fun validateAnnotations(
@@ -297,6 +352,7 @@ object WorkoutTimelineCompiler {
     }
 
     private const val SECONDS_PER_MINUTE = 60L
+    private val VERTICAL_PROGRAM_ID = ProgramId("VERTICAL")
 }
 
 /** Maps a generated 5K draft into the generic typed timeline boundary. */
@@ -316,6 +372,26 @@ fun FiveKReadySessionDraft.toWorkoutTimelineProfile(): AnnotatedWorkoutProfile =
                     FiveKReadySegmentRole.EASY_WALK -> WorkoutTimelineAnnotation.EasyWalk
                     FiveKReadySegmentRole.COOL_DOWN -> WorkoutTimelineAnnotation.CoolDown
                 },
+            )
+        },
+    )
+
+/** Maps an accepted VERTICAL draft into its exact profile and typed preview context. */
+fun VerticalWorkoutDraft.toWorkoutTimelineProfile(): AnnotatedWorkoutProfile =
+    AnnotatedWorkoutProfile(
+        programId = metadata.programId,
+        context = WorkoutTimelineContext.VerticalPreview(
+            programId = metadata.programId,
+            target = metadata.target,
+            proposedTimeLimit = metadata.proposedTimeLimit,
+            elevationSource = metadata.elevationSource,
+            progressStatus = metadata.progressStatus,
+            controlStatus = controlStatus,
+        ),
+        segments = segments.map { segment ->
+            AnnotatedWorkoutProfileSegment(
+                summary = segment.summary,
+                annotation = WorkoutTimelineAnnotation.Unannotated,
             )
         },
     )

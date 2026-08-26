@@ -145,7 +145,7 @@ class InMemoryWorkoutSessionCoordinator(
         draftDurationMinutes = VERTICAL_PROFILE_DURATION_MINUTES,
         draftMaxSpeed = draft.metadata.effectiveSpeedCap,
         draftMaxIncline = draft.metadata.effectiveInclineCap,
-        profile = unannotatedProfile(draft.metadata.programId, draft.profile),
+        profile = draft.toWorkoutTimelineProfile(),
         plan = plan,
     )
 

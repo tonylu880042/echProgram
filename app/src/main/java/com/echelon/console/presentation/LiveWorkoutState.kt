@@ -4,6 +4,11 @@ import com.echelon.console.domain.InclineTenths
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
 import com.echelon.console.domain.SpeedTenths
+import com.echelon.console.domain.VerticalElevationSource
+import com.echelon.console.domain.VerticalProgressStatus
+import com.echelon.console.domain.VerticalTarget
+import com.echelon.console.domain.VerticalTimeLimitProposal
+import com.echelon.console.domain.VerticalWorkoutDraftControlStatus
 import com.echelon.console.domain.WorkoutTimelineAnnotation
 
 sealed interface LiveWorkoutUiState {
@@ -39,6 +44,7 @@ data class LiveWorkoutReadModel(
     val programTitle: String,
     val previewMode: ProgramPreviewMode,
     val runWalkSummary: LiveWorkoutRunWalkSummary? = null,
+    val verticalContext: LiveVerticalWorkoutContext? = null,
 )
 
 data class LiveWorkoutSegment(
@@ -53,6 +59,14 @@ data class LiveWorkoutRunWalkSummary(
     val walkMinutes: Int,
 )
 
+data class LiveVerticalWorkoutContext(
+    val target: VerticalTarget,
+    val proposedTimeLimit: VerticalTimeLimitProposal,
+    val elevationSource: VerticalElevationSource,
+    val progressStatus: VerticalProgressStatus,
+    val controlStatus: VerticalWorkoutDraftControlStatus,
+)
+
 data class LiveWorkoutSummary(
     val programId: ProgramId,
     val elapsedSeconds: Int,
@@ -60,4 +74,5 @@ data class LiveWorkoutSummary(
     val programTitle: String,
     val previewMode: ProgramPreviewMode,
     val runWalkSummary: LiveWorkoutRunWalkSummary? = null,
+    val verticalContext: LiveVerticalWorkoutContext? = null,
 )

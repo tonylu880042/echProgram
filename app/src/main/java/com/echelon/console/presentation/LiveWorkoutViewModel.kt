@@ -12,6 +12,7 @@ import com.echelon.console.domain.WorkoutSessionState
 import com.echelon.console.domain.WorkoutTimeline
 import com.echelon.console.domain.WorkoutTimelineAnnotation
 import com.echelon.console.domain.WorkoutTimelineSegment
+import com.echelon.console.domain.WorkoutTimelineContext
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
 import kotlinx.coroutines.CancellationException
@@ -158,6 +159,7 @@ class LiveWorkoutViewModel(
             programTitle = presentation.title,
             previewMode = presentation.previewMode,
             runWalkSummary = runWalkSummaryFor(timeline),
+            verticalContext = verticalContextFor(timeline),
         )
     }
 
@@ -173,8 +175,30 @@ class LiveWorkoutViewModel(
             programTitle = presentation.title,
             previewMode = presentation.previewMode,
             runWalkSummary = runWalkSummaryFor(timeline),
+            verticalContext = verticalContextFor(timeline),
         )
     }
+
+    private fun verticalContextFor(timeline: WorkoutTimeline): LiveVerticalWorkoutContext? =
+        when (val context = timeline.context) {
+            WorkoutTimelineContext.None -> null
+            is WorkoutTimelineContext.VerticalPreview -> {
+                if (
+                    context.programId != timeline.programId ||
+                    timeline.programId != VERTICAL_PROGRAM_ID
+                ) {
+                    null
+                } else {
+                    LiveVerticalWorkoutContext(
+                        target = context.target,
+                        proposedTimeLimit = context.proposedTimeLimit,
+                        elevationSource = context.elevationSource,
+                        progressStatus = context.progressStatus,
+                        controlStatus = context.controlStatus,
+                    )
+                }
+            }
+        }
 
     private fun displayLabel(segment: WorkoutTimelineSegment): String = when (
         val annotation = segment.annotation
@@ -258,6 +282,7 @@ class LiveWorkoutViewModel(
         const val SECONDS_PER_MINUTE = 60
         const val COMMAND_ERROR_MESSAGE = "Workout controls are unavailable right now."
         const val TICK_SOURCE_ERROR_MESSAGE = "Workout session updates are unavailable right now."
+        val VERTICAL_PROGRAM_ID = ProgramId("VERTICAL")
     }
 }
 

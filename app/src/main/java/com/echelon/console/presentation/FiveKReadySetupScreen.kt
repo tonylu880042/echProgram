@@ -79,10 +79,10 @@ internal fun FiveKReadyConfiguringScreen(
             state.errorMessage?.let { message ->
                 Text(text = message, color = FiveKError, fontSize = 14.sp)
             }
-            FiveKActionButton(
+            ConsoleSetupActionButton(
                 label = "GENERATE 5K PREVIEW",
                 onClick = { onAction(ProgramSetupAction.GenerateFiveKReadyPreview) },
-                primary = true,
+                variant = ConsoleSetupActionButtonVariant.PRIMARY,
             )
         }
     }
@@ -153,15 +153,15 @@ internal fun FiveKReadyDraftPreviewScreen(
             state.errorMessage?.let { message ->
                 Text(text = message, color = FiveKError, fontSize = 14.sp)
             }
-            FiveKActionButton(
+            ConsoleSetupActionButton(
                 label = "BACK TO SETTINGS",
                 onClick = onBack,
-                primary = false,
+                variant = ConsoleSetupActionButtonVariant.SECONDARY,
             )
-            FiveKActionButton(
+            ConsoleSetupActionButton(
                 label = "ACCEPT 5K PREVIEW",
                 onClick = { onAction(ProgramSetupAction.AcceptFiveKReadyPlan) },
-                primary = true,
+                variant = ConsoleSetupActionButtonVariant.PRIMARY,
             )
         }
     }
@@ -425,29 +425,6 @@ private fun FiveKChoiceButton(
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
         )
-    }
-}
-
-@Composable
-private fun FiveKActionButton(
-    label: String,
-    onClick: () -> Unit,
-    primary: Boolean,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .background(if (primary) CarbonHigh else Color.Transparent, RoundedCornerShape(4.dp))
-            .border(1.dp, if (primary) Cyan else RuleColor, RoundedCornerShape(4.dp))
-            .clickable(onClick = onClick)
-            .semantics {
-                role = Role.Button
-                contentDescription = label
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = label, color = if (primary) Cyan else PrimaryText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
 

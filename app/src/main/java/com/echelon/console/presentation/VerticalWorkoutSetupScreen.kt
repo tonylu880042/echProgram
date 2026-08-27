@@ -72,10 +72,10 @@ internal fun VerticalWorkoutConfiguringScreen(
             state.errorMessage?.let { message ->
                 Text(text = message, color = VerticalError, fontSize = 14.sp)
             }
-            VerticalActionButton(
+            ConsoleSetupActionButton(
                 label = "GENERATE VERTICAL PREVIEW",
                 onClick = { onAction(ProgramSetupAction.GenerateVerticalPreview) },
-                primary = true,
+                variant = ConsoleSetupActionButtonVariant.PRIMARY,
             )
         }
     }
@@ -107,15 +107,15 @@ internal fun VerticalWorkoutDraftPreviewScreen(
             state.errorMessage?.let { message ->
                 Text(text = message, color = VerticalError, fontSize = 14.sp)
             }
-            VerticalActionButton(
+            ConsoleSetupActionButton(
                 label = "BACK TO VERTICAL SETTINGS",
                 onClick = onBack,
-                primary = false,
+                variant = ConsoleSetupActionButtonVariant.SECONDARY,
             )
-            VerticalActionButton(
+            ConsoleSetupActionButton(
                 label = "ACCEPT VERTICAL PLAN",
                 onClick = { onAction(ProgramSetupAction.AcceptVerticalPlan) },
-                primary = true,
+                variant = ConsoleSetupActionButtonVariant.PRIMARY,
             )
         }
     }
@@ -368,34 +368,6 @@ private fun VerticalRow(label: String, value: String) {
     ) {
         Text(text = label, color = MutedText, fontSize = 12.sp)
         Text(text = value, color = PrimaryText, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
-    }
-}
-
-@Composable
-private fun VerticalActionButton(
-    label: String,
-    onClick: () -> Unit,
-    primary: Boolean,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .background(if (primary) CarbonHigh else Color.Transparent, RoundedCornerShape(4.dp))
-            .border(1.dp, if (primary) Cyan else RuleColor, RoundedCornerShape(4.dp))
-            .clickable(onClick = onClick)
-            .semantics {
-                role = Role.Button
-                contentDescription = label
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            color = if (primary) Cyan else PrimaryText,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-        )
     }
 }
 

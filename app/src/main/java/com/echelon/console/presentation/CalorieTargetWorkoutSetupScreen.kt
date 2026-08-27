@@ -75,9 +75,10 @@ internal fun CalorieTargetWorkoutSetupScreen(
                     },
                 )
             }
-            CalorieTargetActionButton(
+            ConsoleSetupActionButton(
                 label = "START CALORIE TARGET PREVIEW",
                 onClick = { onAction(ProgramSetupAction.StartCalorieTargetPreview) },
+                variant = ConsoleSetupActionButtonVariant.PRIMARY,
             )
         }
     }
@@ -258,25 +259,6 @@ private fun CalorieTargetCard(
             Text(text = label, color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             content()
         }
-    }
-}
-
-@Composable
-private fun CalorieTargetActionButton(label: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .background(CarbonHigh, RoundedCornerShape(4.dp))
-            .border(1.dp, Cyan, RoundedCornerShape(4.dp))
-            .clickable(onClick = onClick)
-            .semantics {
-                role = Role.Button
-                contentDescription = label
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = label, color = Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
 

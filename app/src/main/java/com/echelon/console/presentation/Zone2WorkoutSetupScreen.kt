@@ -113,9 +113,10 @@ internal fun Zone2WorkoutSetupScreen(
                     modifier = Modifier.semantics { contentDescription = "ZONE 2 SETUP ERROR" },
                 )
             }
-            Zone2ActionButton(
+            ConsoleSetupActionButton(
                 label = "START ZONE 2 PREVIEW",
                 onClick = { onAction(ProgramSetupAction.StartZone2Preview) },
+                variant = ConsoleSetupActionButtonVariant.PRIMARY,
             )
         }
     }
@@ -360,28 +361,6 @@ private fun Zone2Card(
             Text(text = label, color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             content()
         }
-    }
-}
-
-@Composable
-private fun Zone2ActionButton(
-    label: String,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .background(CarbonHigh, RoundedCornerShape(4.dp))
-            .border(1.dp, Cyan, RoundedCornerShape(4.dp))
-            .clickable(onClick = onClick)
-            .semantics {
-                role = Role.Button
-                contentDescription = label
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text = label, color = Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
 

@@ -7,7 +7,6 @@ import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraftReq
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraftRequest
 import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
-import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraftRequest
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailResult
 import com.echelon.console.application.usecase.StartCalorieTargetPreview
@@ -16,7 +15,6 @@ import com.echelon.console.application.usecase.StartFiveKReadySessionDraftResult
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraftResult
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
-import com.echelon.console.application.usecase.StartVerticalWorkoutDraftResult
 import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.StartWorkoutResult
 import com.echelon.console.application.usecase.StartZone2WorkoutPreview
@@ -36,8 +34,6 @@ import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.SurpriseWorkoutEffort
 import com.echelon.console.domain.SurpriseWorkoutGenerationResult
 import com.echelon.console.domain.VerticalTarget
-import com.echelon.console.domain.VerticalWorkoutGenerationFailure
-import com.echelon.console.domain.VerticalWorkoutGenerationResult
 import com.echelon.console.domain.WorkoutPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -69,6 +65,11 @@ class ProgramSetupViewModel(
     )
     private val zone2SetupFlow = Zone2SetupFlow(
         startPreview = startZone2WorkoutPreview,
+        capabilities = capabilities,
+    )
+    private val verticalSetupFlow = VerticalSetupFlow(
+        generateDraft = generateVerticalWorkoutDraft,
+        startDraft = startVerticalWorkoutDraft,
         capabilities = capabilities,
     )
 
@@ -289,90 +290,22 @@ class ProgramSetupViewModel(
     }
 
     private fun enterVerticalConfiguring(detail: ProgramDetail) {
-        val deviceCapabilities = capabilities
-        if (deviceCapabilities == null) {
-            _state.value = ProgramSetupUiState.DeviceUnavailable
-            return
-        }
-        _state.value = ProgramSetupUiState.VerticalConfiguring(
-            detail = detail,
-            target = VerticalTarget.ONE_THOUSAND_FEET,
-            userMaxSpeed = detail.defaultSettings.maxSpeed,
-            machineMaxSpeed = deviceCapabilities.speed.max,
-            userMaxIncline = detail.defaultSettings.maxIncline,
-            machineMaxIncline = deviceCapabilities.incline.max,
-        )
+        _state.value = verticalSetupFlow.enter(detail)
     }
 
     private fun setVerticalTarget(target: VerticalTarget) {
         val current = _state.value as? ProgramSetupUiState.VerticalConfiguring ?: return
-        if (target !in VerticalTargetOptions) return
-        _state.value = current.copy(target = target, errorMessage = null)
+        _state.value = verticalSetupFlow.setTarget(current, target)
     }
 
     private fun generateVerticalPreview() {
         val current = _state.value as? ProgramSetupUiState.VerticalConfiguring ?: return
-        when (
-            val result = generateVerticalWorkoutDraft(
-                GenerateVerticalWorkoutDraftRequest(
-                    target = current.target,
-                    userMaxSpeed = current.userMaxSpeed,
-                    machineMaxSpeed = current.machineMaxSpeed,
-                    userMaxIncline = current.userMaxIncline,
-                    machineMaxIncline = current.machineMaxIncline,
-                ),
-            )
-        ) {
-            is VerticalWorkoutGenerationResult.Generated -> _state.value =
-                ProgramSetupUiState.VerticalDraftPreview(
-                    detail = current.detail,
-                    draft = result.draft,
-                    userMaxSpeed = current.userMaxSpeed,
-                    machineMaxSpeed = current.machineMaxSpeed,
-                    userMaxIncline = current.userMaxIncline,
-                    machineMaxIncline = current.machineMaxIncline,
-                )
-
-            is VerticalWorkoutGenerationResult.Rejected -> _state.value = current.copy(
-                errorMessage = verticalGenerationError(result.failure),
-            )
-        }
+        _state.value = verticalSetupFlow.generatePreview(current)
     }
 
     private fun acceptVerticalPlan() {
         val current = _state.value as? ProgramSetupUiState.VerticalDraftPreview ?: return
-        val deviceCapabilities = capabilities
-        if (deviceCapabilities == null) {
-            _state.value = ProgramSetupUiState.DeviceUnavailable
-            return
-        }
-        _state.value = try {
-            when (val result = startVerticalWorkoutDraft(current.draft, deviceCapabilities)) {
-                is StartVerticalWorkoutDraftResult.Started -> ProgramSetupUiState.Started(
-                    plan = result.plan,
-                    previewMode = ProgramPreviewMode.ELEVATION_TARGET_PREVIEW,
-                )
-
-                is StartVerticalWorkoutDraftResult.InvalidDraft,
-                is StartVerticalWorkoutDraftResult.CapabilityValidationFailed,
-                is StartVerticalWorkoutDraftResult.StarterFailed,
-                -> ProgramSetupUiState.Error(VERTICAL_ACCEPT_ERROR)
-            }
-        } catch (exception: CancellationException) {
-            throw exception
-        } catch (exception: Exception) {
-            ProgramSetupUiState.Error(VERTICAL_ACCEPT_ERROR)
-        }
-    }
-
-    private fun verticalGenerationError(
-        failure: VerticalWorkoutGenerationFailure,
-    ): String = when (failure) {
-        is VerticalWorkoutGenerationFailure.InvalidSpeedCaps,
-        is VerticalWorkoutGenerationFailure.InvalidInclineCaps,
-        is VerticalWorkoutGenerationFailure.SpeedCapsDoNotIntersect,
-        is VerticalWorkoutGenerationFailure.InclineCapsDoNotIntersect,
-        -> VERTICAL_CAPABILITIES_ERROR
+        _state.value = verticalSetupFlow.accept(current)
     }
 
     private fun setFiveKReadyDuration(duration: DurationMinutes) {
@@ -685,8 +618,6 @@ class ProgramSetupViewModel(
         const val FIVE_K_READY_CAPABILITIES_ERROR =
             "CAPABILITIES CANNOT SUPPORT THIS PREVIEW"
         const val FIVE_K_READY_ACCEPT_ERROR = "Unable to accept 5K READY preview"
-        const val VERTICAL_CAPABILITIES_ERROR = "CAPABILITIES CANNOT SUPPORT THIS VERTICAL PREVIEW"
-        const val VERTICAL_ACCEPT_ERROR = "Unable to accept VERTICAL preview"
         const val ZONE_2_PROGRAM_ID = "ZONE_2"
         const val CALORIE_TARGET_PROGRAM_ID = "CALORIE_TARGET"
 

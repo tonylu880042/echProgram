@@ -1,16 +1,6 @@
 package com.echelon.console.presentation
 
-import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
-import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
-import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
-import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
-import com.echelon.console.application.usecase.StartCalorieTargetPreview
-import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
-import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
-import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
-import com.echelon.console.application.usecase.StartWorkout
-import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
@@ -221,17 +211,9 @@ class FiveKReadySetupViewModelTest {
         catalog: StaticProgramCatalog,
         coordinator: InMemoryWorkoutSessionCoordinator,
         capabilitiesOverride: DeviceCapabilities = capabilities,
-    ): ProgramSetupViewModel = ProgramSetupViewModel(
-        getProgramDetail = GetProgramDetail(catalog),
-        startWorkout = StartWorkout(coordinator, catalog),
-        startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
-        generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
-        startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
-        generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
-        startVerticalWorkoutDraft = com.echelon.console.application.usecase.StartVerticalWorkoutDraft(coordinator),
-        generateVerticalWorkoutDraft = com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft(),
-        startZone2WorkoutPreview = StartZone2WorkoutPreview(catalog, coordinator),
-        startCalorieTargetPreview = StartCalorieTargetPreview(catalog, coordinator),
+    ): ProgramSetupViewModel = createProgramSetupViewModel(
+        catalog = catalog,
+        coordinator = coordinator,
         capabilities = capabilitiesOverride,
         dispatcher = dispatcher,
     )

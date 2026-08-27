@@ -1,16 +1,8 @@
 package com.echelon.console.presentation
 
-import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
-import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
-import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
-import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
 import com.echelon.console.application.usecase.ProgramDetailCatalog
 import com.echelon.console.application.usecase.StartCalorieTargetPreview
-import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
-import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
-import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
-import com.echelon.console.application.usecase.StartWorkout
 import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.WorkoutSessionStartFailure
 import com.echelon.console.application.usecase.WorkoutSessionStarterResult
@@ -374,17 +366,11 @@ class Zone2WorkoutSetupViewModelTest {
         coordinator: InMemoryWorkoutSessionCoordinator,
         capabilitiesOverride: DeviceCapabilities? = capabilities,
         zone2UseCase: StartZone2WorkoutPreview = StartZone2WorkoutPreview(detailCatalog, coordinator),
-    ): ProgramSetupViewModel = ProgramSetupViewModel(
-        getProgramDetail = GetProgramDetail(detailCatalog),
-        startWorkout = StartWorkout(coordinator, detailCatalog),
-        startSurpriseWorkoutDraft = StartSurpriseWorkoutDraft(coordinator),
-        generateSurpriseWorkoutDraft = GenerateSurpriseWorkoutDraft(),
-        startFiveKReadySessionDraft = StartFiveKReadySessionDraft(coordinator),
-        generateFiveKReadySessionDraft = GenerateFiveKReadySessionDraft(),
-        startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
-        generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
-        startZone2WorkoutPreview = zone2UseCase,
-        startCalorieTargetPreview = StartCalorieTargetPreview(StaticProgramCatalog(), coordinator),
+    ): ProgramSetupViewModel = createProgramSetupViewModel(
+        catalog = detailCatalog,
+        coordinator = coordinator,
+        zone2UseCase = zone2UseCase,
+        calorieUseCase = StartCalorieTargetPreview(StaticProgramCatalog(), coordinator),
         capabilities = capabilitiesOverride,
         dispatcher = dispatcher,
     )

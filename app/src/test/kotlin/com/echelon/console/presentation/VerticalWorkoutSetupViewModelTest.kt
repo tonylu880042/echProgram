@@ -1,13 +1,6 @@
 package com.echelon.console.presentation
 
-import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
-import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.InMemoryWorkoutSessionCoordinator
-import com.echelon.console.application.usecase.ProgramDetailCatalog
-import com.echelon.console.application.usecase.StartCalorieTargetPreview
-import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
-import com.echelon.console.application.usecase.StartWorkout
-import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.data.StaticProgramCatalog
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationLimits
@@ -209,20 +202,15 @@ class VerticalWorkoutSetupViewModelTest {
         dispatcher: CoroutineDispatcher,
         coordinator: InMemoryWorkoutSessionCoordinator,
         capabilities: DeviceCapabilities? = capabilities(),
-    ): ProgramSetupViewModel = ProgramSetupViewModel(
-        getProgramDetail = GetProgramDetail(StaticProgramCatalog()),
-        startWorkout = StartWorkout(coordinator, StaticProgramCatalog()),
-        startSurpriseWorkoutDraft = com.echelon.console.application.usecase.StartSurpriseWorkoutDraft(coordinator),
-        generateSurpriseWorkoutDraft = com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft(),
-        startFiveKReadySessionDraft = com.echelon.console.application.usecase.StartFiveKReadySessionDraft(coordinator),
-        generateFiveKReadySessionDraft = com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft(),
-        startVerticalWorkoutDraft = StartVerticalWorkoutDraft(coordinator),
-        generateVerticalWorkoutDraft = GenerateVerticalWorkoutDraft(),
-        startZone2WorkoutPreview = StartZone2WorkoutPreview(StaticProgramCatalog(), coordinator),
-        startCalorieTargetPreview = StartCalorieTargetPreview(StaticProgramCatalog(), coordinator),
-        capabilities = capabilities,
-        dispatcher = dispatcher,
-    )
+    ): ProgramSetupViewModel {
+        val catalog = StaticProgramCatalog()
+        return createProgramSetupViewModel(
+            catalog = catalog,
+            coordinator = coordinator,
+            capabilities = capabilities,
+            dispatcher = dispatcher,
+        )
+    }
 
     private fun capabilities() = DeviceCapabilities(
         duration = DurationLimits(DurationMinutes(10), DurationMinutes(90), DurationMinutes(5)),

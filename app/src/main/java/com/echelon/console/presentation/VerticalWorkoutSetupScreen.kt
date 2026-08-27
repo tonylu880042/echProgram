@@ -232,9 +232,9 @@ private fun VerticalCapsCard(
     val effectiveSpeed = SpeedTenths(minOf(userMaxSpeed.value, machineMaxSpeed.value))
     val effectiveIncline = InclineTenths(minOf(userMaxIncline.value, machineMaxIncline.value))
     ConsoleSetupCard(label = "CAPABILITIES") {
-        VerticalRow("USER CAP", "${userMaxSpeed.verticalSpeed()} MPH / ${userMaxIncline.verticalIncline()}%")
-        VerticalRow("MACHINE CAP", "${machineMaxSpeed.verticalSpeed()} MPH / ${machineMaxIncline.verticalIncline()}%")
-        VerticalRow("EFFECTIVE CAP", "${effectiveSpeed.verticalSpeed()} MPH / ${effectiveIncline.verticalIncline()}%")
+        ConsoleSetupReadoutRow("USER CAP", "${userMaxSpeed.verticalSpeed()} MPH / ${userMaxIncline.verticalIncline()}%")
+        ConsoleSetupReadoutRow("MACHINE CAP", "${machineMaxSpeed.verticalSpeed()} MPH / ${machineMaxIncline.verticalIncline()}%")
+        ConsoleSetupReadoutRow("EFFECTIVE CAP", "${effectiveSpeed.verticalSpeed()} MPH / ${effectiveIncline.verticalIncline()}%")
     }
 }
 
@@ -254,11 +254,11 @@ private fun VerticalPreviewMetadata(draft: VerticalWorkoutDraft) {
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
         )
-        VerticalRow("MODE", "REPRESENTATIVE PROFILE")
-        VerticalRow("CONTROL", "PREVIEW ONLY")
-        VerticalRow("ELEVATION SOURCE", "UNAVAILABLE")
-        VerticalRow("PROGRESS", "NOT CALCULATED")
-        VerticalRow(
+        ConsoleSetupReadoutRow("MODE", "REPRESENTATIVE PROFILE")
+        ConsoleSetupReadoutRow("CONTROL", "PREVIEW ONLY")
+        ConsoleSetupReadoutRow("ELEVATION SOURCE", "UNAVAILABLE")
+        ConsoleSetupReadoutRow("PROGRESS", "NOT CALCULATED")
+        ConsoleSetupReadoutRow(
             "EFFECTIVE CAP",
             "${draft.metadata.effectiveSpeedCap.verticalSpeed()} MPH / " +
                 "${draft.metadata.effectiveInclineCap.verticalIncline()}%",
@@ -335,20 +335,6 @@ private fun VerticalProfileCard(draft: VerticalWorkoutDraft) {
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun VerticalRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 32.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text = label, color = MutedText, fontSize = 12.sp)
-        Text(text = value, color = PrimaryText, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
     }
 }
 

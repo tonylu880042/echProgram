@@ -278,9 +278,9 @@ private fun FiveKCapCard(
     val effectiveSpeed = SpeedTenths(minOf(userMaxSpeed.value, machineMaxSpeed.value))
     val effectiveIncline = InclineTenths(minOf(userMaxIncline.value, machineMaxIncline.value))
     ConsoleSetupCard(label = "CAPABILITIES") {
-        FiveKCapRow("USER CAP", "${userMaxSpeed.fiveKSpeed()} MPH / ${userMaxIncline.fiveKIncline()}%")
-        FiveKCapRow("MACHINE CAP", "${machineMaxSpeed.fiveKSpeed()} MPH / ${machineMaxIncline.fiveKIncline()}%")
-        FiveKCapRow(
+        ConsoleSetupReadoutRow("USER CAP", "${userMaxSpeed.fiveKSpeed()} MPH / ${userMaxIncline.fiveKIncline()}%")
+        ConsoleSetupReadoutRow("MACHINE CAP", "${machineMaxSpeed.fiveKSpeed()} MPH / ${machineMaxIncline.fiveKIncline()}%")
+        ConsoleSetupReadoutRow(
             "EFFECTIVE CAP",
             "${effectiveSpeed.fiveKSpeed()} MPH / ${effectiveIncline.fiveKIncline()}%",
         )
@@ -290,21 +290,21 @@ private fun FiveKCapCard(
 @Composable
 private fun FiveKPreviewMetadataCard(draft: FiveKReadySessionDraft) {
     ConsoleSetupCard(label = "PREVIEW CONTRACT") {
-        FiveKCapRow("MODE", "SINGLE SESSION")
-        FiveKCapRow("CONTROL", "PREVIEW ONLY")
+        ConsoleSetupReadoutRow("MODE", "SINGLE SESSION")
+        ConsoleSetupReadoutRow("CONTROL", "PREVIEW ONLY")
         Text(
             text = "USER-ENTERED BASELINE: ${draft.metadata.baselinePace.speed.fiveKSpeed()} MPH",
             color = PrimaryText,
             fontFamily = FontFamily.Monospace,
             fontSize = 12.sp,
         )
-        FiveKCapRow("DURATION", "${draft.metadata.durationMinutes} MIN")
-        FiveKCapRow(
+        ConsoleSetupReadoutRow("DURATION", "${draft.metadata.durationMinutes} MIN")
+        ConsoleSetupReadoutRow(
             "EFFECTIVE CAP",
             "${draft.effectiveSpeedCap.fiveKSpeed()} MPH / ${draft.effectiveInclineCap.fiveKIncline()}%",
         )
-        FiveKCapRow("RUN MINUTES", "${draft.runWalkSummary.runMinutes} MIN")
-        FiveKCapRow("WALK MINUTES", "${draft.runWalkSummary.walkMinutes} MIN")
+        ConsoleSetupReadoutRow("RUN MINUTES", "${draft.runWalkSummary.runMinutes} MIN")
+        ConsoleSetupReadoutRow("WALK MINUTES", "${draft.runWalkSummary.walkMinutes} MIN")
         Text(
             text = "NO DEVICE COMMANDS",
             color = FiveKWarning,
@@ -364,18 +364,6 @@ private fun FiveKProfileCard(draft: FiveKReadySessionDraft) {
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun FiveKCapRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text = label, color = MutedText, fontSize = 12.sp)
-        Text(text = value, color = PrimaryText, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
     }
 }
 

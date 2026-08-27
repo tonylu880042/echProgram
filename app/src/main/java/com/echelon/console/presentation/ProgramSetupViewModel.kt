@@ -11,8 +11,6 @@ import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraftReque
 import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailResult
 import com.echelon.console.application.usecase.StartCalorieTargetPreview
-import com.echelon.console.application.usecase.StartCalorieTargetPreviewRequest
-import com.echelon.console.application.usecase.StartCalorieTargetPreviewResult
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraftResult
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
@@ -25,8 +23,6 @@ import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.application.usecase.StartZone2WorkoutPreviewRequest
 import com.echelon.console.application.usecase.StartZone2WorkoutPreviewResult
 import com.echelon.console.domain.CalorieTargetOption
-import com.echelon.console.domain.CalorieTargetSelection
-import com.echelon.console.domain.CalorieTargetSelectionResult
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationMinutes
 import com.echelon.console.domain.FiveKReadyBaselinePace
@@ -73,6 +69,10 @@ class ProgramSetupViewModel(
     private val startCalorieTargetPreview: StartCalorieTargetPreview,
 ) : ViewModel() {
     private val _state = MutableStateFlow<ProgramSetupUiState>(ProgramSetupUiState.Library)
+    private val calorieTargetSetupFlow = CalorieTargetSetupFlow(
+        startPreview = startCalorieTargetPreview,
+        capabilities = capabilities,
+    )
 
     val state: StateFlow<ProgramSetupUiState> = _state.asStateFlow()
 
@@ -334,92 +334,17 @@ class ProgramSetupViewModel(
     }
 
     private fun enterCalorieTargetConfiguring(detail: ProgramDetail) {
-        val deviceCapabilities = capabilities
-        if (deviceCapabilities == null) {
-            _state.value = ProgramSetupUiState.DeviceUnavailable
-            return
-        }
-        _state.value = ProgramSetupUiState.CalorieTargetConfiguring(
-            detail = detail,
-            representativeProfileDuration = CALORIE_TARGET_REPRESENTATIVE_DURATION,
-            selectedTarget = null,
-            userMaxSpeed = detail.defaultSettings.maxSpeed,
-            machineMaxSpeed = deviceCapabilities.speed.max,
-            userMaxIncline = detail.defaultSettings.maxIncline,
-            machineMaxIncline = deviceCapabilities.incline.max,
-        )
+        _state.value = calorieTargetSetupFlow.enter(detail)
     }
 
     private fun selectCalorieTarget(target: CalorieTargetOption) {
         val current = _state.value as? ProgramSetupUiState.CalorieTargetConfiguring ?: return
-        when (val result = CalorieTargetSelection.createUserSelected(target.estimatedKcal)) {
-            is CalorieTargetSelectionResult.Accepted -> _state.value = current.copy(
-                selectedTarget = result.selection,
-                errorMessage = null,
-            )
-
-            is CalorieTargetSelectionResult.Rejected -> _state.value = current.copy(
-                errorMessage = CALORIE_TARGET_SELECTION_ERROR,
-            )
-        }
+        _state.value = calorieTargetSetupFlow.select(current, target)
     }
 
     private fun startCalorieTargetPreview() {
         val current = _state.value as? ProgramSetupUiState.CalorieTargetConfiguring ?: return
-        val target = current.selectedTarget
-        if (target == null) {
-            _state.value = current.copy(errorMessage = CALORIE_TARGET_SELECTION_ERROR)
-            return
-        }
-        val deviceCapabilities = capabilities
-        if (deviceCapabilities == null) {
-            _state.value = ProgramSetupUiState.DeviceUnavailable
-            return
-        }
-
-        _state.value = try {
-            when (
-                val result = startCalorieTargetPreview(
-                    StartCalorieTargetPreviewRequest(
-                        target = target,
-                        capabilities = deviceCapabilities,
-                    ),
-                )
-            ) {
-                is StartCalorieTargetPreviewResult.Started -> ProgramSetupUiState.Started(
-                    plan = result.plan,
-                    previewMode = ProgramPreviewMode.CALORIE_TARGET_PREVIEW,
-                )
-
-                is StartCalorieTargetPreviewResult.ProgramNotFound -> current.copy(
-                    errorMessage = CALORIE_TARGET_PROGRAM_UNAVAILABLE_ERROR,
-                )
-
-                is StartCalorieTargetPreviewResult.ProgramDetailMismatch -> current.copy(
-                    errorMessage = CALORIE_TARGET_DETAIL_ERROR,
-                )
-
-                is StartCalorieTargetPreviewResult.UnsupportedRepresentativeDuration -> current.copy(
-                    errorMessage = CALORIE_TARGET_DURATION_ERROR,
-                )
-
-                is StartCalorieTargetPreviewResult.RepresentativeProfileDurationMismatch -> current.copy(
-                    errorMessage = CALORIE_TARGET_PROFILE_ERROR,
-                )
-
-                is StartCalorieTargetPreviewResult.CapabilityValidationFailed -> current.copy(
-                    errorMessage = CALORIE_TARGET_CAPABILITIES_ERROR,
-                )
-
-                is StartCalorieTargetPreviewResult.StarterFailed -> current.copy(
-                    errorMessage = CALORIE_TARGET_START_ERROR,
-                )
-            }
-        } catch (exception: CancellationException) {
-            throw exception
-        } catch (exception: Exception) {
-            current.copy(errorMessage = CALORIE_TARGET_START_ERROR)
-        }
+        _state.value = calorieTargetSetupFlow.start(current)
     }
 
     private fun zone2TargetError(
@@ -862,16 +787,6 @@ class ProgramSetupViewModel(
         const val VERTICAL_ACCEPT_ERROR = "Unable to accept VERTICAL preview"
         const val ZONE_2_PROGRAM_ID = "ZONE_2"
         const val CALORIE_TARGET_PROGRAM_ID = "CALORIE_TARGET"
-        const val CALORIE_TARGET_SELECTION_ERROR = "SELECT A CALORIE TARGET BEFORE STARTING"
-        const val CALORIE_TARGET_PROGRAM_UNAVAILABLE_ERROR =
-            "CALORIE TARGET PREVIEW IS UNAVAILABLE"
-        const val CALORIE_TARGET_DETAIL_ERROR = "CALORIE TARGET PREVIEW DETAIL IS INVALID"
-        const val CALORIE_TARGET_DURATION_ERROR =
-            "CALORIE TARGET REQUIRES A 40-MINUTE REPRESENTATIVE PROFILE"
-        const val CALORIE_TARGET_PROFILE_ERROR = "CALORIE TARGET PROFILE IS INVALID"
-        const val CALORIE_TARGET_CAPABILITIES_ERROR =
-            "CAPABILITIES CANNOT SUPPORT CALORIE TARGET PREVIEW"
-        const val CALORIE_TARGET_START_ERROR = "UNABLE TO START CALORIE TARGET PREVIEW"
         const val ZONE_2_PROGRAM_UNAVAILABLE_ERROR = "ZONE 2 PREVIEW IS UNAVAILABLE"
         const val ZONE_2_UNSUPPORTED_DURATION_ERROR = "SELECT 20, 30, 45, OR 60 MINUTES"
         const val ZONE_2_CAPABILITIES_ERROR = "CAPABILITIES CANNOT SUPPORT ZONE 2 PREVIEW"
@@ -883,6 +798,5 @@ class ProgramSetupViewModel(
 
         val SURPRISE_DEFAULT_DURATION = DurationMinutes(20)
         val SURPRISE_DEFAULT_EFFORT = SurpriseWorkoutEffort.SWEAT
-        val CALORIE_TARGET_REPRESENTATIVE_DURATION = DurationMinutes(40)
     }
 }

@@ -26,7 +26,6 @@ import com.echelon.console.domain.toCalorieTargetWorkoutTimelineProfile
 import com.echelon.console.domain.toZone2WorkoutTimelineProfile
 
 private const val VERTICAL_PROFILE_DURATION_MINUTES = 50
-private val ZONE_2_PROGRAM_ID = ProgramId("ZONE_2")
 
 sealed interface WorkoutSessionStarterResult {
     data class Started(
@@ -155,6 +154,7 @@ class InMemoryWorkoutSessionCoordinator(
     CalorieTargetPreviewSessionStarter,
     WorkoutSessionController {
     private var sessionState: WorkoutSessionState? = null
+    private val zone2SessionValidator = Zone2PreviewSessionValidator(catalog)
     private val calorieTargetSessionValidator = CalorieTargetPreviewSessionValidator(catalog)
 
     override fun start(plan: ValidatedWorkoutPlan): WorkoutSessionStarterResult {
@@ -217,72 +217,20 @@ class InMemoryWorkoutSessionCoordinator(
         plan: ValidatedWorkoutPlan,
     ): WorkoutSessionStarterResult {
         activeSessionFailure()?.let { return it }
-        zone2ContextPlanMismatch(context, plan)?.let { return it }
-
-        val detail = catalog.findProgramDetail(ZONE_2_PROGRAM_ID)
-            ?.takeIf { it.programId == ZONE_2_PROGRAM_ID }
-            ?: return WorkoutSessionStarterResult.Failed(
-                WorkoutSessionStartFailure.ProgramNotFound(ZONE_2_PROGRAM_ID),
-            )
-        val settings = plan.plan.settings
-        val reviewedSettingsMismatch = when {
-            settings.intensity != detail.defaultSettings.intensity ->
-                Zone2PreviewContextPlanMismatchField.INTENSITY
-
-            settings.focus != detail.defaultSettings.focus ->
-                Zone2PreviewContextPlanMismatchField.FOCUS
-
-            settings.adaptToYou -> Zone2PreviewContextPlanMismatchField.ADAPT_TO_YOU
-            else -> null
-        }
-        reviewedSettingsMismatch?.let {
-            return WorkoutSessionStarterResult.Failed(
-                WorkoutSessionStartFailure.Zone2PreviewContextPlanMismatch(it),
-            )
-        }
-        if (
-            settings.duration !in ZONE_2_PREVIEW_SUPPORTED_DURATIONS ||
-            settings.duration !in detail.supportedDurations
+        return when (
+            val validation = zone2SessionValidator.validate(context, plan)
         ) {
-            return WorkoutSessionStarterResult.Failed(
-                WorkoutSessionStartFailure.UnsupportedDuration(
-                    programId = ZONE_2_PROGRAM_ID,
-                    duration = settings.duration,
-                    supportedDurations = ZONE_2_PREVIEW_SUPPORTED_DURATIONS,
+            is Zone2PreviewSessionValidationResult.Accepted -> startTimeline(
+                WorkoutTimelineCompiler.compile(
+                    programId = context.programId,
+                    profile = validation.detail.toZone2WorkoutTimelineProfile(context),
+                    settings = plan.plan.settings,
                 ),
             )
-        }
 
-        val detailMaxSpeed = minOf(
-            detail.defaultSettings.maxSpeed.value,
-            detail.speedRange.max.value,
-        )
-        if (settings.maxSpeed.value > detailMaxSpeed) {
-            return WorkoutSessionStarterResult.Failed(
-                WorkoutSessionStartFailure.Zone2PreviewContextPlanMismatch(
-                    Zone2PreviewContextPlanMismatchField.MAX_SPEED,
-                ),
-            )
+            is Zone2PreviewSessionValidationResult.Rejected ->
+                WorkoutSessionStarterResult.Failed(validation.failure)
         }
-        val detailMaxIncline = minOf(
-            detail.defaultSettings.maxIncline.value,
-            detail.inclineRange.max.value,
-        )
-        if (settings.maxIncline.value > detailMaxIncline) {
-            return WorkoutSessionStarterResult.Failed(
-                WorkoutSessionStartFailure.Zone2PreviewContextPlanMismatch(
-                    Zone2PreviewContextPlanMismatchField.MAX_INCLINE,
-                ),
-            )
-        }
-
-        return startTimeline(
-            WorkoutTimelineCompiler.compile(
-                programId = ZONE_2_PROGRAM_ID,
-                profile = detail.toZone2WorkoutTimelineProfile(context),
-                settings = plan.plan.settings,
-            ),
-        )
     }
 
     override fun start(
@@ -348,33 +296,6 @@ class InMemoryWorkoutSessionCoordinator(
         }
         return mismatch?.let {
             WorkoutSessionStarterResult.Failed(WorkoutSessionStartFailure.DraftPlanMismatch(it))
-        }
-    }
-
-    private fun zone2ContextPlanMismatch(
-        context: WorkoutTimelineContext.Zone2Preview,
-        plan: ValidatedWorkoutPlan,
-    ): WorkoutSessionStarterResult.Failed? {
-        val settings = plan.plan.settings
-        val mismatch = when {
-            context.programId != ZONE_2_PROGRAM_ID || plan.plan.programId != ZONE_2_PROGRAM_ID ->
-                Zone2PreviewContextPlanMismatchField.PROGRAM_ID
-
-            context.duration != settings.duration ->
-                Zone2PreviewContextPlanMismatchField.DURATION
-
-            context.effectiveMaxSpeed != settings.maxSpeed ->
-                Zone2PreviewContextPlanMismatchField.MAX_SPEED
-
-            context.effectiveMaxIncline != settings.maxIncline ->
-                Zone2PreviewContextPlanMismatchField.MAX_INCLINE
-
-            else -> null
-        }
-        return mismatch?.let {
-            WorkoutSessionStarterResult.Failed(
-                WorkoutSessionStartFailure.Zone2PreviewContextPlanMismatch(it),
-            )
         }
     }
 

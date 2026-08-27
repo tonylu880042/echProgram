@@ -181,7 +181,7 @@ private fun SurpriseDurationCard(
     onAction: (ProgramSetupAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SurpriseChoiceCard(label = "DURATION", modifier = modifier) {
+    ConsoleSetupCard(label = "DURATION", modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SurpriseWorkoutDurationOptions.forEach { duration ->
                 SurpriseChoiceButton(
@@ -202,7 +202,7 @@ private fun SurpriseEffortCard(
     onAction: (ProgramSetupAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SurpriseChoiceCard(label = "EFFORT", modifier = modifier) {
+    ConsoleSetupCard(label = "EFFORT", modifier = modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SurpriseWorkoutEffort.entries.take(2).forEach { effort ->
@@ -226,29 +226,6 @@ private fun SurpriseEffortCard(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun SurpriseChoiceCard(
-    label: String,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(4.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, RuleColor),
-        colors = CardDefaults.cardColors(containerColor = CarbonLow),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(text = label, color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            content()
         }
     }
 }
@@ -281,7 +258,7 @@ private fun SurpriseChoiceButton(
 private fun SurpriseCapsCard(state: ProgramSetupUiState.Configuring) {
     val effectiveSpeed = SpeedTenths(minOf(state.userMaxSpeed.value, state.machineMaxSpeed.value))
     val effectiveIncline = InclineTenths(minOf(state.userMaxIncline.value, state.machineMaxIncline.value))
-    SurpriseChoiceCard(label = "CAPS AND PROFILE") {
+    ConsoleSetupCard(label = "CAPS AND PROFILE") {
         CapRow("BASELINE USER CAP", "${state.userMaxSpeed.asDecimal()} MPH / ${state.userMaxIncline.asDecimal()}%")
         CapRow("MACHINE CAP", "${state.machineMaxSpeed.asDecimal()} MPH / ${state.machineMaxIncline.asDecimal()}%")
         CapRow("EFFECTIVE INTERSECTION", "${effectiveSpeed.asDecimal()} MPH / ${effectiveIncline.asDecimal()}%")
@@ -300,7 +277,7 @@ private fun SurpriseDraftMetadataCard(draft: SurpriseWorkoutDraft) {
     val profileMaxSpeed = draft.profile.maxOf { it.speed.value }
     val profileMinIncline = draft.profile.minOf { it.incline.value }
     val profileMaxIncline = draft.profile.maxOf { it.incline.value }
-    SurpriseChoiceCard(label = "PREVIEW CONTRACT") {
+    ConsoleSetupCard(label = "PREVIEW CONTRACT") {
         CapRow("DURATION", "${draft.metadata.durationMinutes} MIN")
         CapRow("EFFORT", draft.metadata.effort.name)
         CapRow("REGENERATION INDEX", draft.metadata.regenerationIndex.toString())
@@ -327,7 +304,7 @@ private fun SurpriseDraftMetadataCard(draft: SurpriseWorkoutDraft) {
 
 @Composable
 private fun SurpriseProfileCard(draft: SurpriseWorkoutDraft) {
-    SurpriseChoiceCard(label = "GENERATED PROFILE · ${draft.profile.size} SEGMENTS") {
+    ConsoleSetupCard(label = "GENERATED PROFILE · ${draft.profile.size} SEGMENTS") {
         draft.profile.forEach { segment ->
             Row(
                 modifier = Modifier

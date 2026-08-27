@@ -163,7 +163,7 @@ private fun VerticalTargetCard(
     state: ProgramSetupUiState.VerticalConfiguring,
     onAction: (ProgramSetupAction) -> Unit,
 ) {
-    VerticalCard(label = "TARGET") {
+    ConsoleSetupCard(label = "TARGET") {
         Text(
             text = state.target.verticalLabel(),
             color = Cyan,
@@ -231,7 +231,7 @@ private fun VerticalCapsCard(
 ) {
     val effectiveSpeed = SpeedTenths(minOf(userMaxSpeed.value, machineMaxSpeed.value))
     val effectiveIncline = InclineTenths(minOf(userMaxIncline.value, machineMaxIncline.value))
-    VerticalCard(label = "CAPABILITIES") {
+    ConsoleSetupCard(label = "CAPABILITIES") {
         VerticalRow("USER CAP", "${userMaxSpeed.verticalSpeed()} MPH / ${userMaxIncline.verticalIncline()}%")
         VerticalRow("MACHINE CAP", "${machineMaxSpeed.verticalSpeed()} MPH / ${machineMaxIncline.verticalIncline()}%")
         VerticalRow("EFFECTIVE CAP", "${effectiveSpeed.verticalSpeed()} MPH / ${effectiveIncline.verticalIncline()}%")
@@ -240,7 +240,7 @@ private fun VerticalCapsCard(
 
 @Composable
 private fun VerticalPreviewMetadata(draft: VerticalWorkoutDraft) {
-    VerticalCard(label = "PREVIEW CONTRACT") {
+    ConsoleSetupCard(label = "PREVIEW CONTRACT") {
         Text(
             text = "TARGET ${draft.metadata.target.verticalLabel()}",
             color = PrimaryText,
@@ -298,7 +298,7 @@ private fun VerticalPreviewMetadata(draft: VerticalWorkoutDraft) {
 
 @Composable
 private fun VerticalProfileCard(draft: VerticalWorkoutDraft) {
-    VerticalCard(label = "PROFILE · ${draft.segments.size} SEGMENTS") {
+    ConsoleSetupCard(label = "PROFILE · ${draft.segments.size} SEGMENTS") {
         draft.segments.forEach { segment ->
             Row(
                 modifier = Modifier
@@ -334,25 +334,6 @@ private fun VerticalProfileCard(draft: VerticalWorkoutDraft) {
                     fontSize = 11.sp,
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun VerticalCard(label: String, content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(4.dp),
-        border = BorderStroke(1.dp, RuleColor),
-        colors = CardDefaults.cardColors(containerColor = CarbonLow),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(text = label, color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            content()
         }
     }
 }

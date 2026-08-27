@@ -1,6 +1,5 @@
 package com.echelon.console.presentation
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -138,7 +137,7 @@ private fun Zone2Heading(promise: String) {
 
 @Composable
 private fun Zone2Disclosure() {
-    Zone2Card(label = "PREVIEW CONTRACT", borderColor = Zone2Warning) {
+    ConsoleSetupCard(label = "PREVIEW CONTRACT", borderColor = Zone2Warning) {
         Text(text = "PREVIEW ONLY", color = Zone2Warning, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Text(text = "USER-CONFIRMED TARGET", color = PrimaryText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Text(text = "NO AGE OR MAX-HR FORMULA", color = MutedText, fontSize = 12.sp)
@@ -158,7 +157,7 @@ private fun Zone2TargetCard(
     onAction: (ProgramSetupAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Zone2Card(label = "TARGET HEART RATE", modifier = modifier) {
+    ConsoleSetupCard(label = "TARGET HEART RATE", modifier = modifier) {
         Text(
             text = "ENTER THE RANGE YOU CONFIRM",
             color = Zone2Warning,
@@ -227,7 +226,7 @@ private fun Zone2DurationCard(
     onAction: (ProgramSetupAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Zone2Card(label = "SESSION DURATION", modifier = modifier) {
+    ConsoleSetupCard(label = "SESSION DURATION", modifier = modifier) {
         Zone2DurationOptions.chunked(2).forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -280,7 +279,7 @@ private fun Zone2SourceCard(
     equipmentState: EquipmentReadState,
     modifier: Modifier = Modifier,
 ) {
-    Zone2Card(label = "SOURCE / READINESS", modifier = modifier) {
+    ConsoleSetupCard(label = "SOURCE / READINESS", modifier = modifier) {
         Zone2ReadoutRow(label = "TARGET SOURCE", value = "USER CONFIRMED")
         Zone2ReadoutRow(label = "INTENDED HR SOURCE", value = "FITOS EQUIPMENT SNAPSHOT")
         Zone2ReadoutRow(label = "FITOS STATUS", value = equipmentState.connection.zone2Status())
@@ -307,7 +306,7 @@ private fun Zone2CapsCard(
 ) {
     val effectiveSpeed = SpeedTenths(minOf(state.userMaxSpeed.value, state.machineMaxSpeed.value))
     val effectiveIncline = InclineTenths(minOf(state.userMaxIncline.value, state.machineMaxIncline.value))
-    Zone2Card(label = "CAPABILITIES", modifier = modifier) {
+    ConsoleSetupCard(label = "CAPABILITIES", modifier = modifier) {
         Zone2ReadoutRow(
             label = "USER CAP",
             value = "${state.userMaxSpeed.zone2Speed()} MPH / ${state.userMaxIncline.zone2Incline()}%",
@@ -337,30 +336,6 @@ private fun Zone2ReadoutRow(
     ) {
         Text(text = label, color = MutedText, fontSize = 11.sp)
         Text(text = value, color = PrimaryText, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
-    }
-}
-
-@Composable
-private fun Zone2Card(
-    label: String,
-    modifier: Modifier = Modifier,
-    borderColor: Color = RuleColor,
-    content: @Composable () -> Unit,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(4.dp),
-        border = BorderStroke(1.dp, borderColor),
-        colors = CardDefaults.cardColors(containerColor = CarbonLow),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(text = label, color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            content()
-        }
     }
 }
 

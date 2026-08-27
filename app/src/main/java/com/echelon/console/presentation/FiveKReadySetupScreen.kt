@@ -203,7 +203,7 @@ private fun FiveKBaselineInput(
     text: String,
     onTextChange: (String) -> Unit,
 ) {
-    FiveKCard(label = "BASELINE PACE") {
+    ConsoleSetupCard(label = "BASELINE PACE") {
         Text(
             text = "SET YOUR RUN PACE",
             color = FiveKWarning,
@@ -248,7 +248,7 @@ private fun FiveKDurationCard(
     state: ProgramSetupUiState.FiveKReadyConfiguring,
     onAction: (ProgramSetupAction) -> Unit,
 ) {
-    FiveKCard(label = "SESSION DURATION") {
+    ConsoleSetupCard(label = "SESSION DURATION") {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -277,7 +277,7 @@ private fun FiveKCapCard(
 ) {
     val effectiveSpeed = SpeedTenths(minOf(userMaxSpeed.value, machineMaxSpeed.value))
     val effectiveIncline = InclineTenths(minOf(userMaxIncline.value, machineMaxIncline.value))
-    FiveKCard(label = "CAPABILITIES") {
+    ConsoleSetupCard(label = "CAPABILITIES") {
         FiveKCapRow("USER CAP", "${userMaxSpeed.fiveKSpeed()} MPH / ${userMaxIncline.fiveKIncline()}%")
         FiveKCapRow("MACHINE CAP", "${machineMaxSpeed.fiveKSpeed()} MPH / ${machineMaxIncline.fiveKIncline()}%")
         FiveKCapRow(
@@ -289,7 +289,7 @@ private fun FiveKCapCard(
 
 @Composable
 private fun FiveKPreviewMetadataCard(draft: FiveKReadySessionDraft) {
-    FiveKCard(label = "PREVIEW CONTRACT") {
+    ConsoleSetupCard(label = "PREVIEW CONTRACT") {
         FiveKCapRow("MODE", "SINGLE SESSION")
         FiveKCapRow("CONTROL", "PREVIEW ONLY")
         Text(
@@ -316,7 +316,7 @@ private fun FiveKPreviewMetadataCard(draft: FiveKReadySessionDraft) {
 
 @Composable
 private fun FiveKProfileCard(draft: FiveKReadySessionDraft) {
-    FiveKCard(label = "SESSION PROFILE · ${draft.segments.size} SEGMENTS") {
+    ConsoleSetupCard(label = "SESSION PROFILE · ${draft.segments.size} SEGMENTS") {
         draft.segments.forEach { segment ->
             Row(
                 modifier = Modifier
@@ -364,26 +364,6 @@ private fun FiveKProfileCard(draft: FiveKReadySessionDraft) {
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun FiveKCard(label: String, content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(4.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, RuleColor),
-        colors = CardDefaults.cardColors(containerColor = CarbonLow),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            content = {
-                Text(text = label, color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                content()
-            },
-        )
     }
 }
 

@@ -3,7 +3,6 @@ package com.echelon.console.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraft
-import com.echelon.console.application.usecase.GenerateFiveKReadySessionDraftRequest
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.GenerateSurpriseWorkoutDraftRequest
 import com.echelon.console.application.usecase.GenerateVerticalWorkoutDraft
@@ -11,7 +10,6 @@ import com.echelon.console.application.usecase.GetProgramDetail
 import com.echelon.console.application.usecase.ProgramDetailResult
 import com.echelon.console.application.usecase.StartCalorieTargetPreview
 import com.echelon.console.application.usecase.StartFiveKReadySessionDraft
-import com.echelon.console.application.usecase.StartFiveKReadySessionDraftResult
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraft
 import com.echelon.console.application.usecase.StartSurpriseWorkoutDraftResult
 import com.echelon.console.application.usecase.StartVerticalWorkoutDraft
@@ -21,15 +19,10 @@ import com.echelon.console.application.usecase.StartZone2WorkoutPreview
 import com.echelon.console.domain.CalorieTargetOption
 import com.echelon.console.domain.DeviceCapabilities
 import com.echelon.console.domain.DurationMinutes
-import com.echelon.console.domain.FiveKReadyBaselinePace
-import com.echelon.console.domain.FiveKReadyBaselineSource
-import com.echelon.console.domain.FiveKReadySessionGenerationFailure
-import com.echelon.console.domain.FiveKReadySessionGenerationResult
 import com.echelon.console.domain.PlanSettings
 import com.echelon.console.domain.ProgramDetail
 import com.echelon.console.domain.ProgramId
 import com.echelon.console.domain.ProgramPreviewMode
-import com.echelon.console.domain.SpeedTenths
 import com.echelon.console.domain.SurpriseWorkoutDraft
 import com.echelon.console.domain.SurpriseWorkoutEffort
 import com.echelon.console.domain.SurpriseWorkoutGenerationResult
@@ -42,7 +35,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 class ProgramSetupViewModel(
     private val getProgramDetail: GetProgramDetail,
@@ -70,6 +62,11 @@ class ProgramSetupViewModel(
     private val verticalSetupFlow = VerticalSetupFlow(
         generateDraft = generateVerticalWorkoutDraft,
         startDraft = startVerticalWorkoutDraft,
+        capabilities = capabilities,
+    )
+    private val fiveKReadySetupFlow = FiveKReadySetupFlow(
+        generateDraft = generateFiveKReadySessionDraft,
+        startDraft = startFiveKReadySessionDraft,
         capabilities = capabilities,
     )
 
@@ -271,22 +268,7 @@ class ProgramSetupViewModel(
     }
 
     private fun enterFiveKReadyConfiguring(detail: ProgramDetail) {
-        val deviceCapabilities = capabilities
-        if (deviceCapabilities == null) {
-            _state.value = ProgramSetupUiState.DeviceUnavailable
-            return
-        }
-        _state.value = ProgramSetupUiState.FiveKReadyConfiguring(
-            detail = detail,
-            duration = detail.defaultSettings.duration.takeIf {
-                it in FiveKReadyDurationOptions
-            } ?: FIVE_K_READY_DEFAULT_DURATION,
-            baselinePaceText = "",
-            userMaxSpeed = detail.defaultSettings.maxSpeed,
-            machineMaxSpeed = deviceCapabilities.speed.max,
-            userMaxIncline = detail.defaultSettings.maxIncline,
-            machineMaxIncline = deviceCapabilities.incline.max,
-        )
+        _state.value = fiveKReadySetupFlow.enter(detail)
     }
 
     private fun enterVerticalConfiguring(detail: ProgramDetail) {
@@ -310,109 +292,22 @@ class ProgramSetupViewModel(
 
     private fun setFiveKReadyDuration(duration: DurationMinutes) {
         val current = _state.value as? ProgramSetupUiState.FiveKReadyConfiguring ?: return
-        if (duration !in FiveKReadyDurationOptions) return
-        _state.value = current.copy(duration = duration, errorMessage = null)
+        _state.value = fiveKReadySetupFlow.setDuration(current, duration)
     }
 
     private fun setFiveKReadyBaselinePace(text: String) {
         val current = _state.value as? ProgramSetupUiState.FiveKReadyConfiguring ?: return
-        _state.value = current.copy(baselinePaceText = text, errorMessage = null)
+        _state.value = fiveKReadySetupFlow.setBaselinePace(current, text)
     }
 
     private fun generateFiveKReadyPreview() {
         val current = _state.value as? ProgramSetupUiState.FiveKReadyConfiguring ?: return
-        val baseline = parseFiveKBaseline(current.baselinePaceText)
-        if (baseline == null) {
-            _state.value = current.copy(errorMessage = FIVE_K_READY_BASELINE_INPUT_ERROR)
-            return
-        }
-
-        when (
-            val result = generateFiveKReadySessionDraft(
-                GenerateFiveKReadySessionDraftRequest(
-                    durationMinutes = current.duration.value,
-                    baselinePace = baseline,
-                    userMaxSpeed = current.userMaxSpeed,
-                    machineMaxSpeed = current.machineMaxSpeed,
-                    userMaxIncline = current.userMaxIncline,
-                    machineMaxIncline = current.machineMaxIncline,
-                ),
-            )
-        ) {
-            is FiveKReadySessionGenerationResult.Generated -> _state.value =
-                ProgramSetupUiState.FiveKReadyDraftPreview(
-                    detail = current.detail,
-                    draft = result.draft,
-                    baselinePaceText = current.baselinePaceText,
-                    userMaxSpeed = current.userMaxSpeed,
-                    machineMaxSpeed = current.machineMaxSpeed,
-                    userMaxIncline = current.userMaxIncline,
-                    machineMaxIncline = current.machineMaxIncline,
-                )
-
-            is FiveKReadySessionGenerationResult.Rejected -> _state.value = current.copy(
-                errorMessage = fiveKGenerationError(result.failure),
-            )
-        }
+        _state.value = fiveKReadySetupFlow.generatePreview(current)
     }
 
     private fun acceptFiveKReadyPlan() {
         val current = _state.value as? ProgramSetupUiState.FiveKReadyDraftPreview ?: return
-        val deviceCapabilities = capabilities
-        if (deviceCapabilities == null) {
-            _state.value = ProgramSetupUiState.DeviceUnavailable
-            return
-        }
-        _state.value = try {
-            when (val result = startFiveKReadySessionDraft(current.draft, deviceCapabilities)) {
-                is StartFiveKReadySessionDraftResult.Started -> ProgramSetupUiState.Started(
-                    plan = result.plan,
-                    previewMode = ProgramPreviewMode.BASELINE_PREVIEW,
-                )
-
-                is StartFiveKReadySessionDraftResult.InvalidDraft,
-                is StartFiveKReadySessionDraftResult.CapabilityValidationFailed,
-                is StartFiveKReadySessionDraftResult.StarterFailed,
-                -> ProgramSetupUiState.Error(FIVE_K_READY_ACCEPT_ERROR)
-            }
-        } catch (exception: CancellationException) {
-            throw exception
-        } catch (exception: Exception) {
-            ProgramSetupUiState.Error(FIVE_K_READY_ACCEPT_ERROR)
-        }
-    }
-
-    private fun parseFiveKBaseline(text: String): FiveKReadyBaselinePace? {
-        val normalized = text.trim()
-        if (!FIVE_K_READY_PACE_PATTERN.matches(normalized)) return null
-        val value = normalized.toDoubleOrNull() ?: return null
-        if (!value.isFinite() || value > Int.MAX_VALUE / 10.0) return null
-        return FiveKReadyBaselinePace(
-            speed = SpeedTenths((value * 10.0).roundToInt()),
-            source = FiveKReadyBaselineSource.USER_ENTERED,
-        )
-    }
-
-    private fun fiveKGenerationError(
-        failure: FiveKReadySessionGenerationFailure,
-    ): String = when (failure) {
-        FiveKReadySessionGenerationFailure.BaselineRequired -> FIVE_K_READY_BASELINE_INPUT_ERROR
-        is FiveKReadySessionGenerationFailure.BaselineSourceNotUserEntered ->
-            FIVE_K_READY_BASELINE_INPUT_ERROR
-        is FiveKReadySessionGenerationFailure.BaselineOutsideGlobalEnvelope ->
-            "RUN PACE MUST BE BETWEEN 2.8 AND 6.0 MPH"
-        is FiveKReadySessionGenerationFailure.BaselineExceedsEffectiveSpeedCap ->
-            "RUN PACE EXCEEDS THE EFFECTIVE SPEED CAP"
-        is FiveKReadySessionGenerationFailure.BaselineLeavesNoRecoveryMargin ->
-            "RUN PACE 2.8 MPH LEAVES NO RECOVERY MARGIN; ENTER AT LEAST 2.9 MPH"
-        is FiveKReadySessionGenerationFailure.InvalidSpeedCap,
-        is FiveKReadySessionGenerationFailure.SpeedCapsDoNotIntersect,
-        -> FIVE_K_READY_CAPABILITIES_ERROR
-        is FiveKReadySessionGenerationFailure.InvalidInclineCap,
-        is FiveKReadySessionGenerationFailure.InclineCapsDoNotIntersect,
-        -> FIVE_K_READY_CAPABILITIES_ERROR
-        is FiveKReadySessionGenerationFailure.UnsupportedDuration ->
-            "SELECT 20, 30, 40, OR 60 MINUTES"
+        _state.value = fiveKReadySetupFlow.accept(current)
     }
 
     private fun enterSurpriseConfiguring(detail: ProgramDetail): ProgramSetupUiState.Configuring? {
@@ -613,16 +508,8 @@ class ProgramSetupViewModel(
         const val SURPRISE_ACCEPT_ERROR = "Unable to accept workout preview"
         const val SURPRISE_UNSUPPORTED_DURATION_ERROR =
             "Default duration unavailable; using 20 minutes"
-        const val FIVE_K_READY_BASELINE_INPUT_ERROR =
-            "SET YOUR RUN PACE BEFORE PREVIEW (MPH, FOR EXAMPLE 4.0)"
-        const val FIVE_K_READY_CAPABILITIES_ERROR =
-            "CAPABILITIES CANNOT SUPPORT THIS PREVIEW"
-        const val FIVE_K_READY_ACCEPT_ERROR = "Unable to accept 5K READY preview"
         const val ZONE_2_PROGRAM_ID = "ZONE_2"
         const val CALORIE_TARGET_PROGRAM_ID = "CALORIE_TARGET"
-
-        val FIVE_K_READY_PACE_PATTERN = Regex("""^\d+(?:\.\d)?$""")
-        val FIVE_K_READY_DEFAULT_DURATION = DurationMinutes(30)
 
         val SURPRISE_DEFAULT_DURATION = DurationMinutes(20)
         val SURPRISE_DEFAULT_EFFORT = SurpriseWorkoutEffort.SWEAT
